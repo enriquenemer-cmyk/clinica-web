@@ -18,6 +18,9 @@
   .sidebar{position:fixed;top:0;left:0;bottom:0;width:232px;background:var(--sidebar);color:#cbd5e1;padding:18px 14px;overflow-y:auto;z-index:10}
   .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:16px;padding:4px 8px 20px}
   .brand .logo{width:32px;height:32px;border-radius:9px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:17px}
+  .dkv-mark{padding:7px 11px;border-radius:9px;background:#fff;color:#0a2f6b;font-weight:800;font-size:15px;letter-spacing:.5px;font-family:'Arial Black','Arial Bold',Arial,sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.30);flex:0 0 auto}
+  .brand-txt{display:flex;flex-direction:column;line-height:1.15}
+  .brand-txt small{font-size:10px;font-weight:400;opacity:.6;letter-spacing:.3px}
   .logo-dkv{background:#fff;color:#003a78;font-weight:800;font-size:16px;letter-spacing:.5px;border-radius:7px;padding:5px 8px;font-family:Arial,Helvetica,sans-serif;flex:0 0 auto}
   .sidebar nav{display:flex;flex-direction:column;gap:3px}
   .sidebar nav button{display:flex;align-items:center;gap:11px;width:100%;background:transparent;color:#cbd5e1;border:0;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:500;cursor:pointer;text-align:left;transition:.12s}
@@ -96,7 +99,7 @@
 <body>
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><span class="logo">🦷</span> Clínica dental</div>
+    <div class="brand"><span class="dkv-mark">DKV</span><span class="brand-txt">Clínica dental<small>Espacio de Salud</small></span></div>
     <nav>
       <button data-page="inicio" class="on"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Inicio</span></button>
       <button data-page="agenda"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg><span>Agenda</span></button>
