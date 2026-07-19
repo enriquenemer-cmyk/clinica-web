@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Registro de paciente nuevo · Clínica dental</title>
+<style>
+  :root{--primary:#0d9488;--primary-d:#0f766e;--soft:#d3f7f1;--bg:#eef1f6;--txt:#0f172a;--muted:#64748b;--borde:#dbe3ea}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:15px}
+  .top{background:var(--primary);color:#fff;padding:18px 16px;text-align:center}
+  .top .logo{font-size:26px}.top h1{margin:6px 0 2px;font-size:18px;font-weight:700}.top p{margin:0;font-size:13px;opacity:.9}
+  .wrap{max-width:640px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(16,24,40,.05)}
+  .card h2{font-size:15px;margin:0 0 4px;color:var(--primary-d)}.card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+  label.f{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 5px}
+  input,textarea{width:100%;padding:11px 12px;border:1px solid var(--borde);border-radius:10px;font-size:15px;font-family:inherit;background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--soft)}
+  .field{margin-bottom:13px}
+  .req label.f:after{content:" *";color:#e11d48}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.g2{grid-template-columns:1fr}}
+  .q{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+  .q:last-child{border-bottom:0}
+  .q .t{font-size:14px;flex:1}
+  .sn{display:flex;gap:6px;flex:0 0 auto}
+  .sn button{border:1px solid var(--borde);background:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+  .sn button.si.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .sn button.no.on{background:#475569;border-color:#475569;color:#fff}
+  .extra{margin:6px 0 4px;display:none}
+  .grp-title{font-weight:700;font-size:13px;margin:14px 0 2px;color:var(--txt)}
+  .chk{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;font-size:13px;line-height:1.5}
+  .chk input{width:auto;margin-top:2px;flex:0 0 auto}
+  .firma-box{border:1px dashed var(--borde);border-radius:10px;background:#fbfdfe}
+  canvas{width:100%;height:150px;display:block;touch-action:none;border-radius:10px}
+  .firma-tools{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;color:var(--muted)}
+  .firma-tools button{background:none;border:0;color:var(--primary);font-weight:600;cursor:pointer;font-size:12px}
+  button.enviar{width:100%;background:var(--primary);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer}
+  button.enviar:hover{background:var(--primary-d)}
+  .err{color:#e11d48;font-size:13px;margin-top:8px;display:none}
+  .ok{display:none;text-align:center;padding:30px 16px}
+  .ok .big{font-size:56px}.ok h2{color:var(--primary-d);margin:8px 0}
+  .wa{display:inline-block;margin-top:14px;background:#25d366;color:#fff;text-decoration:none;padding:12px 18px;border-radius:12px;font-weight:700}
+  .foot{text-align:center;color:var(--muted);font-size:12px;padding:8px 16px 30px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">🦷</div>
+  <h1>Registro de paciente nuevo</h1>
+  <p>Rellena tus datos y el cuestionario de salud</p>
+</div>
+
+<div class="wrap" id="formWrap">
+  <div class="card">
+    <h2>Tus datos</h2>
+    <div class="field req"><label class="f">Nombre y apellidos</label><input id="nombre" autocomplete="name"/></div>
+    <div class="g2">
+      <div class="field"><label class="f">DNI / NIE</label><input id="dni"/></div>
+      <div class="field"><label class="f">Fecha de nacimiento</label><input id="nacimiento" type="date"/></div>
+    </div>
+    <div class="g2">
+      <div class="field req"><label class="f">Teléfono</label><input id="telefono" inputmode="tel" autocomplete="tel"/></div>
+      <div class="field"><label class="f">E-mail</label><input id="email" inputmode="email" autocomplete="email"/></div>
+    </div>
+    <div class="field"><label class="f">Profesión</label><input id="profesion"/></div>
+    <div class="field"><label class="f">Motivo de la consulta</label><textarea id="motivo" rows="2"></textarea></div>
+  </div>
+
+  <div class="card">
+    <h2>Cuestionario de salud</h2>
+    <div class="sub">Marca Sí o No en cada pregunta. Es confidencial.</div>
+    <div id="preguntas"></div>
+  </div>
+
+  <div class="card">
+    <h2>Consentimientos</h2>
+    <label class="chk"><input type="checkbox" id="c_veracidad"/><span>Declaro que los datos facilitados son ciertos a mi buen saber y entender. <b style="color:#e11d48">*</b></span></label>
+    <label class="chk"><input type="checkbox" id="c_rgpd"/><span>Autorizo el tratamiento de mis datos personales por la clínica para la atención sanitaria, conforme al RGPD. <b style="color:#e11d48">*</b></span></label>
+    <label class="chk"><input type="checkbox" id="c_marketing"/><span>Acepto recibir información comercial, ofertas y felicitaciones (opcional).</span></label>
+    <label class="chk"><input type="checkbox" id="c_imagenes"/><span>Autorizo el uso de imágenes clínicas con fines docentes/promocionales (opcional).</span></label>
+  </div>
+
+  <div class="card">
+    <h2>Firma</h2>
+    <div class="sub">Firma con el dedo dentro del recuadro.</div>
+    <div class="firma-box"><canvas id="firma"></canvas><div class="firma-tools"><span>Firma del paciente</span><button type="button" id="limpiarFirma">Borrar</button></div></div>
+  </div>
+
+  <button class="enviar" id="enviar">✅ Enviar registro</button>
+  <div class="err" id="error"></div>
+</div>
+
+<div class="wrap ok" id="okWrap">
+  <div class="big">✅</div>
+  <h2>¡Registro enviado!</h2>
+  <p>Gracias. Tus datos han quedado registrados en la clínica.</p>
+  <a class="wa" id="waLink" href="#" target="_blank">📲 Enviar copia por WhatsApp</a>
+  <p style="margin-top:20px;font-size:13px;color:#64748b">Ya puedes avisar en recepción de que has terminado.</p>
+</div>
+
+<div class="foot">K Dental Excellent · Tus datos se tratan de forma confidencial (RGPD)</div>
+
+<script>
+// ==== Preguntas del cuestionario de salud (según formulario DKV) ====
+const GRUPOS=[
+  {titulo:"¿Es alérgico o ha tenido problemas con…?",qs:[
+    ["a_metales","Metales (cromo, níquel, cobalto…)"],["a_latex","Látex"],["a_anestesicos","Anestésicos"],
+    ["a_medicamentos","Medicamentos"],["a_otros","Otros",true]]},
+  {titulo:"¿Tiene o ha sufrido…?",qs:[
+    ["e_corazon","Problemas de corazón (soplos, válvulas, infarto, angina, marcapasos…)"],
+    ["e_artritis","Artritis"],["e_ulcera","Úlcera gástrica/duodenal, hernia hiatal, gastritis"],
+    ["e_hepatitis","Hepatitis o problema hepático"],["e_renal","Problema renal (insuficiencia renal)"],
+    ["e_tiroides","Trastornos del tiroides"],["e_hemorragias","Hemorragias abundantes tras heridas/cirugías/extracciones"],
+    ["e_hematomas","Se producen hematomas con facilidad"],["e_cicatriz","Tardan en cicatrizar las heridas"],
+    ["e_diabetes","Diabetes"],["e_hipertension","Hipertensión arterial"],
+    ["e_tbc","Tuberculosis, SIDA, Hepatitis B/C/A"],["e_epilepsia","Epilepsia"],
+    ["e_otra","Otra enfermedad importante no citada",true]]},
+  {titulo:"Otras preguntas",qs:[
+    ["radio","¿Radioterapia o quimioterapia?"],
+    ["medicacion","¿Toma medicación habitual / bifosfonatos?",true],
+    ["autoinmune","¿Enfermedad autoinmune?",true],
+    ["colesterol","¿Colesterol o triglicéridos altos?"],
+    ["fumador","¿Es fumador?",true],
+    ["embarazo","Si es mujer, ¿podría estar embarazada?"],
+    ["lactancia","¿En período de lactancia?"],
+    ["anticonceptivos","¿Toma anticonceptivos?"],
+    ["apnea","¿Tiene apnea del sueño?"],
+    ["sedacion","¿Le interesaría sedación para el tratamiento?"],
+    ["problema_dental","¿Problema grave en un tratamiento dental anterior?"],
+    ["forma_dientes","¿Descontento con la forma/tamaño de sus dientes?",true],
+    ["color_dientes","¿Descontento con el color de sus dientes?"],
+    ["sangran","¿Le sangran las encías?"],
+    ["sensibilidad","¿Sensibilidad al frío o calor?"],
+    ["periodontitis","¿Antecedentes familiares de periodontitis?"],
+    ["bruxismo","¿Rechina o aprieta los dientes?"],
+    ["chasquidos","¿Chasquidos al abrir/cerrar la boca?"],
+    ["sequedad","¿Sequedad o ardor en la boca?"],
+    ["alcohol","¿Alcohol/sustancias con frecuencia?"],
+    ["aliento","¿Mal aliento?"],
+    ["estetica","¿Satisfecho con la estética de labios/tercio inferior?"]]}
+];
+const respuestas={},textos={};
+const cont=document.getElementById("preguntas");
+GRUPOS.forEach(g=>{
+  const t=document.createElement("div");t.className="grp-title";t.textContent=g.titulo;cont.appendChild(t);
+  g.qs.forEach(([id,txt,extra])=>{
+    const row=document.createElement("div");row.className="q";
+    row.innerHTML=`<div class="t">${txt}</div><div class="sn"><button type="button" class="si" data-q="${id}" data-v="Sí">Sí</button><button type="button" class="no" data-q="${id}" data-v="No">No</button></div>`;
+    cont.appendChild(row);
+    if(extra){const ex=document.createElement("input");ex.className="extra";ex.id="x_"+id;ex.placeholder="Indique cuál/cantidad…";cont.appendChild(ex);}
+  });
+});
+cont.querySelectorAll(".sn button").forEach(b=>b.addEventListener("click",()=>{
+  const id=b.dataset.q;respuestas[id]=b.dataset.v;
+  cont.querySelectorAll(`[data-q="${id}"]`).forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  const ex=document.getElementById("x_"+id);if(ex)ex.style.display=(b.dataset.v==="Sí")?"block":"none";
+}));
+
+// ==== Firma (canvas) ====
+const cv=document.getElementById("firma"),ctx=cv.getContext("2d");
+function fitCanvas(){const r=cv.getBoundingClientRect();cv.width=r.width*2;cv.height=r.height*2;ctx.scale(2,2);ctx.lineWidth=2;ctx.lineCap="round";ctx.strokeStyle="#0f172a";}
+setTimeout(fitCanvas,50);
+let dib=false,firmado=false;
+function pos(e){const r=cv.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
+function start(e){dib=true;firmado=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();}
+function move(e){if(!dib)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault();}
+function end(){dib=false;}
+["mousedown","touchstart"].forEach(ev=>cv.addEventListener(ev,start,{passive:false}));
+["mousemove","touchmove"].forEach(ev=>cv.addEventListener(ev,move,{passive:false}));
+["mouseup","mouseleave","touchend"].forEach(ev=>cv.addEventListener(ev,end));
+document.getElementById("limpiarFirma").addEventListener("click",()=>{ctx.clearRect(0,0,cv.width,cv.height);firmado=false;});
+
+// ==== Envío ====
+const KEY="scanner_pacientes";
+function get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}}
+document.getElementById("enviar").addEventListener("click",()=>{
+  const err=document.getElementById("error");
+  const g=id=>document.getElementById(id).value.trim();
+  if(!g("nombre")||!g("telefono")){err.textContent="Por favor, rellena al menos nombre y teléfono.";err.style.display="block";return;}
+  if(!document.getElementById("c_veracidad").checked||!document.getElementById("c_rgpd").checked){err.textContent="Debes aceptar la declaración y el tratamiento de datos.";err.style.display="block";return;}
+  err.style.display="none";
+  GRUPOS.forEach(gr=>gr.qs.forEach(([id])=>{const ex=document.getElementById("x_"+id);if(ex&&ex.value.trim())textos[id]=ex.value.trim();}));
+  const hoy=new Date();const fISO=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,"0")}-${String(hoy.getDate()).padStart(2,"0")}`;
+  const paciente={id:"pac"+Date.now()+Math.floor(Math.random()*1000),nombre:g("nombre"),dni:g("dni"),nacimiento:g("nacimiento"),
+    telefono:g("telefono"),email:g("email"),profesion:g("profesion"),notas:g("motivo")?"Motivo: "+g("motivo"):"",
+    autoregistro:true,creado:Date.now(),
+    cuestionario:{fecha:fISO,respuestas,textos,etiquetas:(()=>{const e={};GRUPOS.forEach(gr=>gr.qs.forEach(([id,txt])=>e[id]=txt));return e;})(),
+      consentimientos:{marketing:document.getElementById("c_marketing").checked,imagenes:document.getElementById("c_imagenes").checked},
+      firma:firmado?cv.toDataURL("image/png"):""}};
+  // Enviar al servidor (para que llegue al panel de la clínica desde cualquier dispositivo)
+  fetch("/api/registro",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(paciente)}).catch(()=>{});
+  // Respaldo local (por si se usa sin servidor)
+  const A=get(KEY,[]);A.push(paciente);localStorage.setItem(KEY,JSON.stringify(A));
+  // Resumen para WhatsApp
+  const sis=Object.keys(respuestas).filter(k=>respuestas[k]==="Sí");
+  const resumen=`Nuevo paciente: ${paciente.nombre}\nDNI: ${paciente.dni||"-"}\nTel: ${paciente.telefono}\nEmail: ${paciente.email||"-"}\nRespuestas SÍ en cuestionario: ${sis.length}`;
+  const CLINICA_WA="";// pon aquí el número de la clínica (ej: 34600111222) para el botón de WhatsApp
+  document.getElementById("waLink").href=(CLINICA_WA?`https://wa.me/${CLINICA_WA}`:"https://wa.me/")+`?text=${encodeURIComponent(resumen)}`;
+  document.getElementById("formWrap").style.display="none";
+  document.getElementById("okWrap").style.display="block";
+  window.scrollTo(0,0);
+});
+</script>
+</body>
+</html>
