@@ -193,10 +193,11 @@ document.getElementById("enviar").addEventListener("click",()=>{
   // Respaldo local (por si se usa sin servidor)
   const A=get(KEY,[]);A.push(paciente);localStorage.setItem(KEY,JSON.stringify(A));
   // Resumen para WhatsApp
-  const sis=Object.keys(respuestas).filter(k=>respuestas[k]==="Sí");
-  const resumen=`Nuevo paciente: ${paciente.nombre}\nDNI: ${paciente.dni||"-"}\nTel: ${paciente.telefono}\nEmail: ${paciente.email||"-"}\nRespuestas SÍ en cuestionario: ${sis.length}`;
-  const CLINICA_WA="";// pon aquí el número de la clínica (ej: 34600111222) para el botón de WhatsApp
-  document.getElementById("waLink").href=(CLINICA_WA?`https://wa.me/${CLINICA_WA}`:"https://wa.me/")+`?text=${encodeURIComponent(resumen)}`;
+  const et=paciente.cuestionario.etiquetas||{};
+  const sis=Object.keys(respuestas).filter(k=>respuestas[k]==="Sí").map(k=>"• "+(et[k]||k)+(textos[k]?" ("+textos[k]+")":""));
+  const resumen=`🦷 NUEVO PACIENTE\nNombre: ${paciente.nombre}\nDNI: ${paciente.dni||"-"}\nTel: ${paciente.telefono}\nEmail: ${paciente.email||"-"}\nNacimiento: ${paciente.nacimiento||"-"}${paciente.notas?"\n"+paciente.notas:""}\n\nCuestionario — respuestas SÍ:\n${sis.length?sis.join("\n"):"(ninguna)"}`;
+  const CLINICA_WA="34645646828"; // WhatsApp de la clínica
+  document.getElementById("waLink").href=`https://wa.me/${CLINICA_WA}?text=${encodeURIComponent(resumen)}`;
   document.getElementById("formWrap").style.display="none";
   document.getElementById("okWrap").style.display="block";
   window.scrollTo(0,0);
