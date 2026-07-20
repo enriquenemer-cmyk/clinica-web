@@ -2000,7 +2000,7 @@ document.getElementById("im_limpiar").addEventListener("click",()=>{
   document.getElementById("imMapeo").style.display="none";
 });
 document.getElementById("im_importar").addEventListener("click",importarPacientes);
-document.getElementById("gs_add").addEventListener("click",()=>{
+document.getElementById("gs_add").addEventListener("click",async()=>{
   const g=id=>document.getElementById(id);
   const total=Number(g("gs_importe").value),base=Number(g("gs_base").value),pct=Number(g("gs_iva").value)||0;
   const con=g("gs_concepto").value.trim();
