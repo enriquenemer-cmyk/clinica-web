@@ -219,6 +219,22 @@
   html.oscuro .kpi .b:hover{box-shadow:0 8px 24px rgba(0,0,0,.45)}
   html.oscuro .jvchat{background:#0d1626}
   html.oscuro .vacio{background:var(--gris)}
+  /* ---- Tamaños táctiles: en tablet y móvil todo debe poder tocarse con el dedo ---- */
+  @media(hover:none),(max-width:1024px){
+    .sidebar nav button{min-height:46px}
+    input,select,textarea,.search{min-height:46px;font-size:16px}   /* 16px evita el zoom automático de iOS */
+    button.main{min-height:48px;padding:13px 20px}
+    button.ghost{min-height:44px;padding:11px 16px}
+    .sn button,.slotchip,.permchk,.jvsug button{min-height:44px}
+    .btn-wa,.usalir{min-height:44px;display:inline-flex;align-items:center}
+    .toolbar{gap:10px}
+    .recrow{padding:14px}
+    /* periodontograma: casillas grandes para el dedo */
+    #peLista input[data-perio]{min-height:40px!important;width:40px!important;font-size:15px!important}
+    #peLista [data-sangra]{height:16px!important;margin-top:3px!important}
+    #peLista th span{display:inline-block;padding:6px 3px}
+    td[data-citadia],td[data-librecel]{min-height:44px}
+  }
   /* ---- Alertas médicas ---- */
   .alertabox{border:1.5px solid var(--warn);background:var(--warnbg);border-radius:14px;padding:15px 17px;margin-bottom:18px}
   .alertabox.grave{border-color:var(--danger);background:var(--dangerbg);box-shadow:0 4px 18px rgba(225,29,72,.16)}
@@ -2023,6 +2039,23 @@ function renderPerio(p){
       <div class="b"><div class="n" style="color:${x.s4?"var(--warn)":"var(--ok)"}">${x.s4}</div><div class="t">Puntos ≥ 4 mm</div></div>
       <div class="b"><div class="n" style="color:${x.s6?"var(--danger)":"var(--ok)"}">${x.s6}</div><div class="t">Puntos ≥ 6 mm</div></div>`;
   }));
+  // moverse con Enter y flechas, y saltar solo al escribir 1 cifra
+  const todas=[...cont.querySelectorAll("[data-perio]")];
+  todas.forEach((i,n)=>{
+    i.addEventListener("keydown",e=>{
+      const salta=k=>{const t=todas[k];if(t){t.focus();t.select&&t.select();e.preventDefault();}};
+      if(e.key==="Enter"||e.key==="ArrowRight")salta(n+1);
+      else if(e.key==="ArrowLeft")salta(n-1);
+      else if(e.key==="ArrowDown")salta(n+PERIO_SUP.length);
+      else if(e.key==="ArrowUp")salta(n-PERIO_SUP.length);
+      else if(e.key===" "){ // espacio = marcar sangrado
+        const b=cont.querySelector(`[data-sangra="${i.dataset.perio}"]`);if(b){b.click();e.preventDefault();}
+      }
+    });
+    i.addEventListener("input",()=>{ // con 1 cifra (lo normal) pasa sola a la siguiente
+      if(i.value.length===1&&Number(i.value)>=2){const t=todas[n+1];if(t){t.focus();t.select&&t.select();}}
+    });
+  });
   cont.querySelectorAll("[data-sangra]").forEach(b=>b.addEventListener("click",()=>{
     const[pz,k]=b.dataset.sangra.split("|");
     d.datos[pz]=d.datos[pz]||{};d.datos[pz][k]=d.datos[pz][k]||{};
