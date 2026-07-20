@@ -639,7 +639,7 @@ function mensajeRecordatorio(c){
     .replace(/{hora}/g,c.hora||"").replace(/{doctor}/g,c.doctor||"").replace(/{clinica}/g,C.clinica||"la clínica");
 }
 function telPaciente(c){const p=DB.pacientes().find(x=>x.id===c.pacienteId);let t=(p&&p.telefono)||"";t=String(t).replace(/\D/g,"");if(!t)return"";if(t.length===9)t="34"+t;return t;}
-function renderRecordatorios(){
+function renderRecordatoriosWA(){
   const C=cfg();const selD=document.getElementById("rec_dias");
   if(selD&&!selD.options.length){selD.innerHTML=[1,2,3,7].map(n=>`<option value="${n}">${n} día${n===1?"":"s"}</option>`).join("");selD.value=String(C.recDias||2);}
   const n=Number(selD?selD.value:C.recDias)||2;
@@ -660,11 +660,11 @@ function renderRecordatorios(){
   }).join("");
   cont.querySelectorAll("[data-marca]").forEach(b=>b.addEventListener("click",()=>{
     const A=DB.citas();const i=A.findIndex(x=>x.id===b.dataset.marca);
-    if(i>=0){A[i].recordado=!A[i].recordado;DB.setCitas(A);renderRecordatorios();}
+    if(i>=0){A[i].recordado=!A[i].recordado;DB.setCitas(A);renderRecordatoriosWA();}
   }));
   cont.querySelectorAll(".btn-wa").forEach(a=>a.addEventListener("click",()=>{
     const A=DB.citas();const i=A.findIndex(x=>x.id===a.dataset.id);
-    if(i>=0&&!A[i].recordado){A[i].recordado=true;DB.setCitas(A);setTimeout(renderRecordatorios,400);}
+    if(i>=0&&!A[i].recordado){A[i].recordado=true;DB.setCitas(A);setTimeout(renderRecordatoriosWA,400);}
   }));
   actualizaBadge();
 }
@@ -681,7 +681,7 @@ function ir(pagina){
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
   if(pagina==="inicio")renderInicio();
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();pintarSlots();}
-  if(pagina==="recordatorios")renderRecordatorios();
+  if(pagina==="recordatorios")renderRecordatoriosWA();
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();}
@@ -1072,8 +1072,8 @@ document.getElementById("r_guardar").addEventListener("click",()=>{
   const ok=document.getElementById("r_ok");ok.textContent="✓ Guardado";setTimeout(()=>ok.textContent="",2200);
   actualizaBadge();
 });
-document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatorios();});
-document.getElementById("rec_refrescar").addEventListener("click",renderRecordatorios);
+document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatoriosWA();});
+document.getElementById("rec_refrescar").addEventListener("click",renderRecordatoriosWA);
 function cargarRecCfg(){
   const C=cfg();
   document.getElementById("r_dias").value=String(C.recDias||2);
