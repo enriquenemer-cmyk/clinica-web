@@ -1651,7 +1651,8 @@ function abrirFirma(){
   document.getElementById("fm_texto").textContent=CONSENT[k].x;
   const m=document.getElementById("firmaModal");m.style.display="flex";
   const cv=document.getElementById("fm_canvas");
-  cv.width=cv.offsetWidth*2;cv.height=340;
+  const ancho=cv.offsetWidth||(cv.parentElement&&cv.parentElement.offsetWidth)||520;
+  cv.width=Math.max(320,ancho)*2;cv.height=340;
   firmaCtx=cv.getContext("2d");firmaCtx.scale(2,2);
   firmaCtx.lineWidth=2.2;firmaCtx.lineCap="round";firmaCtx.strokeStyle="#0f172a";
   firmaCtx.fillStyle="#fff";firmaCtx.fillRect(0,0,cv.width,cv.height);
