@@ -65,11 +65,12 @@
 <div class="top">
   <div class="dkv-lockup"><span class="dkv-badge">DKV</span><span class="dkv-sub">Espacio de Salud</span></div>
   <div style="width:44px;height:3px;background:rgba(255,255,255,.45);border-radius:3px;margin:14px auto 0"></div>
-  <h1>Registro de paciente nuevo</h1>
+  <h1 id="tituloReg">Registro de paciente nuevo</h1>
   <p>Rellena tus datos y el cuestionario de salud</p>
 </div>
 
 <div class="wrap" id="formWrap">
+  <div id="avisoRecepcion" style="display:none;background:#e7f7ef;border:1.5px solid #0d9488;color:#0f766e;border-radius:12px;padding:12px 15px;margin-bottom:14px;font-size:13.5px;font-weight:600">🖥️ <b>Modo recepción</b> · rellena los datos con el paciente. Al guardar aparecerá directamente en el panel.</div>
   <div class="card">
     <h2>Tus datos</h2>
     <div class="field req"><label class="f">Nombre y apellidos</label><input id="nombre" autocomplete="name"/></div>
@@ -114,12 +115,15 @@
   <h2>¡Registro enviado!</h2>
   <p>Gracias. Tus datos han quedado registrados en la clínica.</p>
   <a class="wa" id="waLink" href="#" target="_blank">📲 Enviar copia por WhatsApp</a>
-  <p style="margin-top:20px;font-size:13px;color:#64748b">Ya puedes avisar en recepción de que has terminado.</p>
+  <p style="margin-top:20px;font-size:13px;color:#64748b" id="okPie">Ya puedes avisar en recepción de que has terminado.</p>
+  <button id="otroMas" style="display:none;margin-top:6px;background:var(--primary);color:#fff;border:0;border-radius:12px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer">➕ Registrar otro paciente</button>
 </div>
 
 <div class="foot"><b style="letter-spacing:1.4px;color:#1f5c4d">ESPACIO DE SALUD DKV</b><br>K Dental Excellent · Tus datos se tratan de forma confidencial (RGPD)</div>
 
 <script>
+const MODO_RECEPCION=new URLSearchParams(location.search).has("recepcion");
+window.addEventListener("DOMContentLoaded",()=>{if(MODO_RECEPCION){const a=document.getElementById("avisoRecepcion");if(a)a.style.display="block";const t=document.getElementById("tituloReg");if(t)t.textContent="Registro de paciente (recepción)";}});
 // ==== Preguntas del cuestionario de salud (según formulario DKV) ====
 const GRUPOS=[
   {titulo:"¿Es alérgico o ha tenido problemas con…?",qs:[
@@ -218,6 +222,13 @@ document.getElementById("enviar").addEventListener("click",()=>{
   document.getElementById("waLink").href=`https://wa.me/${CLINICA_WA}?text=${encodeURIComponent(resumen)}`;
   document.getElementById("formWrap").style.display="none";
   document.getElementById("okWrap").style.display="block";
+  // --- Modo recepción: sin WhatsApp y encadenando pacientes ---
+  if(MODO_RECEPCION){
+    document.getElementById("waLink").style.display="none";
+    document.getElementById("okPie").textContent="Guardado en la clínica. Ya aparece en el panel.";
+    const b=document.getElementById("otroMas");b.style.display="inline-block";
+    b.onclick=()=>location.reload();
+  }
   window.scrollTo(0,0);
 });
 </script>

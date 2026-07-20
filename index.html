@@ -292,6 +292,7 @@
       <div class="toolbar" style="margin-top:4px">
         <button class="main" id="q_cita">📅 Nueva cita</button>
         <button class="ghost" id="q_paciente">👤 Nuevo paciente</button>
+        <button class="ghost" id="q_recepcion">🖥️ Registrar en recepción</button>
         <button class="ghost" id="q_leer">📷 Leer presupuesto</button>
       </div>
     </div>
@@ -485,6 +486,7 @@
         <h2 style="margin:0;flex:1">Pacientes</h2>
         <input id="p_buscar" placeholder="🔍 Buscar por nombre o DNI"/>
         <button class="ghost" id="p_export">⬇️ Exportar</button>
+        <button class="ghost" id="p_recepcion" title="Abrir el formulario completo para rellenarlo con el paciente">🖥️ Registrar en recepción</button>
         <button class="main" id="p_nuevo">＋ Nuevo paciente</button>
       </div>
       <div class="tablewrap">
@@ -1656,6 +1658,13 @@ document.getElementById("ad_guardar").addEventListener("click",async()=>{
   document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
   toast("Contraseña cambiada. Úsala la próxima vez que entres.");
 });
+function abrirRecepcion(){
+  const w=window.open("/registro.html?recepcion=1","_blank");
+  if(!w)toast("Permite las ventanas emergentes para abrir el formulario","err");
+  else toast("Formulario abierto: rellénalo con el paciente","info");
+}
+document.getElementById("p_recepcion").addEventListener("click",abrirRecepcion);
+document.getElementById("q_recepcion").addEventListener("click",abrirRecepcion);
 document.getElementById("im_leer").addEventListener("click",()=>{
   const t=document.getElementById("im_pegar").value.trim();
   if(t)return leerImportacion(t);
