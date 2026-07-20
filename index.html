@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#0d9488"/>
+<link rel="apple-touch-icon" href="/icono.svg"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Clínica DKV"/>
 <title>Clínica — Pacientes, Agenda y Presupuestos</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
@@ -373,6 +378,26 @@
           </div>
         </div>
       </div>
+    <div class="card">
+      <h2>🔑 Contraseña de administradora</h2>
+      <div class="sub">La tuya, la que da acceso total. Cámbiala por una que recuerdes y no compartas con nadie.</div>
+      <div class="grid2">
+        <div class="field"><label>Nueva contraseña</label><input id="ad_pass1" type="text" placeholder="Mínimo 6 caracteres"/></div>
+        <div class="field"><label>Repítela</label><input id="ad_pass2" type="text" placeholder="Otra vez"/></div>
+      </div>
+      <button class="main" id="ad_guardar">Cambiar mi contraseña</button>
+      <div class="hint" style="margin-top:8px">Entras con usuario <b>admin</b> y esta contraseña.</div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Registro de actividad</h2>
+      <div class="sub">Quién ha hecho qué y cuándo. Útil para saber si algo se ha borrado o modificado.</div>
+      <div class="toolbar">
+        <button class="ghost" id="lg_actualizar">🔄 Actualizar</button>
+        <button class="ghost" id="lg_limpiar">🗑️ Vaciar registro</button>
+      </div>
+      <div id="lgLista"></div>
+    </div>
   </div>
 
   <div class="page" id="page-recordatorios">
@@ -746,7 +771,8 @@ async function initSync(){
   syncEstado(servidorOK?"on":"off");
   if(!servidorOK)return;
   if(tieneDatos(serv))escribeLocalCrudo(serv);else await pushStore();
-  poblarListas();poblarPacientesSelect();renderInicio();
+  if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+poblarListas();poblarPacientesSelect();renderInicio();
   setInterval(async()=>{
     const s=await getStore();if(!s||s==="AUTH"||!s.pacientes)return;
     const loc=DB.pacientes(),ids=new Set(loc.map(p=>p.id));let nuevo=false;
@@ -979,7 +1005,7 @@ function ir(pagina){
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
   if(pagina==="recordatorios"){renderRecordatoriosWA();renderRevision();renderEspera();}
   if(pagina==="jarvis")jvIniciar();
-  if(pagina==="usuarios"){renderUsuarios();if(!editandoUsuario)pintarPermisos(null);}
+  if(pagina==="usuarios"){renderUsuarios();renderLog();if(!editandoUsuario)pintarPermisos(null);}
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="informes")renderInformes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
@@ -1155,10 +1181,12 @@ document.getElementById("f_guardar").addEventListener("click",()=>{
   const dupe=A.find(x=>x.id!==A[i].id&&((A[i].dni&&x.dni&&norm(x.dni)===norm(A[i].dni))||(A[i].telefono&&x.telefono&&x.telefono.replace(/\D/g,"")===A[i].telefono.replace(/\D/g,""))));
   if(dupe&&!confirm(`⚠️ Ya existe otro paciente con esos datos:\n\n"${dupe.nombre||"(sin nombre)"}"  ·  ${dupe.dni||""} ${dupe.telefono||""}\n\n¿Guardar de todos modos?`))return;
   delete A[i].borrador;
+  logAcc("Paciente guardado",A[i].nombre);
   DB.setPacientes(A);document.getElementById("f_titulo").textContent="Ficha · "+(A[i].nombre||"paciente");toast("Ficha guardada");
 });
 document.getElementById("f_borrar").addEventListener("click",()=>{
   if(!confirm("¿Borrar este paciente? Sus citas y presupuestos quedarán sin asociar."))return;
+  logAcc("Paciente BORRADO",(DB.pacientes().find(x=>x.id===fichaId)||{}).nombre||"");
   DB.setPacientes(DB.pacientes().filter(x=>x.id!==fichaId));ir("pacientes");
 });
 document.getElementById("f_nuevaCita").addEventListener("click",()=>{
@@ -1186,6 +1214,7 @@ document.getElementById("c_guardar").addEventListener("click",()=>{
   if(editingCitaId){const i=A.findIndex(x=>x.id===editingCitaId);if(i>=0)Object.assign(A[i],datos);editingCitaId=null;document.getElementById("c_guardar").textContent="📅 Agendar cita";}
   else A.push(Object.assign({id:uid("cit")},datos));
   DB.setCitas(A);
+  logAcc(editandoPrev?"Cita modificada":"Cita creada",(nombrePaciente(pacId)||"")+" · "+fecha+" "+(document.getElementById("c_hora").value||""));
   ["c_motivo","c_hora","c_notas"].forEach(k=>document.getElementById(k).value="");
   toast(editandoPrev?"Cita actualizada":"Cita agendada");document.getElementById("c_msg").textContent="";setTimeout(()=>document.getElementById("c_msg").textContent="",2000);
   renderAgenda();
@@ -1381,7 +1410,7 @@ document.getElementById("u_guardar").addEventListener("click",async()=>{
   }else{
     if(pass.length<4){toast("La contraseña debe tener al menos 4 caracteres","err");return;}
     U.push({id:uid("usr"),nombre,usuario,hash:await hashPass(usuario,pass),permisos,activo:true,rol:"personal",creado:Date.now()});
-    setCfg({usuarios:U});toast("Usuario creado: ya puede entrar con su clave");
+    setCfg({usuarios:U});logAcc("Usuario creado",nombre+" ("+usuario+")");toast("Usuario creado: ya puede entrar con su clave");
   }
   resetFormUsuario();renderUsuarios();
 });
@@ -1400,6 +1429,20 @@ document.querySelectorAll("[data-perfil]").forEach(b=>b.addEventListener("click"
   pintarPermisos(PERFILES[b.dataset.perfil]);
   toast("Perfil aplicado: "+b.textContent.trim(),"info");
 }));
+document.getElementById("ad_guardar").addEventListener("click",async()=>{
+  const a=document.getElementById("ad_pass1").value,b=document.getElementById("ad_pass2").value;
+  if(a.length<6){toast("La contraseña debe tener al menos 6 caracteres","err");return;}
+  if(a!==b){toast("Las dos contraseñas no coinciden","err");return;}
+  setCfg({adminHash:await hashPass("admin",a)});
+  logAcc("Cambio de contraseña","La administradora cambió su contraseña");
+  document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
+  toast("Contraseña cambiada. Úsala la próxima vez que entres.");
+});
+document.getElementById("lg_actualizar").addEventListener("click",renderLog);
+document.getElementById("lg_limpiar").addEventListener("click",()=>{
+  if(!confirm("¿Vaciar el registro de actividad? No se puede deshacer."))return;
+  setCfg({log:[]});renderLog();toast("Registro vaciado");
+});
 document.getElementById("u_cancelar").addEventListener("click",resetFormUsuario);
 document.getElementById("btnSalir").addEventListener("click",()=>{if(confirm("¿Cerrar sesión?"))cerrarSesion();});
 // ---- Horarios + recordatorios: eventos ----
@@ -1447,6 +1490,23 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Registro de actividad ====================
+function logAcc(accion,detalle){
+  try{
+    const s=sesion();const L=(cfg().log||[]).slice(-299);
+    L.push({t:Date.now(),u:(s&&s.nombre)||"Administrador",a:accion,d:detalle||""});
+    setCfg({log:L});
+  }catch{}
+}
+function renderLog(){
+  const cont=document.getElementById("lgLista");if(!cont)return;
+  const L=(cfg().log||[]).slice().reverse();
+  if(!L.length){cont.innerHTML='<div class="hint">Todavía no hay actividad registrada.</div>';return;}
+  const f=t=>{const d=new Date(t);return d.toLocaleDateString("es-ES")+" "+d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});};
+  cont.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Cuándo</th><th>Quién</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>`+
+    L.slice(0,150).map(x=>`<tr><td>${esc(f(x.t))}</td><td>${esc(x.u)}</td><td><b>${esc(x.a)}</b></td><td style="white-space:normal">${esc(x.d)}</td></tr>`).join("")+
+    `</tbody></table></div>`+(L.length>150?`<div class="hint" style="margin-top:8px">Mostrando las 150 más recientes de ${L.length}.</div>`:"");
+}
 // ==================== FACTURAS numeradas ====================
 function facturas(){return (cfg().facturas||[]);}
 function datosFiscales(){const c=cfg();return Object.assign({nombre:"",nif:"",dir:"",ciudad:"",tel:"",serie:"F",num:1,iva:0},c.fiscal||{});}
@@ -1462,7 +1522,7 @@ function emitirFactura(pagoId){
        concepto:pg.concepto||"Tratamiento odontológico",total:num(pg.importe),
        base:Math.round(base*100)/100,iva:num(F.iva),cuota:Math.round((num(pg.importe)-base)*100)/100};
     setCfg({facturas:facturas().concat([f]),fiscal:Object.assign({},F,{num:num(F.num||1)+1})});
-    toast("Factura "+numero+" emitida");
+    toast("Factura "+numero+" emitida");logAcc("Factura emitida",numero+" · "+f.total+"€");
     renderFacturas();
   }
   imprimirFactura(f.id);
@@ -2092,7 +2152,7 @@ function renderUsuarios(){
   L.querySelectorAll("[data-delu]").forEach(b=>b.addEventListener("click",()=>{
     const u=usuarios().find(x=>x.id===b.dataset.delu);
     if(!confirm(`¿Borrar el usuario "${u?u.nombre||u.usuario:""}"? Ya no podrá entrar.`))return;
-    setCfg({usuarios:usuarios().filter(x=>x.id!==b.dataset.delu)});renderUsuarios();toast("Usuario borrado");
+    logAcc("Usuario BORRADO",(u&&(u.nombre||u.usuario))||"");setCfg({usuarios:usuarios().filter(x=>x.id!==b.dataset.delu)});renderUsuarios();toast("Usuario borrado");
   }));
 }
 function resetFormUsuario(){
@@ -2232,7 +2292,7 @@ function renderPagos(){
   document.querySelectorAll("[data-recibo]").forEach(b=>b.addEventListener("click",()=>imprimirRecibo(b.dataset.recibo)));
   document.querySelectorAll("[data-factura]").forEach(b=>b.addEventListener("click",()=>emitirFactura(b.dataset.factura)));
   document.querySelectorAll("[data-delpago]").forEach(b=>b.addEventListener("click",()=>{
-    if(!confirm("¿Borrar este pago?"))return;DB.setPagos(DB.pagos().filter(x=>x.id!==b.dataset.delpago));renderPagos();}));
+    if(!confirm("¿Borrar este pago?"))return;logAcc("Pago BORRADO","");DB.setPagos(DB.pagos().filter(x=>x.id!==b.dataset.delpago));renderPagos();}));
 }
 
 // ==================== Recordatorios ====================
