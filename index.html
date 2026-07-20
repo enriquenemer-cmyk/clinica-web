@@ -90,6 +90,26 @@
   .pill.g{background:#eef2f6;color:#64748b;box-shadow:inset 0 0 0 1px rgba(100,116,139,.14)}
   .pill.r{background:var(--dangerbg);color:var(--danger);box-shadow:inset 0 0 0 1px rgba(225,29,72,.16)}
   .hint{color:var(--muted);font-size:12px}
+  /* Avisos flotantes */
+  #toasts{position:fixed;right:20px;bottom:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{background:#0f172a;color:#fff;padding:13px 18px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.28);display:flex;align-items:center;gap:10px;animation:tin .32s cubic-bezier(.2,1.3,.4,1) both;max-width:340px}
+  .toast.ok{background:linear-gradient(135deg,#0d9488,#0f766e)}
+  .toast.err{background:linear-gradient(135deg,#e11d48,#be123c)}
+  .toast.info{background:linear-gradient(135deg,#334155,#1e293b)}
+  .toast.out{animation:tout .28s ease forwards}
+  @keyframes tin{from{opacity:0;transform:translateX(40px) scale(.9)}to{opacity:1;transform:none}}
+  @keyframes tout{to{opacity:0;transform:translateX(40px) scale(.95)}}
+  /* Estado de sincronización */
+  .syncdot{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--muted);padding:5px 11px;border-radius:20px;background:var(--gris);border:1px solid var(--borde);white-space:nowrap}
+  .syncdot i{width:7px;height:7px;border-radius:50%;background:#94a3b8;display:block;flex:0 0 7px}
+  .syncdot.on i{background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+  .syncdot.save i{background:#f59e0b;animation:pulse 1s infinite}
+  .syncdot.off i{background:#ef4444}
+  @keyframes pulse{50%{opacity:.35}}
+  @media(max-width:620px){.syncdot span{display:none}.syncdot{padding:6px}}
+  .telbtn{display:inline-flex;align-items:center;gap:5px;color:var(--primary-d);text-decoration:none;font-weight:600}
+  .telbtn:hover{text-decoration:underline}
+  .wabtn{color:#25d366;text-decoration:none;font-size:15px;margin-left:7px}
   .banner{padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:14px}
   .free{background:var(--okbg);border:1px solid #b7e4cd;color:var(--ok)}.err{background:var(--dangerbg);border:1px solid #f5c2ce;color:var(--danger)}
   .cargando{display:none;text-align:center;color:var(--muted);padding:12px}
@@ -158,10 +178,12 @@
     </nav>
     <div class="sidefoot">Espacio de Salud<br><b>DKV</b></div>
   </aside>
+  <div id="toasts"></div>
   <div class="appmain">
     <div class="topbar">
       <div class="pagetitle" id="pageTitle">Inicio</div>
-      <input class="search" id="g_buscar" placeholder="Buscar paciente…"/>
+      <div class="syncdot" id="syncDot" title="Estado de la conexión con el servidor"><i></i><span>Conectando…</span></div>
+      <input class="search" id="g_buscar" placeholder="Buscar paciente…   ( / )"/>
     </div>
     <div class="content">
   <!-- ===================== INICIO ===================== -->
@@ -515,12 +537,15 @@ async function pushStore(){
   const serv=await getStore();
   if(serv==="AUTH"){pedirLogin();return;}
   if(serv&&serv.pacientes){const loc=DB.pacientes(),ids=new Set(loc.map(p=>p.id));let c=false;serv.pacientes.forEach(p=>{if(!ids.has(p.id)){loc.push(p);c=true;}});if(c)localStorage.setItem(KEY.pac,JSON.stringify(loc));}
-  try{await fetch("/api/data",{method:"PUT",headers:{"content-type":"application/json",...authHeaders()},body:JSON.stringify(storeLocal())});}catch{}
+  syncEstado("save");
+  try{await fetch("/api/data",{method:"PUT",headers:{"content-type":"application/json",...authHeaders()},body:JSON.stringify(storeLocal())});syncEstado("on");}
+  catch{syncEstado("off");toast("No se pudo guardar en el servidor. Los cambios están en este equipo.","err");}
 }
 async function initSync(){
   const serv=await getStore();
   if(serv==="AUTH"){pedirLogin();return;}
   servidorOK=serv!==null;
+  syncEstado(servidorOK?"on":"off");
   if(!servidorOK)return;
   if(tieneDatos(serv))escribeLocalCrudo(serv);else await pushStore();
   poblarListas();poblarPacientesSelect();renderInicio();
@@ -575,6 +600,27 @@ function poblarPacientesSelect(){
 
 // ==================== Navegación ====================
 const TITULOS={inicio:"Inicio",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
+
+// ==================== Avisos flotantes (toast) ====================
+function toast(msg,tipo){
+  const c=document.getElementById("toasts");if(!c)return;
+  const t=document.createElement("div");
+  t.className="toast "+(tipo||"ok");
+  const ico=tipo==="err"?"⚠️":tipo==="info"?"ℹ️":"✓";
+  t.innerHTML=`<span style="font-size:15px">${ico}</span><span>${esc(msg)}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.classList.add("out");setTimeout(()=>t.remove(),300);},2800);
+}
+// ==================== Estado de sincronización ====================
+function syncEstado(estado){
+  const d=document.getElementById("syncDot");if(!d)return;
+  const txt={on:"Sincronizado",save:"Guardando…",off:"Solo en este equipo"};
+  d.className="syncdot "+estado;
+  d.querySelector("span").textContent=txt[estado]||"";
+  d.title=estado==="on"?"Los datos se guardan en el servidor y se ven en todos los dispositivos"
+    :estado==="save"?"Guardando cambios en el servidor…"
+    :"Sin conexión con el servidor: los datos se guardan solo en este equipo";
+}
 
 // ==================== Horarios de doctores ====================
 const DIAS=[{k:1,n:"Lunes"},{k:2,n:"Martes"},{k:3,n:"Miércoles"},{k:4,n:"Jueves"},{k:5,n:"Viernes"},{k:6,n:"Sábado"},{k:0,n:"Domingo"}];
@@ -635,7 +681,7 @@ function guardarHorario(){
   Object.keys(h).forEach(k=>{if(!Object.keys(h[k]).length)delete h[k];});
   const H=Object.assign({},C.horarios);H[doc]=h;
   setCfg({horarios:H,duracion:Number(document.getElementById("h_duracion").value)||30});
-  const ok=document.getElementById("h_ok");ok.textContent="✓ Horario guardado";setTimeout(()=>ok.textContent="",2200);
+  toast("Horario guardado");const ok=document.getElementById("h_ok");ok.textContent="";setTimeout(()=>ok.textContent="",2200);
 }
 // ==================== Recordatorios ====================
 function fechaBonita(iso){if(!iso)return"";const[y,m,d]=iso.split("-");const dn=DIAS.find(x=>x.k===diaDeFecha(iso));return `${dn?dn.n:""} ${d}/${m}/${y}`;}
@@ -686,17 +732,25 @@ function actualizaBadge(){
   const pend=citasEnDias(n).filter(c=>!c.recordado).length;
   b.textContent=pend;b.classList.toggle("on",pend>0);
 }
+// Borra fichas creadas sin rellenar (evita pacientes en blanco)
+function limpiarBorradores(){
+  const A=DB.pacientes();const cit=DB.citas(),pre=DB.presupuestos(),pag=DB.pagos();
+  const B=A.filter(p=>!(p.borrador&&!(p.nombre||"").trim()&&!(p.telefono||"").trim()&&!(p.dni||"").trim()
+    &&!cit.some(c=>c.pacienteId===p.id)&&!pre.some(x=>x.pacienteId===p.id)&&!pag.some(x=>x.pacienteId===p.id)));
+  if(B.length!==A.length)DB.setPacientes(B);
+}
 function ir(pagina){
+  if(pagina!=="ficha")limpiarBorradores();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.page===pagina));
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
   document.getElementById("page-"+pagina).classList.add("on");
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
   if(pagina==="inicio")renderInicio();
-  if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();pintarSlots();}
+  if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
   if(pagina==="recordatorios")renderRecordatoriosWA();
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
-  if(pagina==="pagos"){poblarPagosSelects();renderPagos();}
+  if(pagina==="pagos"){poblarPagosSelects();renderPagos();fechasPorDefecto();}
   if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
@@ -759,13 +813,14 @@ function renderPacientes(){
   const cit=DB.citas(),pre=DB.presupuestos();
   document.getElementById("pacientesVacio").style.display=P.length?"none":"block";
   document.getElementById("pacientesBody").innerHTML=P.map(p=>`<tr class="click" data-pac="${p.id}">
-    <td>${esc(p.nombre||"—")}${p.autoregistro?' <span class="pill v" style="font-size:10px">nuevo</span>':""}</td><td>${esc(p.dni||"—")}</td><td>${esc(p.telefono||p.movil||"—")}</td>
+    <td>${esc(p.nombre||"—")}${p.autoregistro?' <span class="pill v" style="font-size:10px">nuevo</span>':""}</td><td>${esc(p.dni||"—")}</td><td>${(()=>{const t=(p.telefono||p.movil||"").trim();if(!t)return "—";const w=t.replace(/\D/g,"").length===9?"34"+t.replace(/\D/g,""):t.replace(/\D/g,"");return `<a class="telbtn" href="tel:${esc(t)}" onclick="event.stopPropagation()" title="Llamar">${esc(t)}</a><a class="wabtn" href="https://wa.me/${w}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Escribir por WhatsApp">💬</a>`;})()}</td>
     <td>${esc(p.cobertura||"—")}</td><td>${cit.filter(c=>c.pacienteId===p.id).length}</td><td>${pre.filter(x=>x.pacienteId===p.id).length}</td></tr>`).join("");
   document.querySelectorAll("[data-pac]").forEach(tr=>tr.addEventListener("click",()=>abrirFicha(tr.dataset.pac)));
 }
 document.getElementById("p_buscar").addEventListener("input",renderPacientes);
 document.getElementById("p_nuevo").addEventListener("click",()=>{
-  const p={id:uid("pac"),nombre:"",dni:"",creado:Date.now()};const A=DB.pacientes();A.push(p);DB.setPacientes(A);abrirFicha(p.id);
+  const p={id:uid("pac"),nombre:"",dni:"",creado:Date.now(),borrador:true};const A=DB.pacientes();A.push(p);DB.setPacientes(A);abrirFicha(p.id);
+  setTimeout(()=>{const n=document.getElementById("f_nombre");if(n)n.focus();},120);
 });
 function csvDescarga(nombre,head,filas){
   const ec=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
@@ -862,7 +917,12 @@ document.getElementById("f_guardar").addEventListener("click",()=>{
   const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);if(i<0)return;
   const g=k=>document.getElementById(k).value.trim();
   Object.assign(A[i],{nombre:g("f_nombre"),dni:g("f_dni"),nacimiento:g("f_nacimiento"),telefono:g("f_telefono"),movil:g("f_movil"),email:g("f_email"),direccion:g("f_direccion"),cp:g("f_cp"),cobertura:g("f_cobertura"),notas:g("f_notas")});
-  DB.setPacientes(A);document.getElementById("f_titulo").textContent="Ficha · "+(A[i].nombre||"paciente");alert("Ficha guardada ✓");
+  if(!A[i].nombre){toast("Pon al menos el nombre del paciente","err");document.getElementById("f_nombre").focus();return;}
+  // aviso de posible duplicado (mismo DNI o teléfono en otro paciente)
+  const dupe=A.find(x=>x.id!==A[i].id&&((A[i].dni&&x.dni&&norm(x.dni)===norm(A[i].dni))||(A[i].telefono&&x.telefono&&x.telefono.replace(/\D/g,"")===A[i].telefono.replace(/\D/g,""))));
+  if(dupe&&!confirm(`⚠️ Ya existe otro paciente con esos datos:\n\n"${dupe.nombre||"(sin nombre)"}"  ·  ${dupe.dni||""} ${dupe.telefono||""}\n\n¿Guardar de todos modos?`))return;
+  delete A[i].borrador;
+  DB.setPacientes(A);document.getElementById("f_titulo").textContent="Ficha · "+(A[i].nombre||"paciente");toast("Ficha guardada");
 });
 document.getElementById("f_borrar").addEventListener("click",()=>{
   if(!confirm("¿Borrar este paciente? Sus citas y presupuestos quedarán sin asociar."))return;
@@ -882,6 +942,7 @@ function citaHTML(c,compacto){
 }
 let editingCitaId=null;
 document.getElementById("c_guardar").addEventListener("click",()=>{
+  const editandoPrev=!!editingCitaId;
   const pacId=document.getElementById("c_paciente").value;
   const fecha=document.getElementById("c_fecha").value;
   if(!fecha){document.getElementById("c_msg").textContent="Pon al menos la fecha.";return;}
@@ -893,7 +954,7 @@ document.getElementById("c_guardar").addEventListener("click",()=>{
   else A.push(Object.assign({id:uid("cit")},datos));
   DB.setCitas(A);
   ["c_motivo","c_hora","c_notas"].forEach(k=>document.getElementById(k).value="");
-  document.getElementById("c_msg").textContent="✓ Guardado";setTimeout(()=>document.getElementById("c_msg").textContent="",2000);
+  toast(editandoPrev?"Cita actualizada":"Cita agendada");document.getElementById("c_msg").textContent="";setTimeout(()=>document.getElementById("c_msg").textContent="",2000);
   renderAgenda();
 });
 function editarCita(id){
@@ -1062,7 +1123,7 @@ document.getElementById("genQR").addEventListener("click",()=>{
 document.getElementById("guardarListas").addEventListener("click",()=>{
   const ln=id=>document.getElementById(id).value.split("\n").map(s=>s.trim()).filter(Boolean);
   DB.setListas(Object.assign({},DB.get(KEY.lis,{})||{},{doctores:ln("l_doctores"),auxiliares:ln("l_auxiliares"),estado:ln("l_estado"),forma_pago:ln("l_forma_pago")}));
-  poblarListas();renderHorarios();const o=document.getElementById("ajustesOK");o.textContent=" ✓ Guardado";setTimeout(()=>o.textContent="",1500);
+  poblarListas();renderHorarios();toast("Listas guardadas");const o=document.getElementById("ajustesOK");o.textContent="";setTimeout(()=>o.textContent="",1500);
 });
 
 // ---- Horarios + recordatorios: eventos ----
@@ -1081,7 +1142,7 @@ document.getElementById("r_guardar").addEventListener("click",()=>{
   setCfg({recDias:Number(document.getElementById("r_dias").value)||2,
     plantilla:document.getElementById("r_plantilla").value||PLANTILLA_DEF,
     clinica:document.getElementById("r_clinica").value.trim()||"la clínica"});
-  const ok=document.getElementById("r_ok");ok.textContent="✓ Guardado";setTimeout(()=>ok.textContent="",2200);
+  toast("Recordatorios guardados");const ok=document.getElementById("r_ok");ok.textContent="";setTimeout(()=>ok.textContent="",2200);
   actualizaBadge();
 });
 document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatoriosWA();});
@@ -1225,7 +1286,23 @@ document.getElementById("g_buscar").addEventListener("input",e=>{
 });
 
 // ==================== Init ====================
-poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();initSync();
+// ---- Atajos de teclado y comodidades ----
+document.addEventListener("keydown",e=>{
+  const enCampo=/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||""));
+  if(e.key==="/"&&!enCampo){e.preventDefault();document.getElementById("g_buscar").focus();}
+  if(e.key==="Escape"&&enCampo)e.target.blur();
+  if(e.key==="Enter"&&e.target.id==="loginPass"){const b=document.getElementById("loginBtn");if(b)b.click();}
+  if(e.key==="Enter"&&["c_motivo","c_hora","c_fecha"].includes(e.target.id)){const b=document.getElementById("c_guardar");if(b)b.click();}
+  if(e.key==="Enter"&&["pg_importe","pg_concepto"].includes(e.target.id)){const b=document.getElementById("pg_add");if(b)b.click();}
+});
+// Fechas por defecto = hoy (evita tener que escribirlas cada vez)
+function fechasPorDefecto(){
+  ["c_fecha","pg_fecha"].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=hoyISO();});
+}
+// Avisar si se sale con cambios sin guardar en la ficha
+window.addEventListener("beforeunload",()=>{limpiarBorradores();});
+
+poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();limpiarBorradores();fechasPorDefecto();initSync();
 </script>
 </body>
 </html>
