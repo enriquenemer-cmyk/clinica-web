@@ -107,6 +107,20 @@
   .syncdot.off i{background:#ef4444}
   @keyframes pulse{50%{opacity:.35}}
   @media(max-width:620px){.syncdot span{display:none}.syncdot{padding:6px}}
+  /* Jarvis */
+  .jvchat{border:1px solid var(--borde);border-radius:14px;background:var(--gris);padding:16px;height:min(52vh,440px);overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+  .jvmsg{max-width:82%;padding:11px 15px;border-radius:15px;font-size:13.5px;line-height:1.55;animation:jvin .26s ease both;white-space:pre-wrap}
+  .jvmsg.yo{align-self:flex-end;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-bottom-right-radius:5px}
+  .jvmsg.jv{align-self:flex-start;background:var(--card);border:1px solid var(--borde);border-bottom-left-radius:5px;box-shadow:0 2px 8px rgba(16,24,40,.05)}
+  .jvmsg b{font-weight:700}
+  .jvmsg .lin{display:block;padding:3px 0;border-bottom:1px solid var(--borde)}
+  .jvmsg .lin:last-child{border-bottom:0}
+  @keyframes jvin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .jvinput{display:flex;gap:9px;margin-top:14px}
+  .jvinput input{flex:1}
+  .jvsug{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .jvsug button{background:var(--card);border:1.5px solid var(--borde);border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.13s}
+  .jvsug button:hover{border-color:var(--primary);color:var(--primary-d);background:var(--primary-soft)}
   .userchip{display:flex;align-items:center;gap:9px;padding:4px 6px 4px 4px;border-radius:24px;background:var(--gris);border:1px solid var(--borde)}
   .uavatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:0 0 30px}
   .uinfo{display:flex;flex-direction:column;line-height:1.15;min-width:0}
@@ -184,6 +198,7 @@
     <nav>
       <button data-page="inicio" class="on"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Inicio</span></button>
       <button data-page="agenda"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg><span>Agenda</span></button>
+      <button data-page="jarvis" id="navJarvis"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="4" y="7.5" width="16" height="12" rx="3"/><path d="M12 4v3.5M8.5 13h.01M15.5 13h.01M9.5 16.5h5"/></svg><span>Jarvis</span></button>
       <button data-page="recordatorios"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7z"/><path d="M10.5 19.5a1.8 1.8 0 0 0 3 0"/></svg><span>Recordatorios</span><span id="recBadge" class="navbadge"></span></button>
       <button data-page="pacientes"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.6M20.5 20a5 5 0 0 0-3.6-4.8"/></svg><span>Pacientes</span></button>
       <button data-page="leer"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg><span>Leer presupuesto</span></button>
@@ -272,6 +287,19 @@
   </div>
 
   <!-- ===================== PACIENTES ===================== -->
+  <div class="page" id="page-jarvis">
+    <div class="card">
+      <h2>🤖 Jarvis · tu asistente privado</h2>
+      <div class="sub">Solo tú puedes verlo y usarlo. Pídele información o dale órdenes escribiendo con normalidad.</div>
+      <div class="jvchat" id="jvChat"></div>
+      <div class="jvinput">
+        <input id="jvTexto" placeholder="Ej.: citas de mañana · quién me debe dinero · agenda a Ana el martes a las 10" autocomplete="off"/>
+        <button class="main" id="jvEnviar">Enviar</button>
+      </div>
+      <div class="jvsug" id="jvSug"></div>
+    </div>
+  </div>
+
   <div class="page" id="page-recordatorios">
     <div class="card">
       <h2>🔔 Recordatorios de cita por WhatsApp</h2>
@@ -641,7 +669,7 @@ function poblarPacientesSelect(){
 }
 
 // ==================== Navegación ====================
-const TITULOS={inicio:"Inicio",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
+const TITULOS={inicio:"Inicio",jarvis:"Jarvis",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
 
 // ==================== Sesión y permisos ====================
 const SECCIONES=[{k:"inicio",n:"Inicio"},{k:"agenda",n:"Agenda"},{k:"recordatorios",n:"Recordatorios"},{k:"pacientes",n:"Pacientes y fichas"},{k:"leer",n:"Leer presupuesto (foto)"},{k:"presupuestos",n:"Presupuestos"},{k:"pagos",n:"Pagos y cobros"},{k:"ajustes",n:"Ajustes (y usuarios)"}];
@@ -654,7 +682,7 @@ function puede(sec){const s=sesion();if(!s||!s.permisos)return true;return s.per
 function aplicarPermisos(){
   const s=sesion();
   document.querySelectorAll("nav button[data-page]").forEach(b=>{
-    b.style.display=puede(b.dataset.page)?"":"none";
+    b.style.display=(b.dataset.page==="jarvis")?(esAdmin()?"":"none"):(puede(b.dataset.page)?"":"none");
   });
   const chip=document.getElementById("userChip");
   if(chip){
@@ -807,7 +835,8 @@ function limpiarBorradores(){
   if(B.length!==A.length)DB.setPacientes(B);
 }
 function ir(pagina){
-  if(pagina!=="ficha"&&!puede(pagina)){toast("No tienes acceso a esta sección","err");return;}
+  if(pagina==="jarvis"&&!esAdmin()){toast("Jarvis es solo para la administradora","err");return;}
+  if(pagina!=="ficha"&&pagina!=="jarvis"&&!puede(pagina)){toast("No tienes acceso a esta sección","err");return;}
   if(pagina!=="ficha")limpiarBorradores();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.page===pagina));
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
@@ -816,6 +845,7 @@ function ir(pagina){
   if(pagina==="inicio")renderInicio();
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
   if(pagina==="recordatorios")renderRecordatoriosWA();
+  if(pagina==="jarvis")jvIniciar();
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();fechasPorDefecto();}
@@ -1220,6 +1250,8 @@ document.getElementById("u_guardar").addEventListener("click",async()=>{
   }
   resetFormUsuario();renderUsuarios();
 });
+document.getElementById("jvEnviar").addEventListener("click",jvEnviar);
+document.getElementById("jvTexto").addEventListener("keydown",e=>{if(e.key==="Enter")jvEnviar();});
 document.getElementById("u_cancelar").addEventListener("click",resetFormUsuario);
 document.getElementById("btnSalir").addEventListener("click",()=>{if(confirm("¿Cerrar sesión?"))cerrarSesion();});
 // ---- Horarios + recordatorios: eventos ----
@@ -1243,6 +1275,186 @@ document.getElementById("r_guardar").addEventListener("click",()=>{
 });
 document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatoriosWA();});
 document.getElementById("rec_refrescar").addEventListener("click",renderRecordatoriosWA);
+// ==================== JARVIS · asistente privado del administrador ====================
+const isoDe=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function jvFecha(t){
+  if(/pasado\s*ma[nñ]ana/.test(t)){const d=new Date();d.setDate(d.getDate()+2);return isoDe(d);}
+  if(/\bma[nñ]ana\b/.test(t)){const d=new Date();d.setDate(d.getDate()+1);return isoDe(d);}
+  if(/\bhoy\b/.test(t))return hoyISO();
+  if(/\bayer\b/.test(t)){const d=new Date();d.setDate(d.getDate()-1);return isoDe(d);}
+  const dias={domingo:0,lunes:1,martes:2,miercoles:3,jueves:4,viernes:5,sabado:6};
+  for(const k in dias){if(new RegExp("\\b"+k+"\\b").test(t)){const d=new Date();const delta=(dias[k]-d.getDay()+7)%7||7;d.setDate(d.getDate()+delta);return isoDe(d);}}
+  const m=t.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+  if(m){const y=m[3]?(m[3].length===2?"20"+m[3]:m[3]):new Date().getFullYear();return `${y}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;}
+  return null;
+}
+function jvHora(t){const m=t.match(/\ba\s*las?\s*(\d{1,2})(?:[:h\.](\d{2}))?/)||t.match(/\b(\d{1,2})[:h](\d{2})\b/);
+  return m?String(m[1]).padStart(2,"0")+":"+(m[2]||"00"):null;}
+function jvPaciente(q){const P=DB.pacientes();const n=norm(q||"");if(n.length<2)return null;
+  return P.find(p=>norm(p.nombre)===n)||P.find(p=>norm(p.nombre).startsWith(n))||P.find(p=>norm(p.nombre).includes(n))||null;}
+function jvDoctor(t){const L=(DB.get(KEY.lis,LISTAS_DEF).doctores)||[];
+  return L.find(d=>norm(t).includes(norm(d)))||L.find(d=>norm(t).includes(norm(d.split(" ")[0])))||null;}
+function jvLista(items){return items.length?items.map(x=>`<span class="lin">${x}</span>`).join(""):"";}
+function jvCitasDe(iso){
+  const C=DB.citas().filter(c=>c.fecha===iso).sort((a,b)=>(a.hora||"").localeCompare(b.hora||""));
+  if(!C.length)return `No hay ninguna cita el <b>${fechaBonita(iso)}</b>. 🎉`;
+  return `Hay <b>${C.length} cita${C.length>1?"s":""}</b> el ${fechaBonita(iso)}:`+jvLista(C.map(c=>{
+    const p=DB.pacientes().find(x=>x.id===c.pacienteId);
+    return `🕐 <b>${esc(c.hora||"—")}</b> · ${esc((p&&p.nombre)||c.pacienteNombre||"—")} · ${esc(c.doctor||"—")}${c.motivo?" · "+esc(c.motivo):""}`;
+  }));
+}
+function jvSaldos(){
+  const P=DB.pacientes(),PR=DB.presupuestos(),PG=DB.pagos();
+  const filas=P.map(p=>{
+    const fact=PR.filter(x=>x.pacienteId===p.id&&/acept/i.test(x.estado||"")).reduce((s,x)=>s+(parseFloat(String(x.importe_venta||x.importe_presupuestado||0).replace(",","."))||0),0);
+    const cob=PG.filter(x=>x.pacienteId===p.id).reduce((s,x)=>s+(parseFloat(x.importe)||0),0);
+    return {n:p.nombre,d:fact-cob};
+  }).filter(x=>x.d>0.5).sort((a,b)=>b.d-a.d);
+  if(!filas.length)return "Nadie tiene saldo pendiente. Todo cobrado ✅";
+  const tot=filas.reduce((s,x)=>s+x.d,0);
+  return `<b>${filas.length} paciente${filas.length>1?"s":""}</b> con pagos pendientes (total <b>${Math.round(tot)}€</b>):`+jvLista(filas.map(f=>`💰 ${esc(f.n||"—")} · <b>${Math.round(f.d)}€</b>`));
+}
+function jvDinero(){
+  const PR=DB.presupuestos(),PG=DB.pagos();
+  const fact=PR.filter(x=>/acept/i.test(x.estado||"")).reduce((s,x)=>s+(parseFloat(String(x.importe_venta||x.importe_presupuestado||0).replace(",","."))||0),0);
+  const cob=PG.reduce((s,x)=>s+(parseFloat(x.importe)||0),0);
+  return `💶 <b>Resumen económico</b>`+jvLista([`Facturado (presupuestos aceptados): <b>${Math.round(fact)}€</b>`,`Cobrado: <b>${Math.round(cob)}€</b>`,`Pendiente de cobro: <b>${Math.round(fact-cob)}€</b>`]);
+}
+function jvResumen(){
+  const hoy=hoyISO(),C=DB.citas().filter(c=>c.fecha===hoy);
+  const prox=DB.citas().filter(c=>c.fecha>hoy).length;
+  const rec=citasEnDias(cfg().recDias||2).filter(c=>!c.recordado).length;
+  return `📋 <b>Cómo va el día</b> (${fechaBonita(hoy)})`+jvLista([
+    `Citas hoy: <b>${C.length}</b>`,`Próximas citas: <b>${prox}</b>`,`Pacientes en total: <b>${DB.pacientes().length}</b>`,
+    `Pendientes de avisar por WhatsApp: <b>${rec}</b>`]);
+}
+function jvHuecos(t){
+  const doc=jvDoctor(t);if(!doc)return "¿De qué doctor? Dime por ejemplo: <b>huecos de Javier mañana</b>.";
+  const f=jvFecha(t)||hoyISO();
+  const s=slotsDia(doc,f);
+  if(s===null)return `<b>${esc(doc)}</b> aún no tiene horario configurado. Ponlo en <b>Ajustes › Horario de los doctores</b>.`;
+  if(!s.length)return `<b>${esc(doc)}</b> no pasa consulta el ${fechaBonita(f)}.`;
+  const libres=s.filter(x=>!x.ocupada).map(x=>x.hora);
+  if(!libres.length)return `<b>${esc(doc)}</b> tiene la agenda llena el ${fechaBonita(f)}.`;
+  return `<b>${esc(doc)}</b> tiene <b>${libres.length}</b> huecos libres el ${fechaBonita(f)}:\n${libres.join(" · ")}`;
+}
+function jvRecordatorios(){
+  const n=cfg().recDias||2;const L=citasEnDias(n).filter(c=>!c.recordado);
+  if(!L.length)return `No hay nadie pendiente de avisar para dentro de ${n} días ✅`;
+  return `🔔 <b>${L.length}</b> paciente${L.length>1?"s":""} por avisar (cita dentro de ${n} días):`+jvLista(L.map(c=>{
+    const p=DB.pacientes().find(x=>x.id===c.pacienteId);
+    const tel=telPaciente(c);
+    return `${esc((p&&p.nombre)||"—")} · ${esc(c.hora||"")}${tel?` · <a href="https://wa.me/${tel}?text=${encodeURIComponent(mensajeRecordatorio(c))}" target="_blank" rel="noopener" style="color:#25d366;font-weight:700">enviar WhatsApp</a>`:" · sin teléfono"}`;
+  }))+`\n\nTambién los tienes todos en la sección <b>Recordatorios</b>.`;
+}
+// --- Órdenes que modifican datos ---
+function jvAgendar(t){
+  const f=jvFecha(t),h=jvHora(t);
+  let nombre=(t.match(/(?:agenda(?:r)?|cita)\s*(?:a|para|con)?\s+([a-záéíóúñ\s]{2,40}?)(?=\s+(?:el|para|ma[nñ]ana|hoy|pasado|lunes|martes|miercoles|jueves|viernes|sabado|domingo|a\s*las|con|\d)|$)/i)||[])[1];
+  const p=jvPaciente(nombre||"");
+  if(!p)return `No encuentro a ese paciente${nombre?` ("${esc(nombre.trim())}")`:""}. Dime el nombre tal y como está en la ficha, o créalo con: <b>crea paciente Ana López teléfono 600111222</b>`;
+  if(!f)return `¿Para qué día? Por ejemplo: <b>agenda a ${esc(p.nombre)} mañana a las 10</b>`;
+  const doc=jvDoctor(t)||"";
+  if(doc&&h){const s=slotsDia(doc,f);
+    if(s&&s.length){const oc=s.find(x=>x.hora===h&&x.ocupada);
+      if(oc)return `⚠️ <b>${esc(doc)}</b> ya tiene ocupada esa hora (${h}) el ${fechaBonita(f)}. Pregúntame: <b>huecos de ${esc(doc.split(" ")[0])} ${/(ma[nñ]ana|hoy)/.test(t)?RegExp.$1:""}</b>`;}}
+  const A=DB.citas();
+  A.push({id:uid("cit"),pacienteId:p.id,pacienteNombre:p.nombre,doctor:doc,fecha:f,hora:h||"",motivo:"",estado:"Programada"});
+  DB.setCitas(A);
+  return `✅ Cita agendada: <b>${esc(p.nombre)}</b> el <b>${fechaBonita(f)}</b>${h?` a las <b>${h}</b>`:""}${doc?` con <b>${esc(doc)}</b>`:""}.${!h?"\n(No me dijiste la hora: puedes ponerla en Agenda.)":""}`;
+}
+function jvCrearPaciente(t){
+  const tel=(t.match(/\b(\d{9})\b/)||[])[1]||"";
+  let nombre=(t.match(/(?:crea(?:r)?|nuevo|a[nñ]ade)\s*(?:paciente|ficha)?\s*(?:a\s+)?([a-záéíóúñ\s]{2,50}?)(?=\s*(?:tel|tlf|m[oó]vil|n[uú]mero|\d)|$)/i)||[])[1];
+  nombre=(nombre||"").trim();
+  if(!nombre)return "Dime el nombre. Ejemplo: <b>crea paciente Ana López teléfono 600111222</b>";
+  const rep=DB.pacientes().find(p=>norm(p.nombre)===norm(nombre)||(tel&&p.telefono===tel));
+  if(rep)return `⚠️ Ya existe <b>${esc(rep.nombre)}</b>${rep.telefono?" ("+esc(rep.telefono)+")":""}. No lo he duplicado.`;
+  const A=DB.pacientes();
+  A.push({id:uid("pac"),nombre:nombre.toUpperCase(),telefono:tel,dni:"",creado:Date.now()});
+  DB.setPacientes(A);
+  return `✅ Paciente creado: <b>${esc(nombre.toUpperCase())}</b>${tel?" · 📞 "+tel:""}.`;
+}
+function jvPago(t){
+  const imp=parseFloat(((t.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur)?/)||[])[1]||"").replace(",","."));
+  let nombre=(t.match(/\b(?:de|a|del)\s+([a-záéíóúñ\s]{2,40})$/i)||[])[1];
+  const p=jvPaciente(nombre||"");
+  if(!imp)return "Dime el importe. Ejemplo: <b>registra un pago de 150 de Ana López</b>";
+  if(!p)return `¿De qué paciente? Ejemplo: <b>registra un pago de ${imp} de Ana López</b>`;
+  const A=DB.pagos();
+  A.push({id:uid("pag"),pacienteId:p.id,importe:imp,fecha:hoyISO(),forma:"Efectivo",concepto:"Registrado con Jarvis"});
+  DB.setPagos(A);
+  return `✅ Pago registrado: <b>${imp}€</b> de <b>${esc(p.nombre)}</b> (hoy). Puedes cambiar la forma de pago en la sección Pagos.`;
+}
+function jvBuscar(t){
+  let q=(t.match(/(?:busca(?:r)?|ficha de|inf(?:o|ormaci[oó]n) de|datos de)\s+([a-záéíóúñ\s]{2,40})/i)||[])[1]||"";
+  const p=jvPaciente(q);
+  if(!p)return `No encuentro a <b>${esc(q.trim()||"ese paciente")}</b>.`;
+  const cit=DB.citas().filter(c=>c.pacienteId===p.id);
+  const prox=cit.filter(c=>c.fecha>=hoyISO()).sort((a,b)=>a.fecha.localeCompare(b.fecha))[0];
+  return `👤 <b>${esc(p.nombre)}</b>`+jvLista([
+    `📞 ${esc(p.telefono||p.movil||"sin teléfono")}`,
+    `🪪 ${esc(p.dni||"sin DNI")} · ${esc(p.cobertura||"sin cobertura")}`,
+    `📅 Citas: <b>${cit.length}</b>${prox?` · próxima: ${fechaBonita(prox.fecha)} ${esc(prox.hora||"")}`:""}`,
+    `🧾 Presupuestos: <b>${DB.presupuestos().filter(x=>x.pacienteId===p.id).length}</b>`]);
+}
+const JV_AYUDA=`Puedo ayudarte con esto (escríbelo con normalidad):
+
+📅 <b>Consultar</b>
+· citas de hoy / de mañana / del 25/07
+· huecos de Javier mañana
+· quién me debe dinero
+· cuánto he facturado
+· cómo va el día
+· a quién hay que avisar
+· busca a Ana López
+
+✍️ <b>Ordenar</b>
+· agenda a Ana López mañana a las 10 con Javier
+· crea paciente Luis Pérez teléfono 600111222
+· registra un pago de 150 de Ana López`;
+function jarvisResponder(txt){
+  const t=norm(txt);
+  if(!t)return "Dime algo 🙂";
+  if(/^(hola|buenas|hey|jarvis)\b/.test(t)&&t.length<25)return `Hola 👋 Soy Jarvis. ${jvResumen()}\n\nPregúntame lo que quieras o escribe <b>ayuda</b>.`;
+  if(/ayuda|qu[eé] puedes|opciones|comandos/.test(t))return JV_AYUDA;
+  // órdenes primero (modifican datos)
+  if(/\bagend|\bp[oó]n(le)?\s+cita|\bcitar?\b.*\b(ma[nñ]ana|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\d)/.test(t))return jvAgendar(t);
+  if(/\b(crea|crear|nuevo|nueva|a[nñ]ade)\b.*\b(paciente|ficha)\b|^crea\s+[a-z]/.test(t))return jvCrearPaciente(t);
+  if(/\b(registra|apunta|anota|cobra|cobro)\b.*\b(pago|€|eur|\d)/.test(t))return jvPago(t);
+  // consultas
+  if(/hueco|libre|disponib/.test(t))return jvHuecos(t);
+  if(/debe|deben|pendiente|saldo|moroso/.test(t))return jvSaldos();
+  if(/factur|ingres|cobrad|dinero|caja|econom/.test(t))return jvDinero();
+  if(/avisar|recordator|whatsapp/.test(t))return jvRecordatorios();
+  if(/resumen|c[oó]mo va|qu[eé] tal|d[ií]a de hoy|situaci/.test(t))return jvResumen();
+  if(/busca|ficha de|datos de|informacion de/.test(t))return jvBuscar(t);
+  if(/cita/.test(t)){const f=jvFecha(t)||hoyISO();return jvCitasDe(f);}
+  if(/cuantos pacientes|numero de pacientes|total de pacientes/.test(t))return `Tienes <b>${DB.pacientes().length}</b> pacientes registrados.`;
+  const f=jvFecha(t);if(f)return jvCitasDe(f);
+  return `No he entendido eso 🤔\n\n${JV_AYUDA}`;
+}
+function jvPinta(texto,quien){
+  const c=document.getElementById("jvChat");if(!c)return;
+  const d=document.createElement("div");d.className="jvmsg "+(quien||"jv");
+  d.innerHTML=quien==="yo"?esc(texto):texto;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function jvEnviar(){
+  const i=document.getElementById("jvTexto");const t=(i.value||"").trim();if(!t)return;
+  jvPinta(t,"yo");i.value="";
+  setTimeout(()=>{try{jvPinta(jarvisResponder(t),"jv");}catch(e){jvPinta("Uy, algo ha fallado: "+esc(e.message),"jv");}refrescarActual&&0;},260);
+}
+function jvIniciar(){
+  const c=document.getElementById("jvChat");if(!c)return;
+  if(!c.dataset.ini){c.dataset.ini="1";
+    jvPinta(`Hola 👋 Soy <b>Jarvis</b>, tu asistente privado.\n\n${jvResumen()}\n\nEscribe <b>ayuda</b> para ver todo lo que puedo hacer.`,"jv");
+  }
+  const sug=["Citas de hoy","Citas de mañana","¿Quién me debe dinero?","¿A quién hay que avisar?","Cómo va el día","Ayuda"];
+  document.getElementById("jvSug").innerHTML=sug.map(s=>`<button data-sug="${esc(s)}">${esc(s)}</button>`).join("");
+  document.querySelectorAll("#jvSug [data-sug]").forEach(b=>b.addEventListener("click",()=>{
+    document.getElementById("jvTexto").value=b.dataset.sug;jvEnviar();}));
+}
 // ==================== Usuarios ====================
 async function hashPass(usuario,password){
   const dato=new TextEncoder().encode(String(usuario).toLowerCase().trim()+":"+password);
