@@ -1388,11 +1388,17 @@ function pacientesRevision(meses){
     const suyas=C.filter(c=>c.pacienteId===p.id&&c.estado!=="Cancelada");
     if(suyas.some(c=>c.fecha>=hoy))return null;              // ya tiene cita futura
     const pasadas=suyas.filter(c=>c.fecha<hoy).sort((a,b)=>b.fecha.localeCompare(a.fecha));
-    const ref=pasadas.length?pasadas[0].fecha:(p.creado?isoDe(new Date(p.creado)):null);
-    const m=mesesDesde(ref);
-    if(m<Number(meses))return null;
-    return {p,ultima:pasadas.length?pasadas[0].fecha:null,meses:m,alta:!pasadas.length};
-  }).filter(Boolean).sort((a,b)=>b.meses-a.meses);
+    if(pasadas.length){
+      const m=mesesDesde(pasadas[0].fecha);
+      if(m<Number(meses))return null;
+      return {p,ultima:pasadas[0].fecha,meses:m,alta:false};
+    }
+    // nunca ha venido: usamos la fecha de alta si es fiable (posterior al año 2000)
+    const alta=(typeof p.creado==="number"&&p.creado>946684800000)?isoDe(new Date(p.creado)):null;
+    const m=alta?mesesDesde(alta):null;
+    if(m!==null&&m<Number(meses))return null;
+    return {p,ultima:null,meses:m,alta:true};
+  }).filter(Boolean).sort((a,b)=>(b.meses==null?-1:b.meses)-(a.meses==null?-1:a.meses));
 }
 function mensajeRevision(p){
   const C=cfg();
@@ -1408,7 +1414,7 @@ function renderRevision(){
       const tel=(x.p.telefono||x.p.movil||"").replace(/\D/g,"");const w=tel.length===9?"34"+tel:tel;
       return `<div class="recrow">
         <div><div style="font-weight:700">${esc(x.p.nombre||"—")} ${x.alta?'<span class="pill a">nunca ha venido</span>':""}</div>
-        <div class="hint">${x.alta?`Dado de alta hace ${x.meses} meses`:`Última visita: ${fechaBonita(x.ultima)} · hace <b>${x.meses}</b> meses`}${tel?" · 📞 "+esc(x.p.telefono||x.p.movil):' · <span style="color:var(--danger)">sin teléfono</span>'}</div></div>
+        <div class="hint">${x.alta?(x.meses!=null?`Dado de alta hace ${x.meses} meses · sin ninguna visita`:`Sin visitas registradas`):`Última visita: ${fechaBonita(x.ultima)} · hace <b>${x.meses}</b> meses`}${tel?" · 📞 "+esc(x.p.telefono||x.p.movil):' · <span style="color:var(--danger)">sin teléfono</span>'}</div></div>
         <div style="display:flex;gap:8px">
           ${tel?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${encodeURIComponent(mensajeRevision(x.p))}">📲 Escribir</a>`:""}
           <button class="ghost" data-ficharv="${x.p.id}">Ver ficha</button>
