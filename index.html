@@ -1022,7 +1022,11 @@ let servidorOK=false,pushTimer=null,panelPass=localStorage.getItem("scanner_pass
 function authHeaders(){return panelPass?{"x-panel-pass":panelPass}:{};}
 async function getStore(){try{const r=await fetch("/api/data",{cache:"no-store",headers:authHeaders()});if(r.status===401)return "AUTH";if(!r.ok)return null;return await r.json();}catch{return null;}}
 function tieneDatos(s){return s&&((s.pacientes&&s.pacientes.length)||(s.citas&&s.citas.length)||(s.presupuestos&&s.presupuestos.length)||(s.pagos&&s.pagos.length));}
-function escribeLocalCrudo(s){localStorage.setItem(KEY.pac,JSON.stringify(s.pacientes||[]));localStorage.setItem(KEY.cit,JSON.stringify(s.citas||[]));localStorage.setItem(KEY.pre,JSON.stringify(s.presupuestos||[]));localStorage.setItem(KEY.pag,JSON.stringify(s.pagos||[]));if(s.listas&&Object.keys(s.listas).length)localStorage.setItem(KEY.lis,JSON.stringify(s.listas));}
+function escribeLocalCrudo(s){
+  // al traer datos del servidor, respetamos siempre lo que se borró a propósito
+  let _pac=s.pacientes||[];
+  try{const _t=new Set(borrados().map(b=>b.id));if(_t.size)_pac=_pac.filter(p=>!_t.has(p.id));}catch{}
+  localStorage.setItem(KEY.pac,JSON.stringify(_pac));localStorage.setItem(KEY.cit,JSON.stringify(s.citas||[]));localStorage.setItem(KEY.pre,JSON.stringify(s.presupuestos||[]));localStorage.setItem(KEY.pag,JSON.stringify(s.pagos||[]));if(s.listas&&Object.keys(s.listas).length)localStorage.setItem(KEY.lis,JSON.stringify(s.listas));}
 function storeLocal(){return {pacientes:DB.pacientes(),citas:DB.citas(),presupuestos:DB.presupuestos(),pagos:DB.pagos(),listas:DB.get(KEY.lis,{})};}
 function programaPush(){if(!servidorOK)return;clearTimeout(pushTimer);pushTimer=setTimeout(pushStore,700);}
 async function pushStore(){
@@ -1052,8 +1056,10 @@ async function initSync(){
 poblarListas();poblarPacientesSelect();renderInicio();
   setInterval(async()=>{
     const s=await getStore();if(!s||s==="AUTH"||!s.pacientes)return;
-    const loc=DB.pacientes(),ids=new Set(loc.map(p=>p.id));let nuevo=false;
-    s.pacientes.forEach(p=>{if(!ids.has(p.id)){loc.push(p);nuevo=true;}});
+    const loc=DB.pacientes(),ids=new Set(loc.map(p=>p.id)),tumbas=new Set(borrados().map(b=>b.id));
+    let nuevo=false;
+    // traemos los que no tenemos (registros del QR) pero NUNCA los borrados a propósito
+    s.pacientes.forEach(p=>{if(!ids.has(p.id)&&!tumbas.has(p.id)){loc.push(p);nuevo=true;}});
     if(nuevo){localStorage.setItem(KEY.pac,JSON.stringify(loc));poblarPacientesSelect();refrescarActual();}
   },15000);
 }
