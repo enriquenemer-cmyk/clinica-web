@@ -227,6 +227,7 @@
       <button data-page="recordatorios"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7z"/><path d="M10.5 19.5a1.8 1.8 0 0 0 3 0"/></svg><span>Recordatorios</span><span id="recBadge" class="navbadge"></span></button>
       <button data-page="pacientes"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.6M20.5 20a5 5 0 0 0-3.6-4.8"/></svg><span>Pacientes</span></button>
       <button data-page="leer"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg><span>Leer presupuesto</span></button>
+      <button data-page="informes"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Informes</span></button>
       <button data-page="presupuestos"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg><span>Presupuestos</span></button>
       <button data-page="pagos"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><span>Pagos</span></button>
       <button data-page="ajustes"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2l1.8 1.8M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg><span>Ajustes</span></button>
@@ -545,6 +546,36 @@
   </div>
 
   <!-- ===================== PRESUPUESTOS ===================== -->
+  <div class="page" id="page-informes">
+    <div class="card">
+      <h2>📊 Resumen del negocio</h2>
+      <div class="sub">Cómo va la clínica de un vistazo. Los datos se calculan solos con lo que vas registrando.</div>
+      <div class="kpi" id="inf_kpi"></div>
+    </div>
+    <div class="card">
+      <h2>💶 Ingresos cobrados por mes</h2>
+      <div class="sub">Últimos 12 meses, según los pagos registrados.</div>
+      <div id="inf_ingresos"></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h2>🧾 Presupuestos</h2>
+        <div class="sub">Cuántos aceptas de los que presentas.</div>
+        <div id="inf_presu"></div>
+      </div>
+      <div class="card">
+        <h2>📅 Citas por mes</h2>
+        <div class="sub">Actividad de la agenda.</div>
+        <div id="inf_citas"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>👨‍⚕️ Presupuestos aceptados por doctor</h2>
+      <div class="sub">Quién cierra más presupuestos. Útil para formación y reparto de pacientes.</div>
+      <div id="inf_doctores"></div>
+    </div>
+  </div>
+
   <div class="page" id="page-presupuestos">
     <div class="card">
       <div class="toolbar"><h2 style="margin:0;flex:1">Presupuestos</h2>
@@ -579,9 +610,15 @@
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Importe</th><th>Forma</th><th>Concepto</th><th></th></tr></thead><tbody id="pg_body"></tbody></table></div>
       <div class="hint" id="pg_vacio">Aún no hay pagos registrados.</div>
     </div>
-  </div>
+    <div class="card">
+      <h2>📄 Facturas emitidas</h2>
+      <div class="sub">Numeración correlativa. Pulsa 📄 en un pago para emitir su factura.</div>
+      <div id="fcLista"></div>
+    </div>
+</div>
 
   <!-- ===================== AJUSTES ===================== -->
+
   <div class="page" id="page-ajustes">
     <div class="card">
       <h2>Ajustes · listas</h2><div class="sub">Un nombre por línea. Afecta a los desplegables de toda la plataforma.</div>
@@ -594,6 +631,26 @@
         <div class="field"><label>Formas de pago</label><textarea id="l_forma_pago" rows="4"></textarea></div>
       </div>
       <button class="main" id="guardarListas">Guardar listas</button><span id="ajustesOK" class="hint" style="color:var(--verde)"></span>
+    </div>
+
+    <div class="card">
+      <h2>🧾 Datos para las facturas</h2>
+      <div class="sub">Aparecerán en las facturas que emitas. Rellénalos una vez.</div>
+      <div class="grid3">
+        <div class="field"><label>Nombre o razón social</label><input id="fc_nombre" placeholder="K Dental Excellent S.L."/></div>
+        <div class="field"><label>NIF / CIF</label><input id="fc_nif" placeholder="B12345678"/></div>
+        <div class="field"><label>Teléfono</label><input id="fc_tel" placeholder="645646828"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Dirección</label><input id="fc_dir" placeholder="Calle Ejemplo, 1"/></div>
+        <div class="field"><label>Código postal y ciudad</label><input id="fc_ciudad" placeholder="28001 Madrid"/></div>
+        <div class="field"><label>Serie y nº siguiente</label>
+          <div style="display:flex;gap:8px"><input id="fc_serie" placeholder="F" style="width:70px"/><input id="fc_num" type="number" min="1" placeholder="1"/></div></div>
+      </div>
+      <div class="field"><label>IVA a aplicar (%)</label>
+        <div style="display:flex;gap:10px;align-items:center"><input id="fc_iva" type="number" min="0" max="21" style="width:100px"/>
+        <span class="hint">Los tratamientos dentales suelen estar <b>exentos de IVA</b> (0%). Consúltalo con tu gestoría.</span></div></div>
+      <button class="main" id="fc_guardar">Guardar datos de facturación</button><span id="fc_ok" class="hint" style="color:var(--verde)"></span>
     </div>
 
     <div class="card">
@@ -745,10 +802,10 @@ function poblarPacientesSelect(){
 }
 
 // ==================== Navegación ====================
-const TITULOS={inicio:"Inicio",jarvis:"Jarvis",usuarios:"Usuarios y permisos",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
+const TITULOS={inicio:"Inicio",jarvis:"Jarvis",usuarios:"Usuarios y permisos",informes:"Informes",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
 
 // ==================== Sesión y permisos ====================
-const SECCIONES=[{k:"inicio",n:"Inicio"},{k:"agenda",n:"Agenda"},{k:"recordatorios",n:"Recordatorios"},{k:"pacientes",n:"Pacientes y fichas"},{k:"leer",n:"Leer presupuesto (foto)"},{k:"presupuestos",n:"Presupuestos"},{k:"pagos",n:"Pagos y cobros"},{k:"ajustes",n:"Ajustes (y usuarios)"}];
+const SECCIONES=[{k:"inicio",n:"Inicio"},{k:"agenda",n:"Agenda"},{k:"recordatorios",n:"Recordatorios"},{k:"pacientes",n:"Pacientes y fichas"},{k:"leer",n:"Leer presupuesto (foto)"},{k:"informes",n:"Informes del negocio"},{k:"presupuestos",n:"Presupuestos"},{k:"pagos",n:"Pagos y cobros"},{k:"ajustes",n:"Ajustes (y usuarios)"}];
 const PERM_TODO=()=>SECCIONES.reduce((o,s)=>(o[s.k]=true,o),{});
 function sesion(){try{return JSON.parse(localStorage.getItem("scanner_sesion"))||null}catch{return null}}
 function guardarSesion(s){localStorage.setItem("scanner_sesion",JSON.stringify(s));aplicarPermisos();}
@@ -924,9 +981,10 @@ function ir(pagina){
   if(pagina==="jarvis")jvIniciar();
   if(pagina==="usuarios"){renderUsuarios();if(!editandoUsuario)pintarPermisos(null);}
   if(pagina==="pacientes")renderPacientes();
+  if(pagina==="informes")renderInformes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
-  if(pagina==="pagos"){poblarPagosSelects();renderPagos();fechasPorDefecto();}
-  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();}
+  if(pagina==="pagos"){poblarPagosSelects();renderPagos();renderFacturas();fechasPorDefecto();}
+  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
 
@@ -1372,6 +1430,15 @@ document.getElementById("rv_exportar").addEventListener("click",()=>{
   csvDescarga("pacientes-revision",["Nombre","Telefono","Ultima visita","Meses sin venir"],
     L.map(x=>[x.p.nombre||"",x.p.telefono||x.p.movil||"",x.ultima?fechaBonita(x.ultima):"nunca",x.meses]));
 });
+document.getElementById("fc_guardar").addEventListener("click",()=>{
+  const g=id=>document.getElementById(id).value.trim();
+  setCfg({fiscal:{nombre:g("fc_nombre"),nif:g("fc_nif"),tel:g("fc_tel"),dir:g("fc_dir"),ciudad:g("fc_ciudad"),
+    serie:g("fc_serie")||"F",num:Number(g("fc_num"))||1,iva:Number(g("fc_iva"))||0}});
+  toast("Datos de facturación guardados");
+  const ok=document.getElementById("fc_ok");ok.textContent="";
+});
+function cargarFiscal(){const F=datosFiscales();
+  ["nombre","nif","tel","dir","ciudad","serie","num","iva"].forEach(k=>{const e=document.getElementById("fc_"+k);if(e)e.value=F[k];});}
 document.getElementById("le_add").addEventListener("click",()=>{
   const id=document.getElementById("le_paciente").value;
   if(!id){toast("Elige un paciente","err");return;}
@@ -1380,6 +1447,168 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== FACTURAS numeradas ====================
+function facturas(){return (cfg().facturas||[]);}
+function datosFiscales(){const c=cfg();return Object.assign({nombre:"",nif:"",dir:"",ciudad:"",tel:"",serie:"F",num:1,iva:0},c.fiscal||{});}
+function emitirFactura(pagoId){
+  const pg=DB.pagos().find(p=>p.id===pagoId);if(!pg)return toast("No encuentro ese pago","err");
+  const F=datosFiscales();
+  if(!F.nombre||!F.nif)return toast("Rellena antes tus datos fiscales en Ajustes › Datos para las facturas","err");
+  let f=facturas().find(x=>x.pagoId===pagoId);
+  if(!f){
+    const numero=`${F.serie||"F"}${String(F.num||1).padStart(4,"0")}`;
+    const base=num(pg.importe)/(1+num(F.iva)/100);
+    f={id:uid("fac"),numero,pagoId,pacienteId:pg.pacienteId,fecha:pg.fecha||hoyISO(),
+       concepto:pg.concepto||"Tratamiento odontológico",total:num(pg.importe),
+       base:Math.round(base*100)/100,iva:num(F.iva),cuota:Math.round((num(pg.importe)-base)*100)/100};
+    setCfg({facturas:facturas().concat([f]),fiscal:Object.assign({},F,{num:num(F.num||1)+1})});
+    toast("Factura "+numero+" emitida");
+    renderFacturas();
+  }
+  imprimirFactura(f.id);
+}
+function imprimirFactura(id){
+  const f=facturas().find(x=>x.id===id);if(!f)return;
+  const F=datosFiscales();const p=DB.pacientes().find(x=>x.id===f.pacienteId)||{};
+  const w=window.open("","_blank","width=800,height=900");
+  if(!w)return toast("Permite las ventanas emergentes para imprimir","err");
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${esc(f.numero)}</title>
+  <style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:#0f172a;padding:44px;max-width:760px;margin:auto;font-size:14px}
+  .cab{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0d9488;padding-bottom:18px;margin-bottom:26px}
+  .marca{font-size:26px;font-weight:800;color:#1f5c4d;letter-spacing:2px}
+  h1{font-size:19px;margin:0 0 4px}.mut{color:#64748b;font-size:12.5px;line-height:1.6}
+  table{width:100%;border-collapse:collapse;margin:26px 0}
+  th{background:#f1f5f9;text-align:left;padding:11px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+  td{padding:12px 11px;border-bottom:1px solid #e8edf3}
+  .tot{margin-left:auto;width:290px}.tot div{display:flex;justify-content:space-between;padding:7px 0}
+  .tot .fin{border-top:2px solid #0d9488;font-weight:800;font-size:17px;color:#0f766e;margin-top:6px;padding-top:11px}
+  .pie{margin-top:44px;border-top:1px solid #e8edf3;padding-top:14px;color:#64748b;font-size:11.5px;line-height:1.6}
+  @media print{body{padding:14px}}</style></head><body>
+  <div class="cab"><div><div class="marca">DKV</div><div class="mut" style="letter-spacing:1.5px;font-size:10px">ESPACIO DE SALUD</div>
+    <div style="margin-top:12px;font-weight:700">${esc(F.nombre)}</div>
+    <div class="mut">NIF: ${esc(F.nif)}<br>${esc(F.dir)}<br>${esc(F.ciudad)}${F.tel?"<br>Tel: "+esc(F.tel):""}</div></div>
+    <div style="text-align:right"><h1>FACTURA</h1><div class="mut"><b style="font-size:16px;color:#0f172a">${esc(f.numero)}</b><br>Fecha: ${esc(fmtFecha(f.fecha))}</div></div></div>
+  <div class="mut" style="margin-bottom:6px">FACTURAR A</div>
+  <div style="font-weight:700;font-size:15px">${esc(p.nombre||"—")}</div>
+  <div class="mut">${p.dni?"DNI/NIE: "+esc(p.dni)+"<br>":""}${p.direccion?esc(p.direccion)+"<br>":""}${p.cp?esc(p.cp)+" ":""}${p.telefono?"Tel: "+esc(p.telefono):""}</div>
+  <table><thead><tr><th>Concepto</th><th style="text-align:right;width:130px">Importe</th></tr></thead>
+  <tbody><tr><td>${esc(f.concepto)}</td><td style="text-align:right">${f.base.toFixed(2)} €</td></tr></tbody></table>
+  <div class="tot"><div><span>Base imponible</span><b>${f.base.toFixed(2)} €</b></div>
+    <div><span>IVA (${f.iva}%)</span><b>${f.cuota.toFixed(2)} €</b></div>
+    <div class="fin"><span>TOTAL</span><span>${f.total.toFixed(2)} €</span></div></div>
+  <div class="pie">${f.iva===0?"Servicio sanitario exento de IVA según el art. 20.Uno.3º de la Ley 37/1992 del IVA.<br>":""}
+    Factura emitida por ${esc(F.nombre)}. Conserve este documento como justificante de pago.</div>
+  <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
+}
+function renderFacturas(){
+  const cont=document.getElementById("fcLista");if(!cont)return;
+  const L=facturas().slice().sort((a,b)=>(b.numero||"").localeCompare(a.numero||""));
+  if(!L.length){cont.innerHTML='<div class="hint">Aún no has emitido facturas. Pulsa 📄 en cualquier pago para emitir la primera.</div>';return;}
+  const tot=L.reduce((s,f)=>s+num(f.total),0);
+  cont.innerHTML=`<div class="hint" style="margin-bottom:10px"><b>${L.length}</b> facturas emitidas · <b>${Math.round(tot)}€</b></div>`+
+    L.map(f=>{const p=DB.pacientes().find(x=>x.id===f.pacienteId)||{};
+      return `<div class="recrow"><div><div style="font-weight:700">${esc(f.numero)} · ${esc(p.nombre||"—")}</div>
+        <div class="hint">${esc(fmtFecha(f.fecha))} · ${esc(f.concepto)} · <b>${f.total.toFixed(2)}€</b></div></div>
+        <button class="ghost" data-verfac="${f.id}">🖨️ Imprimir</button></div>`;}).join("");
+  cont.querySelectorAll("[data-verfac]").forEach(b=>b.addEventListener("click",()=>imprimirFactura(b.dataset.verfac)));
+}
+// ==================== INFORMES · gráficas ====================
+function num(v){const n=parseFloat(String(v==null?0:v).replace(",","."));return isNaN(n)?0:n;}
+function mesNombre(ym){const[a,m]=ym.split("-");return ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][Number(m)]+" "+a.slice(2);}
+function ultimosMeses(n){const out=[];const d=new Date();d.setDate(1);
+  for(let i=n-1;i>=0;i--){const x=new Date(d);x.setMonth(x.getMonth()-i);out.push(`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}`);}return out;}
+// Gráfica de barras en SVG
+function graficaBarras(datos,opts){
+  opts=opts||{};const alto=opts.alto||190,ancho=Math.max(datos.length*58,320);
+  const max=Math.max(1,...datos.map(d=>d.valor));
+  const pb=(ancho-20)/datos.length, bw=Math.min(34,pb-12);
+  const barras=datos.map((d,i)=>{
+    const h=Math.round((d.valor/max)*(alto-42));const x=10+i*pb+(pb-bw)/2, y=alto-24-h;
+    return `<g><rect x="${x}" y="${y}" width="${bw}" height="${Math.max(h,2)}" rx="5" fill="${d.color||"var(--primary)"}" opacity=".92"><title>${esc(d.etiqueta)}: ${d.texto||d.valor}</title></rect>
+      ${d.valor?`<text x="${x+bw/2}" y="${y-5}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--muted)">${esc(d.texto||d.valor)}</text>`:""}
+      <text x="${x+bw/2}" y="${alto-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(d.etiqueta)}</text></g>`;
+  }).join("");
+  return `<div style="overflow-x:auto"><svg viewBox="0 0 ${ancho} ${alto}" style="width:100%;min-width:${ancho}px;height:${alto}px" role="img">
+    <line x1="8" y1="${alto-24}" x2="${ancho-8}" y2="${alto-24}" stroke="var(--borde)" stroke-width="1.5"/>${barras}</svg></div>`;
+}
+// Gráfica de anillo
+function graficaAnillo(partes){
+  const tot=partes.reduce((s,p)=>s+p.valor,0);
+  if(!tot)return '<div class="hint">Aún no hay datos.</div>';
+  let ang=-Math.PI/2;const R=54,r=33,cx=70,cy=70;
+  const arcos=partes.filter(p=>p.valor>0).map(p=>{
+    const a=(p.valor/tot)*Math.PI*2, fin=ang+a, grande=a>Math.PI?1:0;
+    const x1=cx+R*Math.cos(ang),y1=cy+R*Math.sin(ang),x2=cx+R*Math.cos(fin),y2=cy+R*Math.sin(fin);
+    const x3=cx+r*Math.cos(fin),y3=cy+r*Math.sin(fin),x4=cx+r*Math.cos(ang),y4=cy+r*Math.sin(ang);
+    ang=fin;
+    return `<path d="M${x1} ${y1} A${R} ${R} 0 ${grande} 1 ${x2} ${y2} L${x3} ${y3} A${r} ${r} 0 ${grande} 0 ${x4} ${y4} Z" fill="${p.color}"><title>${esc(p.etiqueta)}: ${p.valor}</title></path>`;
+  }).join("");
+  const leyenda=partes.map(p=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0">
+    <span style="width:11px;height:11px;border-radius:3px;background:${p.color};flex:0 0 11px"></span>
+    <span style="flex:1">${esc(p.etiqueta)}</span><b>${p.valor}</b>
+    <span class="hint">${Math.round(p.valor/tot*100)}%</span></div>`).join("");
+  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+    <svg viewBox="0 0 140 140" style="width:140px;height:140px;flex:0 0 140px">${arcos}
+      <text x="70" y="66" text-anchor="middle" font-size="20" font-weight="800" fill="var(--txt)">${tot}</text>
+      <text x="70" y="82" text-anchor="middle" font-size="10" fill="var(--muted)">total</text></svg>
+    <div style="flex:1;min-width:180px">${leyenda}</div></div>`;
+}
+function renderInformes(){
+  const PG=DB.pagos(),PR=DB.presupuestos(),C=DB.citas(),P=DB.pacientes();
+  const acept=PR.filter(x=>/acept/i.test(x.estado||"")&&!/no acept/i.test(x.estado||""));
+  const fact=acept.reduce((s,x)=>s+num(x.importe_venta||x.importe_presupuestado),0);
+  const cob=PG.reduce((s,x)=>s+num(x.importe),0);
+  const tasa=PR.length?Math.round(acept.length/PR.length*100):0;
+  const ticket=acept.length?Math.round(fact/acept.length):0;
+  const mesAct=hoyISO().slice(0,7);
+  const cobMes=PG.filter(p=>(p.fecha||"").slice(0,7)===mesAct).reduce((s,x)=>s+num(x.importe),0);
+  document.getElementById("inf_kpi").innerHTML=[
+    ["Cobrado este mes",Math.round(cobMes)+"€"],["Facturado total",Math.round(fact)+"€"],
+    ["Cobrado total",Math.round(cob)+"€"],["Pendiente de cobro",Math.max(0,Math.round(fact-cob))+"€"],
+    ["Tasa de aceptación",tasa+"%"],["Presupuesto medio",ticket+"€"],
+    ["Pacientes",P.length],["Citas totales",C.filter(c=>c.estado!=="Cancelada").length]
+  ].map(([t,v])=>`<div class="b"><div class="n">${v}</div><div class="t">${t}</div></div>`).join("");
+  // ingresos por mes
+  const meses=ultimosMeses(12);
+  document.getElementById("inf_ingresos").innerHTML=graficaBarras(meses.map(m=>{
+    const v=PG.filter(p=>(p.fecha||"").slice(0,7)===m).reduce((s,x)=>s+num(x.importe),0);
+    return {etiqueta:mesNombre(m),valor:Math.round(v),texto:Math.round(v)+"€"};
+  }),{alto:200});
+  // presupuestos por estado
+  const pend=PR.filter(x=>/pendiente/i.test(x.estado||"")).length;
+  const no=PR.filter(x=>/no acept/i.test(x.estado||"")).length;
+  const otros=PR.length-acept.length-pend-no;
+  document.getElementById("inf_presu").innerHTML=graficaAnillo([
+    {etiqueta:"Aceptados",valor:acept.length,color:"#0d9488"},
+    {etiqueta:"Pendientes",valor:pend,color:"#f59e0b"},
+    {etiqueta:"No aceptados",valor:no,color:"#e11d48"},
+    {etiqueta:"Otros",valor:Math.max(0,otros),color:"#94a3b8"}
+  ])+(PR.length?`<div class="hint" style="margin-top:10px">De cada 10 presupuestos que presentas, aceptan <b>${Math.round(tasa/10)}</b>.</div>`:"");
+  // citas por mes
+  document.getElementById("inf_citas").innerHTML=graficaBarras(ultimosMeses(6).map(m=>({
+    etiqueta:mesNombre(m),valor:C.filter(c=>(c.fecha||"").slice(0,7)===m&&c.estado!=="Cancelada").length
+  })),{alto:170});
+  // aceptación por doctor
+  const docs=[...new Set(PR.map(x=>x.doctor).filter(Boolean))];
+  if(!docs.length)document.getElementById("inf_doctores").innerHTML='<div class="hint">Aún no hay presupuestos con doctor asignado.</div>';
+  else{
+    const filas=docs.map(d=>{
+      const suyos=PR.filter(x=>x.doctor===d);
+      const ok=suyos.filter(x=>/acept/i.test(x.estado||"")&&!/no acept/i.test(x.estado||""));
+      const eur=ok.reduce((s,x)=>s+num(x.importe_venta||x.importe_presupuestado),0);
+      return {d,total:suyos.length,ok:ok.length,pct:suyos.length?Math.round(ok.length/suyos.length*100):0,eur:Math.round(eur)};
+    }).sort((a,b)=>b.eur-a.eur);
+    document.getElementById("inf_doctores").innerHTML=filas.map(f=>`
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+          <b>${esc(f.d)}</b><span class="hint">${f.ok}/${f.total} aceptados · <b style="color:var(--primary-d)">${f.eur}€</b></span></div>
+        <div style="height:11px;background:var(--gris);border-radius:6px;overflow:hidden;border:1px solid var(--borde)">
+          <div style="height:100%;width:${f.pct}%;background:linear-gradient(90deg,#2dd4bf,#0d9488);border-radius:6px"></div></div>
+        <div class="hint" style="margin-top:3px">${f.pct}% de aceptación</div>
+      </div>`).join("");
+  }
+}
 // ==================== Pacientes para revisión (recall) ====================
 function mesesDesde(iso){if(!iso)return 999;const d=new Date(iso),h=new Date();return (h.getFullYear()-d.getFullYear())*12+(h.getMonth()-d.getMonth());}
 function pacientesRevision(meses){
@@ -1999,8 +2228,9 @@ function renderPagos(){
   document.getElementById("pg_body").innerHTML=G.slice().sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).map(p=>`<tr>
     <td>${esc(fmtFecha(p.fecha))}</td><td>${esc(nombrePaciente(p.pacienteId)||"—")}</td><td>${esc(p.importe)}€</td>
     <td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td>
-    <td><button class="ghost" data-recibo="${p.id}" title="Imprimir recibo" style="padding:4px 8px">🧾</button> <button class="ghost" data-delpago="${p.id}" style="padding:4px 8px">🗑️</button></td></tr>`).join("");
+    <td><button class="ghost" data-factura="${p.id}" title="Emitir factura numerada" style="padding:4px 8px">📄</button> <button class="ghost" data-recibo="${p.id}" title="Imprimir recibo" style="padding:4px 8px">🧾</button> <button class="ghost" data-delpago="${p.id}" style="padding:4px 8px">🗑️</button></td></tr>`).join("");
   document.querySelectorAll("[data-recibo]").forEach(b=>b.addEventListener("click",()=>imprimirRecibo(b.dataset.recibo)));
+  document.querySelectorAll("[data-factura]").forEach(b=>b.addEventListener("click",()=>emitirFactura(b.dataset.factura)));
   document.querySelectorAll("[data-delpago]").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("¿Borrar este pago?"))return;DB.setPagos(DB.pagos().filter(x=>x.id!==b.dataset.delpago));renderPagos();}));
 }
