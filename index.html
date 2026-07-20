@@ -258,6 +258,8 @@
   .oblig .o.cero .imp{color:var(--muted)}
   .avisolegal{margin-top:16px;padding:13px 15px;background:var(--warnbg);border:1px solid var(--warn);
     border-radius:11px;color:var(--warn);font-size:12px;line-height:1.55}
+  .folder{border:1.5px solid var(--borde);border-radius:14px;padding:15px;background:var(--card);cursor:pointer;transition:.15s}
+  .folder:hover{border-color:var(--primary);box-shadow:0 6px 18px rgba(13,148,136,.15);transform:translateY(-2px)}
   /* ---- Alertas médicas ---- */
   .alertabox{border:1.5px solid var(--warn);background:var(--warnbg);border-radius:14px;padding:15px 17px;margin-bottom:18px}
   .alertabox.grave{border-color:var(--danger);background:var(--dangerbg);box-shadow:0 4px 18px rgba(225,29,72,.16)}
@@ -2005,16 +2007,31 @@ document.getElementById("gs_add").addEventListener("click",()=>{
   if(!total||total<=0){toast("Pon el importe total del gasto","err");return;}
   if(!con){toast("Escribe el concepto","err");return;}
   const b=base>0?base:(total/(1+pct/100));
-  setCfg({gastos:gastos().concat([{id:uid("gs"),fecha:g("gs_fecha").value||hoyISO(),hora:g("gs_hora").value||horaAhora(),
+  const gid=uid("gs");
+  const nuevo={id:gid,fecha:g("gs_fecha").value||hoyISO(),hora:g("gs_hora").value||horaAhora(),
     categoria:g("gs_cat").value,concepto:con,importe:total,
     base:Math.round(b*100)/100,ivaPct:pct,cuotaIva:Math.round((total-b)*100)/100,
     proveedor:g("gs_proveedor").value.trim(),nif:g("gs_nif").value.trim().toUpperCase(),
     retPct:Number(g("gs_ret").value)||0,forma:g("gs_forma").value,
-    numfac:g("gs_numfac").value.trim(),deducible:g("gs_deducible").checked}])});
-  logAcc("Gasto registrado",con+" · "+imp+"€");
+    numfac:g("gs_numfac").value.trim(),deducible:g("gs_deducible").checked};
+  // adjuntar el archivo de la factura si se subió uno
+  const fx=document.getElementById("fx_file").files&&document.getElementById("fx_file").files[0];
+  if(fx&&servidorOK){
+    try{
+      const esPdf=/pdf$/i.test(fx.name)||fx.type==="application/pdf";
+      const fid=(esPdf?"fac":"img")+gid+(esPdf?".pdf":".jpg");
+      const dataUrl=esPdf?await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(fx);})
+                         :await comprimeImagen(fx,1800,.78);
+      const rr=await fetch("/api/foto",{method:"POST",headers:{"content-type":"application/json",...authHeaders()},body:JSON.stringify({id:fid,dataUrl})});
+      if(rr.ok)nuevo.justif={id:fid,pdf:esPdf,nombre:fx.name};
+    }catch{}
+  }
+  setCfg({gastos:gastos().concat([nuevo])});
+  logAcc("Gasto registrado",con+" · "+imp+"€"+(nuevo.justif?" (con justificante)":""));
   ["gs_concepto","gs_importe","gs_base","gs_proveedor","gs_nif","gs_numfac"].forEach(x=>document.getElementById(x).value="");
+  document.getElementById("fx_file").value="";document.getElementById("fx_estado").textContent="";
   document.getElementById("gs_calc").textContent="";
-  renderGastos();renderCaja();toast("Gasto registrado");
+  renderGastos();renderCaja();toast(nuevo.justif?"Gasto guardado con su factura adjunta":"Gasto registrado");
 });
 (()=>{const iva=document.getElementById("gs_iva");
   if(iva&&!iva.options.length)iva.innerHTML=[0,4,10,21].map(v=>`<option value="${v}"${v===21?" selected":""}>${v}%</option>`).join("");
@@ -2338,29 +2355,80 @@ function proveedoresResumen(anio){
   });
   return Object.values(map).sort((a,b)=>b.total-a.total);
 }
+let proveedorAbierto=null;
+async function verJustificante(fid,pdf){
+  toast("Abriendo el justificante…","info");
+  try{
+    const r=await fetch("/api/foto?id="+encodeURIComponent(fid),{headers:authHeaders()});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    const w=window.open("","_blank");
+    if(pdf)w.document.write(`<iframe src="${j.dataUrl}" style="border:0;width:100vw;height:100vh"></iframe>`);
+    else w.document.write(`<img src="${j.dataUrl}" style="max-width:100%">`);
+  }catch{toast("No se pudo abrir el justificante","err");}
+}
 function renderProveedores(){
   const cont=document.getElementById("pvLista");if(!cont)return;
   const anio=(document.getElementById("cb_anio")||{}).value||"";
   const P=proveedoresResumen(anio);
-  if(!P.length){cont.innerHTML='<div class="hint">Aún no hay proveedores. Se crean solos al registrar gastos con proveedor.</div>';return;}
+  if(!P.length){cont.innerHTML='<div class="hint">Aún no hay proveedores. Se crean solos al registrar gastos con proveedor.</div>';proveedorAbierto=null;return;}
+  // ---- CARPETA ABIERTA: las facturas de un proveedor ----
+  if(proveedorAbierto){
+    const p=P.find(x=>norm(x.nombre)===norm(proveedorAbierto));
+    if(!p){proveedorAbierto=null;return renderProveedores();}
+    const fac=gastos().filter(g=>norm(g.proveedor||"(sin proveedor)")===norm(proveedorAbierto)&&(!anio||(g.fecha||"").slice(0,4)===String(anio)))
+      .sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+    cont.innerHTML=`<button class="ghost" id="pv_volver" style="margin-bottom:14px">← Volver a todas las carpetas</button>
+      <div class="cbtit">📂 ${esc(p.nombre)}<span class="n">NIF ${esc(p.nif||"—")} · ${p.facturas} facturas · ${fmtEur(p.total)}</span></div>
+      <div class="kpi" style="margin-bottom:14px">
+        <div class="b"><div class="n">${fmtEur(p.base)}</div><div class="t">Base total</div></div>
+        <div class="b"><div class="n">${fmtEur(p.iva)}</div><div class="t">IVA soportado</div></div>
+        <div class="b"><div class="n">${p.retencion?fmtEur(p.retencion):"0,00 €"}</div><div class="t">Retenido</div></div>
+        <div class="b"><div class="n">${fmtEur(p.total)}</div><div class="t">Total pagado</div></div></div>
+      <div class="tablewrap"><table class="conta"><thead><tr>
+        <th>Fecha</th><th>Nº factura</th><th>Concepto</th><th>Categoría</th>
+        <th class="num">Base</th><th class="num">IVA</th><th class="num">Total</th><th>Justificante</th></tr></thead><tbody>`+
+      fac.map(g=>`<tr>
+        <td>${esc(fmtFecha(g.fecha))}</td><td>${esc(g.numfac||"—")}</td><td>${esc(g.concepto||"—")}</td>
+        <td>${esc(g.categoria||"—")}</td><td class="num">${fmtEur(g.base||g.importe)}</td>
+        <td class="num">${fmtEur(g.cuotaIva||0)}</td><td class="num"><b>${fmtEur(g.importe)}</b></td>
+        <td>${g.justif?`<button class="ghost" data-justif="${g.justif.id}" data-pdf="${g.justif.pdf?1:0}" style="padding:4px 9px">${g.justif.pdf?"📄 PDF":"🖼️ Ver"}</button>`:'<span class="hint">sin adjuntar</span>'}</td></tr>`).join("")+
+      `</tbody></table></div>`;
+    cont.querySelector("#pv_volver").addEventListener("click",()=>{proveedorAbierto=null;renderProveedores();});
+    cont.querySelectorAll("[data-justif]").forEach(b=>b.addEventListener("click",()=>verJustificante(b.dataset.justif,b.dataset.pdf==="1")));
+    return;
+  }
+  // ---- VISTA GENERAL: todas las carpetas ----
   const tot=P.reduce((s,p)=>s+p.total,0);
-  cont.innerHTML=`<div class="hint" style="margin-bottom:10px"><b>${P.length}</b> proveedores · <b>${fmtEur(tot)}</b> en total durante ${esc(anio)}</div>
+  cont.innerHTML=`<div class="hint" style="margin-bottom:12px"><b>${P.length}</b> proveedores · <b>${fmtEur(tot)}</b> en total durante ${esc(anio)} · pulsa una carpeta para ver sus facturas</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">`+
+    P.map(p=>`<div class="folder" data-carpeta="${esc(p.nombre)}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <span style="font-size:26px">📁</span>
+        <div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre)}</div>
+        <div class="hint">${esc(p.nif||"sin NIF")}</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:20px;font-weight:800;color:var(--primary-d)">${fmtEur(p.total)}</span>
+        <span class="hint">${p.facturas} fact. · ${Math.round(p.total/(tot||1)*100)}%</span></div>
+      <div class="hint" style="margin-top:5px">${Object.keys(p.categorias).map(c=>esc(c)).join(", ")}</div>
+    </div>`).join("")+`</div>
+    <div class="cbtit" style="margin-top:20px">RESUMEN GENERAL<span class="n">todos los proveedores</span></div>
     <div class="tablewrap"><table class="conta"><thead><tr>
       <th>Proveedor</th><th>NIF</th><th class="num">Facturas</th><th class="num">Base</th><th class="num">IVA</th>
-      <th class="num">Retenido</th><th class="num">TOTAL</th><th>Última</th><th class="num">% del gasto</th></tr></thead><tbody>`+
-    P.map(p=>`<tr>
-      <td><b>${esc(p.nombre)}</b><div class="hint">${Object.keys(p.categorias).map(c=>esc(c)).join(", ")}</div></td>
-      <td>${esc(p.nif||"—")}</td><td class="num">${p.facturas}</td>
-      <td class="num">${fmtEur(p.base)}</td><td class="num">${fmtEur(p.iva)}</td>
-      <td class="num">${p.retencion?fmtEur(p.retencion):"—"}</td>
-      <td class="num"><b>${fmtEur(p.total)}</b></td>
-      <td>${p.ultima?esc(fmtFecha(p.ultima)):"—"}</td>
-      <td class="num">${Math.round(p.total/(tot||1)*100)}%</td></tr>`).join("")+
+      <th class="num">Retenido</th><th class="num">TOTAL</th><th>Última</th></tr></thead><tbody>`+
+    P.map(p=>`<tr class="click" data-fila="${esc(p.nombre)}"><td><b>${esc(p.nombre)}</b></td><td>${esc(p.nif||"—")}</td>
+      <td class="num">${p.facturas}</td><td class="num">${fmtEur(p.base)}</td><td class="num">${fmtEur(p.iva)}</td>
+      <td class="num">${p.retencion?fmtEur(p.retencion):"—"}</td><td class="num"><b>${fmtEur(p.total)}</b></td>
+      <td>${p.ultima?esc(fmtFecha(p.ultima)):"—"}</td></tr>`).join("")+
     `<tr class="tot"><td colspan="3">TOTALES</td>
       <td class="num">${fmtEur(P.reduce((s,p)=>s+p.base,0))}</td>
       <td class="num">${fmtEur(P.reduce((s,p)=>s+p.iva,0))}</td>
       <td class="num">${fmtEur(P.reduce((s,p)=>s+p.retencion,0))}</td>
-      <td class="num">${fmtEur(tot)}</td><td colspan="2"></td></tr></tbody></table></div>`;
+      <td class="num">${fmtEur(tot)}</td><td></td></tr></tbody></table></div>`;
+  cont.querySelectorAll("[data-carpeta],[data-fila]").forEach(el=>el.addEventListener("click",()=>{
+    proveedorAbierto=el.dataset.carpeta||el.dataset.fila;renderProveedores();
+    document.getElementById("pvLista").scrollIntoView({block:"start",behavior:"smooth"});
+  }));
 }
 // ---- Diario detallado: todos los movimientos por día y hora, con saldo acumulado ----
 function movimientosDiarios(anio,trim){
