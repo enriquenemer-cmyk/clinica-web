@@ -107,11 +107,35 @@
   .syncdot.off i{background:#ef4444}
   @keyframes pulse{50%{opacity:.35}}
   @media(max-width:620px){.syncdot span{display:none}.syncdot{padding:6px}}
-  /* Jarvis */
+  /* Jarvis · núcleo animado */
+  .jvhead{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:16px;background:linear-gradient(135deg,#0b1424,#132033 60%,#0e1c2b);color:#e6f6f4;margin-bottom:16px;position:relative;overflow:hidden}
+  .jvhead:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 12% 50%,rgba(45,212,191,.18),transparent 55%)}
+  .jv-core{width:62px;height:62px;flex:0 0 62px;position:relative;z-index:1}
+  .jv-r1{transform-origin:50% 50%;animation:jvspin 9s linear infinite}
+  .jv-r2{transform-origin:50% 50%;animation:jvspin 6s linear infinite reverse}
+  .jv-glow{animation:jvbreath 2.6s ease-in-out infinite}
+  .jv-dot{animation:jvbreath 2.6s ease-in-out infinite .3s}
+  @keyframes jvspin{to{transform:rotate(360deg)}}
+  @keyframes jvbreath{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.07)}}
+  .jvhead.hablando .jv-glow{animation-duration:.7s}
+  .jvhead.escuchando .jv-r1{animation-duration:2s;stroke:#f43f5e}
+  .jvtit{z-index:1}
+  .jvtit b{display:block;font-size:20px;letter-spacing:5px;font-weight:800}
+  .jvtit small{display:block;font-size:11px;opacity:.65;letter-spacing:1.4px;text-transform:uppercase;margin-top:3px}
+  .jvtools{margin-left:auto;display:flex;gap:8px;z-index:1}
+  .jvtool{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#cdece8;border-radius:11px;padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+  .jvtool:hover{background:rgba(45,212,191,.2);border-color:rgba(45,212,191,.5)}
+  .jvtool.on{background:rgba(45,212,191,.28);border-color:#2dd4bf;color:#fff}
+  .jvtool.rec{background:rgba(244,63,94,.28);border-color:#f43f5e;color:#fff;animation:jvbreath 1s infinite}
+  /* Jarvis · chat */
   .jvchat{border:1px solid var(--borde);border-radius:14px;background:var(--gris);padding:16px;height:min(52vh,440px);overflow-y:auto;display:flex;flex-direction:column;gap:12px}
   .jvmsg{max-width:82%;padding:11px 15px;border-radius:15px;font-size:13.5px;line-height:1.55;animation:jvin .26s ease both;white-space:pre-wrap}
   .jvmsg.yo{align-self:flex-end;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-bottom-right-radius:5px}
   .jvmsg.jv{align-self:flex-start;background:var(--card);border:1px solid var(--borde);border-bottom-left-radius:5px;box-shadow:0 2px 8px rgba(16,24,40,.05)}
+  .jvpensando{align-self:flex-start;display:flex;gap:5px;padding:13px 16px;background:var(--card);border:1px solid var(--borde);border-radius:15px}
+  .jvpensando i{width:7px;height:7px;border-radius:50%;background:var(--primary);display:block;animation:jvbounce 1.2s infinite}
+  .jvpensando i:nth-child(2){animation-delay:.15s}.jvpensando i:nth-child(3){animation-delay:.3s}
+  @keyframes jvbounce{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-5px)}}
   .jvmsg b{font-weight:700}
   .jvmsg .lin{display:block;padding:3px 0;border-bottom:1px solid var(--borde)}
   .jvmsg .lin:last-child{border-bottom:0}
@@ -289,8 +313,25 @@
   <!-- ===================== PACIENTES ===================== -->
   <div class="page" id="page-jarvis">
     <div class="card">
-      <h2>🤖 Jarvis · tu asistente privado</h2>
-      <div class="sub">Solo tú puedes verlo y usarlo. Pídele información o dale órdenes escribiendo con normalidad.</div>
+      <div class="jvhead" id="jvHead">
+        <svg class="jv-core" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <radialGradient id="jvGrad" cx="50%" cy="45%"><stop offset="0%" stop-color="#a7f3ea"/><stop offset="55%" stop-color="#2dd4bf"/><stop offset="100%" stop-color="#0d9488"/></radialGradient>
+            <filter id="jvBlur"><feGaussianBlur stdDeviation="3"/></filter>
+          </defs>
+          <circle class="jv-r1" cx="50" cy="50" r="45" fill="none" stroke="#2dd4bf" stroke-width="1.6" stroke-dasharray="7 11" opacity=".6"/>
+          <circle class="jv-r2" cx="50" cy="50" r="36" fill="none" stroke="#a7f3ea" stroke-width="1" stroke-dasharray="22 9" opacity=".45"/>
+          <circle class="jv-glow" cx="50" cy="50" r="26" fill="url(#jvGrad)" filter="url(#jvBlur)" opacity=".55"/>
+          <circle class="jv-glow" cx="50" cy="50" r="19" fill="url(#jvGrad)"/>
+          <circle class="jv-dot" cx="50" cy="50" r="8" fill="#ecfeff" opacity=".95"/>
+        </svg>
+        <div class="jvtit"><b>JARVIS</b><small id="jvEstado">Asistente privado · en línea</small></div>
+        <div class="jvtools">
+          <button class="jvtool" id="jvBtnVoz" title="Que Jarvis me hable en voz alta">🔊 Voz</button>
+          <button class="jvtool" id="jvBtnMic" title="Hablarle por micrófono">🎙️ Hablar</button>
+        </div>
+      </div>
+      <div class="sub">Solo tú puedes verlo y usarlo. Pídele información o dale órdenes: escribiendo o <b>por voz</b>.</div>
       <div class="jvchat" id="jvChat"></div>
       <div class="jvinput">
         <input id="jvTexto" placeholder="Ej.: citas de mañana · quién me debe dinero · agenda a Ana el martes a las 10" autocomplete="off"/>
@@ -1251,6 +1292,9 @@ document.getElementById("u_guardar").addEventListener("click",async()=>{
   resetFormUsuario();renderUsuarios();
 });
 document.getElementById("jvEnviar").addEventListener("click",jvEnviar);
+document.getElementById("jvBtnVoz").addEventListener("click",jvToggleVoz);
+document.getElementById("jvBtnMic").addEventListener("click",jvMic);
+if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>{};
 document.getElementById("jvTexto").addEventListener("keydown",e=>{if(e.key==="Enter")jvEnviar();});
 document.getElementById("u_cancelar").addEventListener("click",resetFormUsuario);
 document.getElementById("btnSalir").addEventListener("click",()=>{if(confirm("¿Cerrar sesión?"))cerrarSesion();});
@@ -1590,15 +1634,62 @@ function jvPinta(texto,quien){
   d.innerHTML=quien==="yo"?esc(texto):texto;
   c.appendChild(d);c.scrollTop=c.scrollHeight;
 }
+// ---- VOZ: que Jarvis hable ----
+let jvVoz=localStorage.getItem("jarvis_voz")==="1";
+function jvHablar(html){
+  if(!jvVoz||!window.speechSynthesis)return;
+  const txt=String(html).replace(/<[^>]+>/g," ").replace(/&[a-z]+;/gi," ").replace(/[·•]/g,", ").replace(/\s+/g," ").trim();
+  if(!txt)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt.slice(0,420));
+  u.lang="es-ES";u.rate=1.05;
+  const vs=speechSynthesis.getVoices()||[];
+  const v=vs.find(x=>/es[-_]ES/i.test(x.lang))||vs.find(x=>/^es/i.test(x.lang));
+  if(v)u.voice=v;
+  const h=document.getElementById("jvHead");
+  u.onstart=()=>h&&h.classList.add("hablando");
+  u.onend=u.onerror=()=>h&&h.classList.remove("hablando");
+  speechSynthesis.speak(u);
+}
+function jvToggleVoz(){
+  jvVoz=!jvVoz;localStorage.setItem("jarvis_voz",jvVoz?"1":"0");
+  document.getElementById("jvBtnVoz").classList.toggle("on",jvVoz);
+  if(jvVoz)jvHablar("Voz activada. Dime qué necesitas.");
+  else{speechSynthesis&&speechSynthesis.cancel();toast("Voz desactivada","info");}
+}
+// ---- VOZ: hablarle por micrófono ----
+let jvRec=null,jvEscuchando=false;
+function jvMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast("Este navegador no permite dictar. Prueba con Chrome.","err");return;}
+  if(jvEscuchando){try{jvRec.stop()}catch{};return;}
+  jvRec=new SR();jvRec.lang="es-ES";jvRec.interimResults=false;jvRec.maxAlternatives=1;
+  const b=document.getElementById("jvBtnMic"),h=document.getElementById("jvHead"),e=document.getElementById("jvEstado");
+  jvRec.onstart=()=>{jvEscuchando=true;b.classList.add("rec");h.classList.add("escuchando");e.textContent="Escuchando…";};
+  jvRec.onerror=ev=>{toast(ev.error==="not-allowed"?"Tienes que dar permiso al micrófono":"No te he entendido, repite","err");};
+  jvRec.onend=()=>{jvEscuchando=false;b.classList.remove("rec");h.classList.remove("escuchando");e.textContent="Asistente privado · en línea";};
+  jvRec.onresult=ev=>{const t=ev.results[0][0].transcript;document.getElementById("jvTexto").value=t;jvEnviar();};
+  try{jvRec.start()}catch{toast("Ya te estoy escuchando","info")}
+}
+function jvSaludo(){const h=new Date().getHours();return h<6?"Buenas noches":h<13?"Buenos días":h<21?"Buenas tardes":"Buenas noches";}
 function jvEnviar(){
   const i=document.getElementById("jvTexto");const t=(i.value||"").trim();if(!t)return;
   jvPinta(t,"yo");i.value="";
-  setTimeout(()=>{try{jvPinta(jarvisResponder(t),"jv");}catch(e){jvPinta("Uy, algo ha fallado: "+esc(e.message),"jv");}refrescarActual&&0;},260);
+  const c=document.getElementById("jvChat");
+  const p=document.createElement("div");p.className="jvpensando";p.innerHTML="<i></i><i></i><i></i>";
+  c.appendChild(p);c.scrollTop=c.scrollHeight;
+  setTimeout(()=>{
+    p.remove();
+    let r;try{r=jarvisResponder(t);}catch(e){r="Uy, algo ha fallado: "+esc(e.message);}
+    jvPinta(r,"jv");jvHablar(r);
+  },430);
 }
 function jvIniciar(){
   const c=document.getElementById("jvChat");if(!c)return;
+  const bv=document.getElementById("jvBtnVoz");if(bv)bv.classList.toggle("on",jvVoz);
   if(!c.dataset.ini){c.dataset.ini="1";
-    jvPinta(`Hola 👋 Soy <b>Jarvis</b>, tu asistente privado.\n\n${jvResumen()}\n\nEscribe <b>ayuda</b> para ver todo lo que puedo hacer.`,"jv");
+    const s=sesion();const quien=s&&s.nombre&&s.rol!=="admin"?", "+s.nombre.split(" ")[0]:"";
+    jvPinta(`${jvSaludo()}${quien}. Soy <b>JARVIS</b>, a tu servicio.\n\n${jvResumen()}\n\nPuedes escribirme o pulsar <b>🎙️ Hablar</b> y decírmelo en voz alta. Escribe <b>ayuda</b> para verlo todo.`,"jv");
   }
   const sug=["Citas de hoy","Citas de esta semana","Citas sin confirmar","¿Quién me debe dinero?","Caja de hoy","Presupuestos sin aceptar","Pacientes nuevos","¿A quién hay que avisar?","Cómo va el día","Ayuda"];
   document.getElementById("jvSug").innerHTML=sug.map(s=>`<button data-sug="${esc(s)}">${esc(s)}</button>`).join("");
