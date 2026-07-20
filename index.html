@@ -331,6 +331,16 @@
       <div class="grid3">
         <div class="field"><label>Fecha</label><input id="c_fecha" type="date"/></div>
         <div class="field"><label>Hora</label><input id="c_hora" type="time"/><div id="c_slots"></div></div>
+        <div class="field" style="grid-column:1/-1">
+          <label class="chk" style="display:flex;gap:9px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
+            <input type="checkbox" id="c_repetir" style="width:auto;accent-color:var(--primary)"/> 🔁 Repetir esta cita (ortodoncia, revisiones…)</label>
+          <div id="c_repZona" style="display:none;margin-top:8px;display:none">
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+              <span class="hint">cada</span><select id="c_cada" style="width:auto"></select>
+              <span class="hint">durante</span><select id="c_veces" style="width:auto"></select>
+              <span class="hint" id="c_repInfo"></span>
+            </div></div>
+        </div>
         <div class="field"><label>Estado</label><select id="c_estado"><option>Programada</option><option>Confirmada</option><option>Realizada</option><option>Cancelada</option></select></div>
       </div>
       <div class="field"><label>Notas</label><input id="c_notas"/></div>
@@ -603,6 +613,19 @@
     </div>
 
     <div class="card">
+      <h2>💳 Plan de pago a plazos</h2>
+      <div class="sub">Divide un tratamiento en cuotas y ve marcándolas según cobras. Te avisa de las vencidas.</div>
+      <div class="kpi" id="ppKpi"></div>
+      <div class="grid3">
+        <div class="field"><label>Importe total (€)</label><input id="pp_total" type="number" min="0" placeholder="1200"/></div>
+        <div class="field"><label>Nº de cuotas</label><select id="pp_num"></select></div>
+        <div class="field"><label>Primera cuota</label><input id="pp_fecha" type="date"/></div>
+      </div>
+      <button class="main" id="pp_crear">💳 Crear plan de pago</button>
+      <div id="ppLista" style="margin-top:16px"></div>
+    </div>
+
+    <div class="card">
       <h2>💊 Recetas</h2>
       <div class="sub">Elige un medicamento habitual o escribe otro. Se imprime con los datos de la clínica.</div>
       <div class="grid2">
@@ -777,6 +800,12 @@
         <div id="inf_citas"></div>
       </div>
     </div>
+    <div class="card" id="cardComisiones" style="display:none">
+      <h2>💰 Comisiones a pagar</h2>
+      <div class="sub">Según el porcentaje de cada doctor sobre lo que ha cerrado.</div>
+      <div id="inf_comisiones"></div>
+    </div>
+
     <div class="card">
       <h2>👨‍⚕️ Presupuestos aceptados por doctor</h2>
       <div class="sub">Quién cierra más presupuestos. Útil para formación y reparto de pacientes.</div>
@@ -920,6 +949,13 @@
         <button class="main" id="bl_add">➕ Bloquear</button>
       </div>
       <div id="blLista"></div>
+    </div>
+
+    <div class="card">
+      <h2>📊 Comisiones por doctor</h2>
+      <div class="sub">Porcentaje que se lleva cada doctor de los presupuestos aceptados. Verás el cálculo en Informes.</div>
+      <div id="coLista"></div>
+      <button class="main" id="co_guardar" style="margin-top:12px">Guardar comisiones</button>
     </div>
 
     <div class="card">
@@ -1313,15 +1349,15 @@ function ir(pagina){
   document.getElementById("page-"+pagina).classList.add("on");
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
   if(pagina==="inicio"){renderInicio();renderSalaEspera();renderSetup();}
-  if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
+  if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();initRepetir();}
   if(pagina==="recordatorios"){renderRecordatoriosWA();renderRevision();renderEspera();}
   if(pagina==="jarvis")jvIniciar();
   if(pagina==="usuarios"){renderUsuarios();renderPapelera();renderLog();if(!editandoUsuario)pintarPermisos(null);}
   if(pagina==="pacientes")renderPacientes();
-  if(pagina==="informes")renderInformes();
+  if(pagina==="informes"){renderInformes();renderComisionesInforme();}
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();renderFacturas();renderGastos();renderCaja();fechasPorDefecto();}
-  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();renderDuraciones();renderBloqueos();}
+  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();renderDuraciones();renderBloqueos();renderComisionesAjustes();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
 
@@ -1431,7 +1467,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderPlan(p);renderRecetas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
+  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderPlan(p);renderPlanPago(p);renderRecetas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1526,6 +1562,12 @@ document.getElementById("c_guardar").addEventListener("click",()=>{
   if(editingCitaId){const i=A.findIndex(x=>x.id===editingCitaId);if(i>=0)Object.assign(A[i],datos);editingCitaId=null;document.getElementById("c_guardar").textContent="📅 Agendar cita";}
   else A.push(Object.assign({id:uid("cit")},datos));
   DB.setCitas(A);
+  const _rep=document.getElementById("c_repetir");
+  if(!editandoPrev&&_rep&&_rep.checked&&fecha){
+    const _n=crearCitasRepetidas(datos);
+    if(_n.length)toast("Creadas "+(_n.length+1)+" citas en total (la última el "+fechaBonita(_n[_n.length-1])+")");
+    _rep.checked=false;initRepetir();
+  }
   logAcc(editandoPrev?"Cita modificada":"Cita creada",(nombrePaciente(pacId)||"")+" · "+fecha+" "+(document.getElementById("c_hora").value||""));
   ["c_motivo","c_hora","c_notas"].forEach(k=>document.getElementById(k).value="");
   toast(editandoPrev?"Cita actualizada":"Cita agendada");document.getElementById("c_msg").textContent="";setTimeout(()=>document.getElementById("c_msg").textContent="",2000);
@@ -1759,6 +1801,11 @@ document.getElementById("p_recepcion").addEventListener("click",abrirRecepcion);
 document.getElementById("fb_imprimir").addEventListener("click",imprimirFormularioBlanco);
 document.getElementById("dz_borrar").addEventListener("click",borrarTodosLosDatos);
 document.getElementById("rc_add").addEventListener("click",anadirReceta);
+document.getElementById("pp_crear").addEventListener("click",crearPlanPago);
+document.getElementById("co_guardar").addEventListener("click",()=>{
+  const C={};document.querySelectorAll("[data-com]").forEach(i=>{const v=Number(i.value)||0;if(v>0)C[i.dataset.com]=v;});
+  setCfg({comisiones:C});toast("Comisiones guardadas");
+});
 document.getElementById("rc_med").addEventListener("change",()=>{
   const i=document.getElementById("rc_med").value;
   if(i!==""){document.getElementById("rc_pauta").value=RECETAS[Number(i)].p;document.getElementById("rc_otro").value="";}
@@ -1877,6 +1924,130 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Citas recurrentes ====================
+function initRepetir(){
+  const cada=document.getElementById("c_cada"),veces=document.getElementById("c_veces");
+  if(cada&&!cada.options.length)cada.innerHTML=[1,2,3,4,6,8].map(n=>`<option value="${n}"${n===4?" selected":""}>${n} semana${n>1?"s":""}</option>`).join("");
+  if(veces&&!veces.options.length)veces.innerHTML=[2,3,4,5,6,8,10,12].map(n=>`<option value="${n}"${n===6?" selected":""}>${n} citas</option>`).join("");
+  const ch=document.getElementById("c_repetir"),z=document.getElementById("c_repZona");
+  const pinta=()=>{
+    if(!z)return;z.style.display=ch&&ch.checked?"block":"none";
+    const inf=document.getElementById("c_repInfo");
+    if(inf&&ch&&ch.checked){
+      const f=document.getElementById("c_fecha").value;
+      if(f){const d=new Date(f);d.setDate(d.getDate()+Number(cada.value)*7*(Number(veces.value)-1));
+        inf.textContent="→ hasta el "+fechaBonita(isoDe(d));}
+      else inf.textContent="";
+    }
+  };
+  [ch,cada,veces,document.getElementById("c_fecha")].forEach(e=>{if(e&&!e.dataset.rep){e.dataset.rep="1";e.addEventListener("change",pinta);}});
+  pinta();
+}
+function crearCitasRepetidas(base){
+  const cada=Number(document.getElementById("c_cada").value)||4;
+  const veces=Number(document.getElementById("c_veces").value)||6;
+  const A=DB.citas();const creadas=[];
+  for(let i=1;i<veces;i++){
+    const d=new Date(base.fecha);d.setDate(d.getDate()+cada*7*i);
+    const f=isoDe(d);
+    const c=Object.assign({},base,{id:uid("cit"),fecha:f,estado:"Programada",recurrente:true,llegada:null});
+    // si el doctor tiene esa hora ocupada, la dejamos igual pero avisamos
+    A.push(c);creadas.push(f);
+  }
+  DB.setCitas(A);
+  return creadas;
+}
+// ==================== Plan de pago a plazos ====================
+function renderPlanPago(p){
+  const cont=document.getElementById("ppLista"),kpi=document.getElementById("ppKpi");if(!cont)return;
+  const sel=document.getElementById("pp_num");
+  if(sel&&!sel.options.length)sel.innerHTML=[2,3,4,5,6,8,10,12,18,24].map(n=>`<option value="${n}"${n===6?" selected":""}>${n} cuotas</option>`).join("");
+  const f=document.getElementById("pp_fecha");if(f&&!f.value)f.value=hoyISO();
+  const P=(p&&p.planPago)||null;
+  if(!P||!P.cuotas||!P.cuotas.length){cont.innerHTML='<div class="hint">Sin plan de pago. Útil para tratamientos caros que se cobran a plazos.</div>';if(kpi)kpi.innerHTML="";return;}
+  const pagadas=P.cuotas.filter(c=>c.pagada);
+  const cobrado=pagadas.reduce((s,c)=>s+num(c.importe),0);
+  const total=P.cuotas.reduce((s,c)=>s+num(c.importe),0);
+  const vencidas=P.cuotas.filter(c=>!c.pagada&&c.fecha<hoyISO());
+  if(kpi)kpi.innerHTML=`<div class="b"><div class="n">${Math.round(total)}€</div><div class="t">Total del plan</div></div>
+    <div class="b"><div class="n">${Math.round(cobrado)}€</div><div class="t">Cobrado</div></div>
+    <div class="b"><div class="n">${Math.round(total-cobrado)}€</div><div class="t">Pendiente</div></div>
+    <div class="b"><div class="n" style="color:${vencidas.length?"var(--danger)":"var(--ok)"}">${vencidas.length}</div><div class="t">Cuotas vencidas</div></div>`;
+  cont.innerHTML=P.cuotas.map((c,i)=>{
+    const vencida=!c.pagada&&c.fecha<hoyISO();
+    return `<div class="recrow" style="${c.pagada?"opacity:.6":vencida?"border-color:var(--danger)":""}">
+      <div style="display:flex;align-items:center;gap:11px">
+        <input type="checkbox" data-ppc="${i}" ${c.pagada?"checked":""} style="width:auto;accent-color:var(--primary)"/>
+        <div><div style="font-weight:700${c.pagada?";text-decoration:line-through":""}">Cuota ${i+1} · ${num(c.importe).toFixed(2)}€</div>
+        <div class="hint">${esc(fechaBonita(c.fecha))} ${vencida?'<b style="color:var(--danger)">· VENCIDA</b>':c.pagada?"· cobrada":""}</div></div></div>
+      ${!c.pagada&&vencida?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${(p.telefono||"").replace(/\\D/g,"").length===9?"34"+(p.telefono||"").replace(/\\D/g,""):(p.telefono||"").replace(/\\D/g,"")}?text=${encodeURIComponent("Hola "+(p.nombre||"").split(" ")[0]+", te recordamos que tienes pendiente la cuota de "+num(c.importe).toFixed(2)+"€ de tu tratamiento. ¡Gracias!")}">📲 Recordar</a>`:""}
+    </div>`;}).join("")+
+    `<button class="ghost" id="pp_borrar" style="margin-top:10px;color:var(--danger)">🗑️ Borrar el plan</button>`;
+  cont.querySelectorAll("[data-ppc]").forEach(ch=>ch.addEventListener("change",()=>{
+    const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);
+    const cu=A[k].planPago.cuotas[Number(ch.dataset.ppc)];
+    cu.pagada=ch.checked;
+    if(ch.checked){ // al marcar pagada, registramos el cobro
+      DB.setPagos(DB.pagos().concat([{id:uid("pag"),pacienteId:fichaId,importe:num(cu.importe),fecha:hoyISO(),forma:"",concepto:"Cuota "+(Number(ch.dataset.ppc)+1)+" del plan de pago"}]));
+      toast("Cuota cobrada y registrada en Pagos");
+    }
+    DB.setPacientes(A);logAcc(ch.checked?"Cuota cobrada":"Cuota desmarcada",A[k].nombre||"");renderPlanPago(A[k]);
+  }));
+  const b=document.getElementById("pp_borrar");
+  if(b)b.addEventListener("click",()=>{
+    if(!confirm("¿Borrar el plan de pago? Los cobros ya registrados se mantienen."))return;
+    const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);delete A[k].planPago;
+    DB.setPacientes(A);renderPlanPago(A[k]);
+  });
+}
+function crearPlanPago(){
+  if(!fichaId)return;
+  const total=num(document.getElementById("pp_total").value);
+  const n=Number(document.getElementById("pp_num").value)||6;
+  const ini=document.getElementById("pp_fecha").value||hoyISO();
+  if(total<=0)return toast("Pon el importe total","err");
+  const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);if(k<0)return;
+  if(A[k].planPago&&!confirm("Ya hay un plan de pago. ¿Reemplazarlo?"))return;
+  const base=Math.floor(total/n*100)/100;
+  const cuotas=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(ini);d.setMonth(d.getMonth()+i);
+    const importe=i===n-1?Math.round((total-base*(n-1))*100)/100:base;   // la última ajusta el redondeo
+    cuotas.push({fecha:isoDe(d),importe,pagada:false});
+  }
+  A[k].planPago={total,creado:hoyISO(),cuotas};
+  DB.setPacientes(A);logAcc("Plan de pago creado",(A[k].nombre||"")+" · "+total+"€ en "+n+" cuotas");
+  document.getElementById("pp_total").value="";
+  renderPlanPago(A[k]);toast("Plan de pago creado");
+}
+// ==================== Comisiones por doctor ====================
+function comisiones(){return (cfg().comisiones||{});}
+function renderComisionesAjustes(){
+  const cont=document.getElementById("coLista");if(!cont)return;
+  const L=DB.get(KEY.lis,LISTAS_DEF).doctores||[];const C=comisiones();
+  if(!L.length){cont.innerHTML='<div class="hint">Añade doctores en la lista de arriba.</div>';return;}
+  cont.innerHTML=L.map(d=>`<div class="recrow" style="padding:9px 13px">
+    <div style="font-weight:600">${esc(d)}</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="number" min="0" max="100" step="0.5" data-com="${esc(d)}" value="${C[d]!=null?C[d]:0}" style="width:90px"/>
+      <span class="hint">%</span></div></div>`).join("");
+}
+function renderComisionesInforme(){
+  const card=document.getElementById("cardComisiones"),cont=document.getElementById("inf_comisiones");
+  if(!card||!cont)return;
+  const C=comisiones();const conCom=Object.keys(C).filter(d=>num(C[d])>0);
+  if(!conCom.length){card.style.display="none";return;}
+  card.style.display="";
+  const PR=DB.presupuestos().filter(x=>/acept/i.test(x.estado||"")&&!/no acept/i.test(x.estado||""));
+  const filas=conCom.map(d=>{
+    const eur=PR.filter(x=>x.doctor===d).reduce((s,x)=>s+num(x.importe_venta||x.importe_presupuestado),0);
+    return {d,pct:num(C[d]),eur,com:eur*num(C[d])/100};
+  }).sort((a,b)=>b.com-a.com);
+  const tot=filas.reduce((s,f)=>s+f.com,0);
+  cont.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Doctor</th><th>Cerrado</th><th>%</th><th>Comisión</th></tr></thead><tbody>`+
+    filas.map(f=>`<tr><td>${esc(f.d)}</td><td>${Math.round(f.eur)}€</td><td>${f.pct}%</td><td><b style="color:var(--primary-d)">${f.com.toFixed(2)}€</b></td></tr>`).join("")+
+    `</tbody></table></div><div class="hint" style="margin-top:10px">Total a pagar en comisiones: <b>${tot.toFixed(2)}€</b> · calculado sobre presupuestos aceptados</div>`;
+}
 // ==================== Asistente de puesta en marcha ====================
 function pasosSetup(){
   const C=cfg();
