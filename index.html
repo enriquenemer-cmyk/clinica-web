@@ -297,6 +297,7 @@
       <div class="toolbar">
         <h2 style="margin:0;flex:1">Agenda</h2>
         <button class="ghost" id="v_lista">📋 Lista</button>
+        <button class="ghost" id="v_dia">👥 Día por doctor</button>
         <button class="ghost" id="v_mes">🗓️ Mes</button>
         <button class="ghost" id="a_hoy">Hoy</button>
         <button class="ghost" id="a_semana">Semana</button>
@@ -306,6 +307,7 @@
         <button class="ghost" id="a_export">⬇️ Exportar</button>
       </div>
       <div id="agendaCal" style="display:none"></div>
+      <div id="agendaDia" style="display:none"></div>
       <div id="agendaLista"></div>
       <div class="hint" id="agendaVacia">No hay citas agendadas todavía.</div>
     </div>
@@ -383,6 +385,29 @@
         <button class="ghost" id="rec_refrescar">🔄 Actualizar</button>
       </div>
       <div id="recLista"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔄 Pacientes para revisión</h2>
+      <div class="sub">Pacientes que <b>hace tiempo que no vienen</b> y no tienen ninguna cita futura. Llamarles o escribirles es la forma más rápida de llenar la agenda.</div>
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted);font-weight:600">Sin venir desde hace más de</label>
+        <select id="rv_meses" style="width:auto"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="9">9 meses</option><option value="12">1 año</option></select>
+        <button class="ghost" id="rv_actualizar">🔄 Actualizar</button>
+        <button class="ghost" id="rv_exportar">⬇️ Exportar</button>
+      </div>
+      <div id="rvLista"></div>
+    </div>
+
+    <div class="card">
+      <h2>⏳ Lista de espera</h2>
+      <div class="sub">Pacientes que quieren <b>adelantar su cita</b>. Cuando se cancele un hueco, aquí tienes a quién llamar primero.</div>
+      <div class="toolbar">
+        <select id="le_paciente" style="min-width:200px"></select>
+        <input id="le_nota" placeholder="Ej. le viene bien por las mañanas" style="min-width:230px"/>
+        <button class="main" id="le_add">➕ Añadir a la lista</button>
+      </div>
+      <div id="leLista"></div>
     </div>
   </div>
 
@@ -895,7 +920,7 @@ function ir(pagina){
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
   if(pagina==="inicio")renderInicio();
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
-  if(pagina==="recordatorios")renderRecordatoriosWA();
+  if(pagina==="recordatorios"){renderRecordatoriosWA();renderRevision();renderEspera();}
   if(pagina==="jarvis")jvIniciar();
   if(pagina==="usuarios"){renderUsuarios();if(!editandoUsuario)pintarPermisos(null);}
   if(pagina==="pacientes")renderPacientes();
@@ -1340,6 +1365,78 @@ document.getElementById("r_guardar").addEventListener("click",()=>{
 });
 document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatoriosWA();});
 document.getElementById("rec_refrescar").addEventListener("click",renderRecordatoriosWA);
+document.getElementById("rv_meses").addEventListener("change",renderRevision);
+document.getElementById("rv_actualizar").addEventListener("click",()=>{renderRevision();toast("Lista actualizada","info");});
+document.getElementById("rv_exportar").addEventListener("click",()=>{
+  const L=pacientesRevision(Number(document.getElementById("rv_meses").value||6));
+  csvDescarga("pacientes-revision",["Nombre","Telefono","Ultima visita","Meses sin venir"],
+    L.map(x=>[x.p.nombre||"",x.p.telefono||x.p.movil||"",x.ultima?fechaBonita(x.ultima):"nunca",x.meses]));
+});
+document.getElementById("le_add").addEventListener("click",()=>{
+  const id=document.getElementById("le_paciente").value;
+  if(!id){toast("Elige un paciente","err");return;}
+  if(espera().some(e=>e.pacienteId===id)){toast("Ese paciente ya está en la lista","err");return;}
+  setCfg({espera:espera().concat([{id:uid("esp"),pacienteId:id,nota:document.getElementById("le_nota").value.trim(),creado:hoyISO()}])});
+  document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
+  renderEspera();toast("Añadido a la lista de espera");
+});
+// ==================== Pacientes para revisión (recall) ====================
+function mesesDesde(iso){if(!iso)return 999;const d=new Date(iso),h=new Date();return (h.getFullYear()-d.getFullYear())*12+(h.getMonth()-d.getMonth());}
+function pacientesRevision(meses){
+  const hoy=hoyISO(),C=DB.citas();
+  return DB.pacientes().map(p=>{
+    const suyas=C.filter(c=>c.pacienteId===p.id&&c.estado!=="Cancelada");
+    if(suyas.some(c=>c.fecha>=hoy))return null;              // ya tiene cita futura
+    const pasadas=suyas.filter(c=>c.fecha<hoy).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    const ref=pasadas.length?pasadas[0].fecha:(p.creado?isoDe(new Date(p.creado)):null);
+    const m=mesesDesde(ref);
+    if(m<Number(meses))return null;
+    return {p,ultima:pasadas.length?pasadas[0].fecha:null,meses:m,alta:!pasadas.length};
+  }).filter(Boolean).sort((a,b)=>b.meses-a.meses);
+}
+function mensajeRevision(p){
+  const C=cfg();
+  return `Hola ${(p.nombre||"").split(" ")[0]} 👋\n\nTe escribimos de ${C.clinica||"la clínica"}. Hace un tiempo que no te vemos y nos gustaría hacerte una *revisión* para comprobar que todo está bien.\n\n¿Te viene bien que te demos cita? 🦷`;
+}
+function renderRevision(){
+  const cont=document.getElementById("rvLista");if(!cont)return;
+  const meses=Number((document.getElementById("rv_meses")||{}).value||6);
+  const L=pacientesRevision(meses);
+  if(!L.length){cont.innerHTML=`<div class="hint">No hay pacientes sin venir desde hace más de ${meses} meses. ¡Buena señal! ✅</div>`;return;}
+  cont.innerHTML=`<div class="hint" style="margin-bottom:10px"><b>${L.length}</b> paciente${L.length>1?"s":""} para recuperar · potencial de agenda</div>`+
+    L.map(x=>{
+      const tel=(x.p.telefono||x.p.movil||"").replace(/\D/g,"");const w=tel.length===9?"34"+tel:tel;
+      return `<div class="recrow">
+        <div><div style="font-weight:700">${esc(x.p.nombre||"—")} ${x.alta?'<span class="pill a">nunca ha venido</span>':""}</div>
+        <div class="hint">${x.alta?`Dado de alta hace ${x.meses} meses`:`Última visita: ${fechaBonita(x.ultima)} · hace <b>${x.meses}</b> meses`}${tel?" · 📞 "+esc(x.p.telefono||x.p.movil):' · <span style="color:var(--danger)">sin teléfono</span>'}</div></div>
+        <div style="display:flex;gap:8px">
+          ${tel?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${encodeURIComponent(mensajeRevision(x.p))}">📲 Escribir</a>`:""}
+          <button class="ghost" data-ficharv="${x.p.id}">Ver ficha</button>
+        </div></div>`;}).join("");
+  cont.querySelectorAll("[data-ficharv]").forEach(b=>b.addEventListener("click",()=>abrirFicha(b.dataset.ficharv)));
+}
+// ==================== Lista de espera ====================
+function espera(){return (cfg().espera||[]);}
+function renderEspera(){
+  const cont=document.getElementById("leLista");if(!cont)return;
+  const sel=document.getElementById("le_paciente");
+  if(sel){const cur=sel.value;sel.innerHTML='<option value="">— Elige paciente —</option>'+DB.pacientes().slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||"")).map(p=>`<option value="${p.id}">${esc(p.nombre||"(sin nombre)")}</option>`).join("");sel.value=cur;}
+  const E=espera();
+  if(!E.length){cont.innerHTML='<div class="hint">La lista de espera está vacía. Añade aquí a quien quiera adelantar su cita.</div>';return;}
+  cont.innerHTML=E.map(e=>{
+    const p=DB.pacientes().find(x=>x.id===e.pacienteId);if(!p)return"";
+    const tel=(p.telefono||p.movil||"").replace(/\D/g,"");const w=tel.length===9?"34"+tel:tel;
+    return `<div class="recrow">
+      <div><div style="font-weight:700">${esc(p.nombre||"—")}</div>
+      <div class="hint">${e.nota?esc(e.nota)+" · ":""}en espera desde ${fechaBonita(e.creado)}${tel?" · 📞 "+esc(p.telefono||p.movil):""}</div></div>
+      <div style="display:flex;gap:8px">
+        ${tel?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${encodeURIComponent("Hola "+(p.nombre||"").split(" ")[0]+" 👋 ¡Se nos ha quedado un hueco libre! ¿Te vendría bien adelantar tu cita?")}">📲 Avisar</a>`:""}
+        <button class="ghost" data-quitarle="${e.id}">Quitar</button>
+      </div></div>`;}).join("");
+  cont.querySelectorAll("[data-quitarle]").forEach(b=>b.addEventListener("click",()=>{
+    setCfg({espera:espera().filter(x=>x.id!==b.dataset.quitarle)});renderEspera();toast("Quitado de la lista de espera");
+  }));
+}
 // ==================== JARVIS · asistente privado del administrador ====================
 const isoDe=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 function jvFecha(t){
@@ -1803,14 +1900,72 @@ function renderCalendario(){
   document.getElementById("cal_next").onclick=()=>{if(++calRef.m>11){calRef.m=0;calRef.y++;}renderCalendario();};
   document.querySelectorAll("[data-caldia]").forEach(c=>c.addEventListener("click",()=>{document.getElementById("a_fecha").value=c.dataset.caldia;vistaAgenda("lista");renderAgenda();}));
 }
+let diaAgenda=null;
 function vistaAgenda(v){
-  const cal=v==="mes";
+  const cal=v==="mes",dia=v==="dia";
   document.getElementById("agendaCal").style.display=cal?"block":"none";
-  document.getElementById("agendaLista").style.display=cal?"none":"block";
-  if(cal){document.getElementById("agendaVacia").style.display="none";renderCalendario();}
+  document.getElementById("agendaDia").style.display=dia?"block":"none";
+  document.getElementById("agendaLista").style.display=(cal||dia)?"none":"block";
+  if(cal||dia)document.getElementById("agendaVacia").style.display="none";
+  if(cal)renderCalendario();
+  if(dia)renderDiaDoctores();
+}
+// ---- Vista "día por doctor": columnas por doctor, filas por hora ----
+function renderDiaDoctores(){
+  const cont=document.getElementById("agendaDia");if(!cont)return;
+  const f=diaAgenda||document.getElementById("a_fecha").value||hoyISO();
+  diaAgenda=f;
+  const C=DB.citas().filter(c=>c.fecha===f&&c.estado!=="Cancelada");
+  const H=cfg().horarios||{};
+  const conHorario=Object.keys(H).filter(d=>{const r=H[d]&&H[d][diaDeFecha(f)];return r&&(r.m1||r.t1);});
+  let docs=[...new Set([...conHorario,...C.map(c=>c.doctor).filter(Boolean)])].sort();
+  const nav=`<div class="toolbar" style="margin-bottom:12px">
+      <button class="ghost" id="d_ant">←</button>
+      <b style="font-size:15px;min-width:210px;text-align:center">${fechaBonita(f)}</b>
+      <button class="ghost" id="d_sig">→</button>
+      <button class="ghost" id="d_hoy">Hoy</button>
+    </div>`;
+  if(!docs.length){cont.innerHTML=nav+`<div class="hint">No hay citas ni doctores con horario ese día.<br>Configura los horarios en <b>Ajustes › Horario de los doctores</b> para ver aquí sus columnas.</div>`;navDia(cont);return;}
+  // franja horaria a mostrar
+  let ini=24*60,fin=0;const dur=Number(cfg().duracion)||30;
+  docs.forEach(d=>{const r=(H[d]||{})[diaDeFecha(f)];if(r){[r.m1,r.t1].forEach(x=>{const m=minutos(x);if(m!=null)ini=Math.min(ini,m);});[r.m2,r.t2].forEach(x=>{const m=minutos(x);if(m!=null)fin=Math.max(fin,m);});}});
+  C.forEach(c=>{const m=minutos(c.hora);if(m!=null){ini=Math.min(ini,m);fin=Math.max(fin,m+dur);}});
+  if(ini>=fin){ini=9*60;fin=20*60;}
+  const filas=[];for(let m=ini;m<fin;m+=dur)filas.push(m);
+  const cab=docs.map(d=>`<th style="text-align:center">${esc(d)}</th>`).join("");
+  const cuerpo=filas.map(m=>{
+    const h=hhmm(m);
+    const celdas=docs.map(d=>{
+      const cit=C.find(c=>c.doctor===d&&c.hora===h);
+      if(cit){const p=DB.pacientes().find(x=>x.id===cit.pacienteId);
+        const col=cit.estado==="Confirmada"?"var(--okbg)":"var(--primary-soft)";
+        return `<td style="background:${col};cursor:pointer;border-radius:8px" data-citadia="${cit.id}" title="${esc(cit.motivo||"")}">
+          <b>${esc((p&&p.nombre)||cit.pacienteNombre||"—")}</b>${cit.motivo?`<div class="hint" style="font-size:11px">${esc(cit.motivo)}</div>`:""}</td>`;}
+      const r=(H[d]||{})[diaDeFecha(f)];
+      let trabaja=false;
+      if(r){[[r.m1,r.m2],[r.t1,r.t2]].forEach(([a,b])=>{const x=minutos(a),y=minutos(b);if(x!=null&&y!=null&&m>=x&&m+dur<=y)trabaja=true;});}
+      return trabaja?`<td style="color:var(--muted);font-size:11px;text-align:center;cursor:pointer" data-librecel="${d}|${h}">libre</td>`
+                    :`<td style="background:var(--gris)"></td>`;
+    }).join("");
+    return `<tr><td style="font-weight:700;white-space:nowrap;background:var(--gris)">${h}</td>${celdas}</tr>`;
+  }).join("");
+  cont.innerHTML=nav+`<div class="tablewrap"><table><thead><tr><th style="width:70px">Hora</th>${cab}</tr></thead><tbody>${cuerpo}</tbody></table></div>`;
+  navDia(cont);
+  cont.querySelectorAll("[data-citadia]").forEach(td=>td.addEventListener("click",()=>editarCita(td.dataset.citadia)));
+  cont.querySelectorAll("[data-librecel]").forEach(td=>td.addEventListener("click",()=>{
+    const [d,h]=td.dataset.librecel.split("|");
+    document.getElementById("c_doctor").value=d;document.getElementById("c_fecha").value=f;document.getElementById("c_hora").value=h;
+    pintarSlots();window.scrollTo({top:0,behavior:"smooth"});toast(`Hueco elegido: ${d} · ${h}`,"info");
+  }));
+}
+function navDia(cont){
+  const mover=n=>{const d=new Date(diaAgenda);d.setDate(d.getDate()+n);diaAgenda=isoDe(d);renderDiaDoctores();};
+  const a=cont.querySelector("#d_ant"),s=cont.querySelector("#d_sig"),h=cont.querySelector("#d_hoy");
+  if(a)a.onclick=()=>mover(-1); if(s)s.onclick=()=>mover(1); if(h)h.onclick=()=>{diaAgenda=hoyISO();renderDiaDoctores();};
 }
 document.getElementById("v_lista").addEventListener("click",()=>{vistaAgenda("lista");renderAgenda();});
 document.getElementById("v_mes").addEventListener("click",()=>vistaAgenda("mes"));
+document.getElementById("v_dia").addEventListener("click",()=>{diaAgenda=document.getElementById("a_fecha").value||hoyISO();vistaAgenda("dia");});
 
 // ==================== Pagos ====================
 function facturadoPaciente(id){return DB.presupuestos().filter(x=>x.pacienteId===id&&esAceptado(x.estado)).reduce((s,x)=>s+(parseFloat(x.importe_venta)||0),0);}
