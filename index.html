@@ -219,6 +219,17 @@
   html.oscuro .kpi .b:hover{box-shadow:0 8px 24px rgba(0,0,0,.45)}
   html.oscuro .jvchat{background:#0d1626}
   html.oscuro .vacio{background:var(--gris)}
+  /* ---- Alertas médicas ---- */
+  .alertabox{border:1.5px solid var(--warn);background:var(--warnbg);border-radius:14px;padding:15px 17px;margin-bottom:18px}
+  .alertabox.grave{border-color:var(--danger);background:var(--dangerbg);box-shadow:0 4px 18px rgba(225,29,72,.16)}
+  .alertabox .cab{display:flex;align-items:center;gap:9px;font-size:14px;margin-bottom:10px;color:var(--danger);letter-spacing:.01em}
+  .alertabox:not(.grave) .cab{color:var(--warn)}
+  .alertabox .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .al{display:inline-block;padding:5px 12px;border-radius:20px;font-size:12.5px;font-weight:700;background:var(--card)}
+  .al.r{color:var(--danger);box-shadow:inset 0 0 0 1.5px var(--danger)}
+  .al.a{color:var(--warn);box-shadow:inset 0 0 0 1.5px var(--warn)}
+  .alertabox .pie{margin-top:10px;font-size:12px;color:var(--danger);opacity:.85;font-weight:600}
+  .avisocita{color:var(--danger);font-weight:800;margin-left:5px}
   /* ---- Estados vacíos ---- */
   .vacio{text-align:center;padding:34px 20px;color:var(--muted);background:var(--gris);border:1.5px dashed var(--borde);border-radius:14px}
   .vacio .ico{font-size:38px;display:block;margin-bottom:10px;opacity:.75}
@@ -482,6 +493,7 @@
     <div class="card">
       <span class="back" id="f_volver">← Volver a pacientes</span>
       <h2 id="f_titulo">Ficha del paciente</h2>
+      <div id="f_alertas" style="display:none"></div>
       <div class="kpi" id="f_kpi"></div>
       <div class="grid3">
         <div class="field"><label>Nombre completo</label><input id="f_nombre"/></div>
@@ -547,6 +559,19 @@
     <div class="card" id="f_cuestCard" style="display:none">
       <h2>📋 Cuestionario de salud <span class="pill v" style="vertical-align:middle">autorregistro</span></h2>
       <div id="f_cuest"></div>
+    </div>
+
+    <div class="card">
+      <h2>🩺 Evolución clínica</h2>
+      <div class="sub">Qué se ha hecho en cada sesión. Queda con su fecha y doctor: es la historia clínica del paciente.</div>
+      <div class="grid3">
+        <div class="field"><label>Fecha</label><input id="ev_fecha" type="date"/></div>
+        <div class="field"><label>Doctor</label><select id="ev_doctor"></select></div>
+        <div class="field"><label>Pieza (opcional)</label><input id="ev_pieza" placeholder="Ej. 47"/></div>
+      </div>
+      <div class="field"><label>Qué se ha hecho</label><textarea id="ev_texto" rows="3" placeholder="Ej. Endodoncia 47, 2 conductos, obturación provisional. Se cita para corona."></textarea></div>
+      <button class="main" id="ev_add">➕ Añadir a la evolución</button>
+      <div id="evLista" style="margin-top:16px"></div>
     </div>
 
     <div class="card">
@@ -1196,7 +1221,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);renderConsentimientos(p);renderFotos(p);
+  renderOdontograma(p);renderCuestionario(p);renderAlertas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1271,9 +1296,10 @@ document.getElementById("f_nuevaCita").addEventListener("click",()=>{
 
 // ==================== Agenda / Citas ====================
 function citaHTML(c,compacto){
+  const _al=tieneAlertaGrave(c.pacienteId)?'<span class="avisocita" title="Este paciente tiene avisos médicos importantes">⚠️</span>':"";
   const est={Programada:"g",Confirmada:"v",Realizada:"v",Cancelada:"r"}[c.estado]||"g";
   return `<div class="cita"><div class="h">${esc(c.hora||"--:--")}</div>
-    <div style="flex:1"><div><b>${esc(compacto?(c.doctor||""):(nombrePaciente(c.pacienteId)||c.pacienteNombre||"(paciente)"))}</b> ${c.motivo?"· "+esc(c.motivo):""}</div>
+    <div style="flex:1"><div><b>${esc(compacto?(c.doctor||""):(nombrePaciente(c.pacienteId)||c.pacienteNombre||"(paciente)"))}</b>${_al} ${c.motivo?"· "+esc(c.motivo):""}</div>
     <div class="m">${compacto?"":"👤 "+esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"—")+" · "}👨‍⚕️ ${esc(c.doctor||"—")}${c.notas?" · "+esc(c.notas):""}</div></div>
     <div><span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px">🗑️</button></div></div>`;
 }
@@ -1514,6 +1540,7 @@ document.getElementById("ad_guardar").addEventListener("click",async()=>{
   document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
   toast("Contraseña cambiada. Úsala la próxima vez que entres.");
 });
+document.getElementById("ev_add").addEventListener("click",anadirEvolucion);
 document.getElementById("cs_nuevo").addEventListener("click",abrirFirma);
 document.getElementById("fm_cerrar").addEventListener("click",()=>document.getElementById("firmaModal").style.display="none");
 document.getElementById("fm_limpiar").addEventListener("click",()=>{const cv=document.getElementById("fm_canvas");firmaCtx.fillStyle="#fff";firmaCtx.fillRect(0,0,cv.width,cv.height);});
@@ -1572,6 +1599,83 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Evolución clínica ====================
+function renderEvolucion(p){
+  const cont=document.getElementById("evLista");if(!cont)return;
+  const sel=document.getElementById("ev_doctor");
+  if(sel&&!sel.options.length){const L=DB.get(KEY.lis,LISTAS_DEF);sel.innerHTML='<option value="">— Doctor —</option>'+(L.doctores||[]).map(d=>`<option>${esc(d)}</option>`).join("");}
+  const f=document.getElementById("ev_fecha");if(f&&!f.value)f.value=hoyISO();
+  const E=((p&&p.evolucion)||[]).slice().sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+  if(!E.length){cont.innerHTML='<div class="hint">Todavía no hay anotaciones de evolución para este paciente.</div>';return;}
+  cont.innerHTML=E.map(e=>`<div style="border-left:3px solid var(--primary);padding:10px 0 10px 14px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <b style="font-size:13px">${esc(fechaBonita(e.fecha))}${e.pieza?` · pieza <span class="pill v">${esc(e.pieza)}</span>`:""}</b>
+      <span class="hint">${esc(e.doctor||"—")} ${e.autor?"· anotado por "+esc(e.autor):""}
+        <button class="ghost" data-delev="${e.id}" style="padding:2px 7px;color:var(--danger);margin-left:6px">🗑️</button></span>
+    </div>
+    <div style="font-size:13.5px;line-height:1.55;margin-top:5px;white-space:pre-wrap">${esc(e.texto)}</div>
+  </div>`).join("");
+  cont.querySelectorAll("[data-delev]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("¿Borrar esta anotación de la historia clínica?"))return;
+    const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
+    A[i].evolucion=(A[i].evolucion||[]).filter(x=>x.id!==b.dataset.delev);
+    DB.setPacientes(A);logAcc("Evolución borrada",A[i].nombre||"");renderEvolucion(A[i]);
+  }));
+}
+function anadirEvolucion(){
+  if(!fichaId)return;
+  const t=document.getElementById("ev_texto").value.trim();
+  if(!t){toast("Escribe qué se ha hecho","err");return;}
+  const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);if(i<0)return;
+  const s=sesion();
+  A[i].evolucion=(A[i].evolucion||[]).concat([{id:uid("ev"),fecha:document.getElementById("ev_fecha").value||hoyISO(),
+    doctor:document.getElementById("ev_doctor").value,pieza:document.getElementById("ev_pieza").value.trim(),
+    texto:t,autor:(s&&s.nombre)||"Administrador",creado:Date.now()}]);
+  DB.setPacientes(A);
+  logAcc("Evolución añadida",(A[i].nombre||"")+" · "+t.slice(0,40));
+  document.getElementById("ev_texto").value="";document.getElementById("ev_pieza").value="";
+  renderEvolucion(A[i]);toast("Anotado en la historia clínica");
+}
+// ==================== Alertas médicas ====================
+// Claves críticas (rojo) y de aviso (ámbar) del cuestionario de salud
+const ALERTA_ROJA={a_metales:"Alergia a metales",a_latex:"ALERGIA AL LÁTEX",a_anestesicos:"ALERGIA A ANESTÉSICOS",
+  a_medicamentos:"Alergia a medicamentos",a_otros:"Alergia (otros)",e_corazon:"Problemas de corazón",
+  e_hemorragias:"Riesgo de hemorragia",e_tbc:"Enfermedad infecciosa",e_hepatitis:"Hepatitis / hígado",
+  e_epilepsia:"Epilepsia",embarazo:"POSIBLE EMBARAZO",e_diabetes:"Diabetes"};
+const ALERTA_AMBAR={e_hipertension:"Hipertensión",e_renal:"Problema renal",e_tiroides:"Tiroides",
+  e_hematomas:"Hematomas con facilidad",e_cicatriz:"Cicatriza mal",radio:"Radio/quimioterapia",
+  lactancia:"Lactancia",e_ulcera:"Úlcera / gastritis",bruxismo:"Bruxismo",apnea:"Apnea del sueño",
+  problema_dental:"Problema en tratamiento anterior",fumador:"Fumador"};
+function alertasPaciente(p){
+  if(!p)return [];
+  const out=[];
+  const c=p.cuestionario||{};const R=c.respuestas||{};const T=c.textos||{};
+  Object.keys(R).forEach(k=>{
+    if(R[k]!=="Sí")return;
+    const extra=T[k]?" ("+T[k]+")":"";
+    if(ALERTA_ROJA[k])out.push({n:2,t:ALERTA_ROJA[k]+extra});
+    else if(ALERTA_AMBAR[k])out.push({n:1,t:ALERTA_AMBAR[k]+extra});
+  });
+  (p.alertas||[]).forEach(a=>out.push({n:2,t:a}));
+  return out.sort((a,b)=>b.n-a.n);
+}
+function renderAlertas(p){
+  const cont=document.getElementById("f_alertas");if(!cont)return;
+  const A=alertasPaciente(p);
+  if(!A.length){cont.style.display="none";cont.innerHTML="";return;}
+  const rojas=A.filter(x=>x.n===2),ambar=A.filter(x=>x.n===1);
+  cont.style.display="block";
+  cont.innerHTML=`<div class="alertabox${rojas.length?" grave":""}">
+    <div class="cab"><span style="font-size:20px">${rojas.length?"⚠️":"ℹ️"}</span>
+      <b>${rojas.length?"ATENCIÓN · avisos médicos importantes":"Avisos médicos"}</b></div>
+    <div class="chips">${A.map(x=>`<span class="al ${x.n===2?"r":"a"}">${esc(x.t)}</span>`).join("")}</div>
+    ${rojas.length?'<div class="pie">Comprueba estos puntos antes de anestesiar o intervenir.</div>':""}
+  </div>`;
+}
+function tieneAlertaGrave(pid){
+  const p=DB.pacientes().find(x=>x.id===pid);
+  return alertasPaciente(p).some(a=>a.n===2);
+}
 // ==================== Fotos y radiografías ====================
 const MAX_FOTOS=12;
 function comprimeImagen(file,maxLado,calidad){
