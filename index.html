@@ -1479,7 +1479,6 @@ document.getElementById("fm_cerrar").addEventListener("click",()=>document.getEl
 document.getElementById("fm_limpiar").addEventListener("click",()=>{const cv=document.getElementById("fm_canvas");firmaCtx.fillStyle="#fff";firmaCtx.fillRect(0,0,cv.width,cv.height);});
 document.getElementById("fm_guardar").addEventListener("click",guardarConsentimiento);
 document.getElementById("ft_subir").addEventListener("click",subirFoto);
-initFirmaCanvas();poblarConsentTipos();
 document.getElementById("lg_actualizar").addEventListener("click",renderLog);
 document.getElementById("lg_limpiar").addEventListener("click",()=>{
   if(!confirm("¿Vaciar el registro de actividad? No se puede deshacer."))return;
@@ -2621,6 +2620,7 @@ function fechasPorDefecto(){
 // Avisar si se sale con cambios sin guardar en la ficha
 window.addEventListener("beforeunload",()=>{limpiarBorradores();});
 
+initFirmaCanvas();poblarConsentTipos();
 poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();limpiarBorradores();fechasPorDefecto();aplicarPermisos();initSync();
 </script>
 </body>
