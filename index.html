@@ -1401,12 +1401,12 @@ function jvBuscar(t){
     `🧾 Presupuestos: <b>${DB.presupuestos().filter(x=>x.pacienteId===p.id).length}</b>`]);
 }
 // ---- Localizar una cita por paciente (y fecha opcional) ----
-function jvBuscaCita(t){
+function jvBuscaCita(t,ignorarFecha){
   let nombre=(t.match(/(?:cita|citas)\s+(?:de|del|de la|a)\s+([a-záéíóúñ\s]{2,40}?)(?=\s+(?:el|para|al|ma[nñ]ana|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|a\s*las|\d)|$)/i)||[])[1]
     ||(t.match(/(?:cancela|anula|borra|confirma|mueve|cambia|pasa)\s+(?:la\s+)?(?:cita\s+)?(?:de|del|a)?\s*([a-záéíóúñ\s]{2,40}?)(?=\s+(?:el|para|al|ma[nñ]ana|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|a\s*las|\d)|$)/i)||[])[1];
   const p=jvPaciente(nombre||"");
   if(!p)return {err:`¿De qué paciente? Ejemplo: <b>cancela la cita de Ana López</b>`};
-  const f=jvFecha(t);
+  const f=ignorarFecha?null:jvFecha(t);
   let C=DB.citas().filter(c=>c.pacienteId===p.id&&c.estado!=="Cancelada");
   if(f)C=C.filter(c=>c.fecha===f);
   else C=C.filter(c=>c.fecha>=hoyISO());
@@ -1428,7 +1428,8 @@ function jvConfirmar(t){
   return `✅ Cita <b>confirmada</b>: ${esc(r.p.nombre)} · ${fechaBonita(r.c.fecha)} ${esc(r.c.hora||"")}.`;
 }
 function jvMover(t){
-  const r=jvBuscaCita(t);if(r.err)return r.err;
+  // la fecha del texto es el DESTINO, no la de la cita original
+  const r=jvBuscaCita(t,true);if(r.err)return r.err;
   const partes=t.split(/\b(?:al|para el|para|a la|a las)\b/);
   const destino=partes.length>1?partes.slice(1).join(" "):t;
   const f=jvFecha(destino)||jvFecha(t),h=jvHora(t);
