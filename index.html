@@ -1400,39 +1400,186 @@ function jvBuscar(t){
     `📅 Citas: <b>${cit.length}</b>${prox?` · próxima: ${fechaBonita(prox.fecha)} ${esc(prox.hora||"")}`:""}`,
     `🧾 Presupuestos: <b>${DB.presupuestos().filter(x=>x.pacienteId===p.id).length}</b>`]);
 }
+// ---- Localizar una cita por paciente (y fecha opcional) ----
+function jvBuscaCita(t){
+  let nombre=(t.match(/(?:cita|citas)\s+(?:de|del|de la|a)\s+([a-záéíóúñ\s]{2,40}?)(?=\s+(?:el|para|al|ma[nñ]ana|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|a\s*las|\d)|$)/i)||[])[1]
+    ||(t.match(/(?:cancela|anula|borra|confirma|mueve|cambia|pasa)\s+(?:la\s+)?(?:cita\s+)?(?:de|del|a)?\s*([a-záéíóúñ\s]{2,40}?)(?=\s+(?:el|para|al|ma[nñ]ana|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|a\s*las|\d)|$)/i)||[])[1];
+  const p=jvPaciente(nombre||"");
+  if(!p)return {err:`¿De qué paciente? Ejemplo: <b>cancela la cita de Ana López</b>`};
+  const f=jvFecha(t);
+  let C=DB.citas().filter(c=>c.pacienteId===p.id&&c.estado!=="Cancelada");
+  if(f)C=C.filter(c=>c.fecha===f);
+  else C=C.filter(c=>c.fecha>=hoyISO());
+  C.sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
+  if(!C.length)return {err:`<b>${esc(p.nombre)}</b> no tiene citas próximas${f?` el ${fechaBonita(f)}`:""}.`};
+  if(C.length>1&&!f)return {err:`<b>${esc(p.nombre)}</b> tiene <b>${C.length}</b> citas próximas. Dime cuál:`+jvLista(C.map(c=>`${fechaBonita(c.fecha)} · ${esc(c.hora||"")} · ${esc(c.doctor||"")}`))};
+  return {p,c:C[0]};
+}
+function jvCancelar(t){
+  const r=jvBuscaCita(t);if(r.err)return r.err;
+  const A=DB.citas();const i=A.findIndex(x=>x.id===r.c.id);
+  A[i].estado="Cancelada";DB.setCitas(A);
+  return `🚫 Cita <b>cancelada</b>: ${esc(r.p.nombre)} · ${fechaBonita(r.c.fecha)} ${esc(r.c.hora||"")}.\nEse hueco vuelve a quedar libre.`;
+}
+function jvConfirmar(t){
+  const r=jvBuscaCita(t);if(r.err)return r.err;
+  const A=DB.citas();const i=A.findIndex(x=>x.id===r.c.id);
+  A[i].estado="Confirmada";DB.setCitas(A);
+  return `✅ Cita <b>confirmada</b>: ${esc(r.p.nombre)} · ${fechaBonita(r.c.fecha)} ${esc(r.c.hora||"")}.`;
+}
+function jvMover(t){
+  const r=jvBuscaCita(t);if(r.err)return r.err;
+  const partes=t.split(/\b(?:al|para el|para|a la|a las)\b/);
+  const destino=partes.length>1?partes.slice(1).join(" "):t;
+  const f=jvFecha(destino)||jvFecha(t),h=jvHora(t);
+  if(!f&&!h)return `¿A cuándo la muevo? Ejemplo: <b>mueve la cita de ${esc(r.p.nombre)} al jueves a las 12</b>`;
+  const A=DB.citas();const i=A.findIndex(x=>x.id===r.c.id);
+  const antes=`${fechaBonita(A[i].fecha)} ${A[i].hora||""}`;
+  if(f)A[i].fecha=f; if(h)A[i].hora=h;
+  if(A[i].doctor&&A[i].hora){const s=slotsDia(A[i].doctor,A[i].fecha);
+    if(s&&s.length){const oc=s.find(x=>x.hora===A[i].hora&&x.ocupada&&x.hora!==r.c.hora);
+      if(oc)return `⚠️ <b>${esc(A[i].doctor)}</b> ya tiene ocupada esa hora. No he movido la cita.`;}}
+  DB.setCitas(A);
+  return `📅 Cita movida: <b>${esc(r.p.nombre)}</b>\nAntes: ${antes}\nAhora: <b>${fechaBonita(A[i].fecha)} ${esc(A[i].hora||"")}</b>`;
+}
+function jvAgendaDoctor(t){
+  const doc=jvDoctor(t);if(!doc)return null;
+  const f=jvFecha(t)||hoyISO();
+  const C=DB.citas().filter(c=>c.doctor===doc&&c.fecha===f&&c.estado!=="Cancelada").sort((a,b)=>(a.hora||"").localeCompare(b.hora||""));
+  if(!C.length)return `<b>${esc(doc)}</b> no tiene citas el ${fechaBonita(f)}.`;
+  return `👨‍⚕️ <b>${esc(doc)}</b> · ${fechaBonita(f)} · <b>${C.length}</b> cita${C.length>1?"s":""}:`+jvLista(C.map(c=>{
+    const p=DB.pacientes().find(x=>x.id===c.pacienteId);
+    return `🕐 <b>${esc(c.hora||"—")}</b> · ${esc((p&&p.nombre)||c.pacienteNombre||"—")}${c.motivo?" · "+esc(c.motivo):""} ${c.estado==="Confirmada"?"✅":""}`;}));
+}
+function jvSemana(){
+  const d=new Date();const ini=hoyISO();const fin=new Date();fin.setDate(fin.getDate()+7);
+  const C=DB.citas().filter(c=>c.fecha>=ini&&c.fecha<=isoDe(fin)&&c.estado!=="Cancelada").sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
+  if(!C.length)return "No hay citas en los próximos 7 días.";
+  const porDia={};C.forEach(c=>{(porDia[c.fecha]=porDia[c.fecha]||[]).push(c);});
+  return `📆 <b>${C.length}</b> citas en los próximos 7 días:`+jvLista(Object.keys(porDia).sort().map(f=>`<b>${fechaBonita(f)}</b>: ${porDia[f].length} cita${porDia[f].length>1?"s":""} (${porDia[f].map(c=>esc(c.hora||"")).join(", ")})`));
+}
+function jvNuevos(){
+  const P=DB.pacientes().filter(p=>p.autoregistro);
+  if(!P.length)return "No hay pacientes nuevos registrados por el QR.";
+  return `🆕 <b>${P.length}</b> paciente${P.length>1?"s":""} registrado${P.length>1?"s":""} por el QR:`+jvLista(P.map(p=>{
+    const c=(p.cuestionario&&p.cuestionario.respuestas)?Object.values(p.cuestionario.respuestas).filter(v=>v==="Sí").length:0;
+    return `${esc(p.nombre||"—")} · 📞 ${esc(p.telefono||"—")}${c?` · ⚠️ ${c} avisos médicos`:""}`;}));
+}
+function jvContacto(t){
+  let nombre=(t.match(/(?:tel[eé]fono|tlf|m[oó]vil|llama(?:r)?|escr[ií]bele|whatsapp|contacto)\s*(?:de|a|al)?\s+([a-záéíóúñ\s]{2,40})/i)||[])[1];
+  const p=jvPaciente(nombre||"");
+  if(!p)return `¿A qué paciente? Ejemplo: <b>teléfono de Ana López</b>`;
+  const t2=(p.telefono||p.movil||"").replace(/\D/g,"");
+  if(!t2)return `<b>${esc(p.nombre)}</b> no tiene teléfono en la ficha.`;
+  const w=t2.length===9?"34"+t2:t2;
+  return `📞 <b>${esc(p.nombre)}</b>: ${esc(p.telefono||p.movil)}\n<a href="tel:${esc(p.telefono||p.movil)}" style="color:var(--primary-d);font-weight:700">Llamar</a> · <a href="https://wa.me/${w}" target="_blank" rel="noopener" style="color:#25d366;font-weight:700">Escribir por WhatsApp</a>`;
+}
+function jvPresuPendientes(){
+  const PR=DB.presupuestos().filter(x=>!/acept/i.test(x.estado||"")||/no acept/i.test(x.estado||""));
+  if(!PR.length)return "No hay presupuestos pendientes de respuesta ✅";
+  const tot=PR.reduce((s,x)=>s+(parseFloat(String(x.importe_venta||x.importe_presupuestado||0).replace(",","."))||0),0);
+  return `🧾 <b>${PR.length}</b> presupuesto${PR.length>1?"s":""} sin aceptar (<b>${Math.round(tot)}€</b> en juego):`+jvLista(PR.map(x=>{
+    const p=DB.pacientes().find(y=>y.id===x.pacienteId);
+    return `${esc((p&&p.nombre)||"—")} · ${esc(x.importe_venta||x.importe_presupuestado||"—")}€ · ${esc(x.estado||"Pendiente")}`;}));
+}
+function jvCaja(t){
+  const f=jvFecha(t)||hoyISO();
+  const PG=DB.pagos().filter(p=>p.fecha===f);
+  const tot=PG.reduce((s,x)=>s+(parseFloat(x.importe)||0),0);
+  if(!PG.length)return `No hay cobros registrados el ${fechaBonita(f)}.`;
+  return `💵 <b>Caja del ${fechaBonita(f)}</b>: <b>${Math.round(tot)}€</b> en ${PG.length} cobro${PG.length>1?"s":""}`+jvLista(PG.map(x=>{
+    const p=DB.pacientes().find(y=>y.id===x.pacienteId);
+    return `${esc((p&&p.nombre)||"—")} · <b>${x.importe}€</b> · ${esc(x.forma||"")}`;}));
+}
+function jvSinConfirmar(){
+  const C=DB.citas().filter(c=>c.fecha>=hoyISO()&&c.estado!=="Confirmada"&&c.estado!=="Cancelada").sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
+  if(!C.length)return "Todas las citas próximas están confirmadas ✅";
+  return `⚠️ <b>${C.length}</b> cita${C.length>1?"s":""} sin confirmar:`+jvLista(C.map(c=>{
+    const p=DB.pacientes().find(x=>x.id===c.pacienteId);
+    return `${fechaBonita(c.fecha)} ${esc(c.hora||"")} · ${esc((p&&p.nombre)||"—")} · ${esc(c.doctor||"")}`;}));
+}
+function jvCumples(t){
+  const P=DB.pacientes().filter(p=>p.nacimiento);
+  const hoyD=new Date();const mes=hoyD.getMonth()+1,dia=hoyD.getDate();
+  const deHoy=/\bhoy\b/.test(t);
+  const L=P.filter(p=>{const m=p.nacimiento.split("-");return deHoy?(Number(m[1])===mes&&Number(m[2])===dia):Number(m[1])===mes;});
+  if(!L.length)return deHoy?"Hoy no cumple años ningún paciente.":"Ningún paciente cumple años este mes.";
+  return `🎂 <b>${L.length}</b> cumpleaños ${deHoy?"hoy":"este mes"}:`+jvLista(L.map(p=>{
+    const d=p.nacimiento.split("-");const edad=hoyD.getFullYear()-Number(d[0]);
+    return `${esc(p.nombre)} · ${d[2]}/${d[1]} · ${edad} años · 📞 ${esc(p.telefono||"—")}`;}));
+}
+function jvNota(t){
+  const m=t.match(/(?:apunta|anota|nota|a[nñ]ade nota)\s+(?:en la ficha de|en|a|de|para)?\s*([a-záéíóúñ\s]{2,40}?)\s+(?:que|:)\s+(.+)$/i);
+  if(!m)return `Dime así: <b>apunta en la ficha de Ana que es alérgica a la penicilina</b>`;
+  const p=jvPaciente(m[1]);
+  if(!p)return `No encuentro a <b>${esc((m[1]||"").trim())}</b>.`;
+  const A=DB.pacientes();const i=A.findIndex(x=>x.id===p.id);
+  const fecha=new Date().toLocaleDateString("es-ES");
+  A[i].notas=((A[i].notas||"")+`\n[${fecha}] ${m[2].trim()}`).trim();
+  DB.setPacientes(A);
+  return `📝 Anotado en la ficha de <b>${esc(p.nombre)}</b>:\n"${esc(m[2].trim())}"`;
+}
 const JV_AYUDA=`Puedo ayudarte con esto (escríbelo con normalidad):
 
-📅 <b>Consultar</b>
+📅 <b>Agenda</b>
 · citas de hoy / de mañana / del 25/07
+· citas de esta semana
+· qué tiene Javier mañana
 · huecos de Javier mañana
+· citas sin confirmar
+
+💰 <b>Dinero</b>
 · quién me debe dinero
 · cuánto he facturado
-· cómo va el día
-· a quién hay que avisar
-· busca a Ana López
+· caja de hoy
+· presupuestos sin aceptar
 
-✍️ <b>Ordenar</b>
+👥 <b>Pacientes</b>
+· busca a Ana López
+· teléfono de Ana López
+· pacientes nuevos (los del QR)
+· cumpleaños de este mes
+· a quién hay que avisar
+
+✍️ <b>Órdenes</b>
 · agenda a Ana López mañana a las 10 con Javier
+· cancela la cita de Ana López
+· confirma la cita de Ana López
+· mueve la cita de Ana al jueves a las 12
 · crea paciente Luis Pérez teléfono 600111222
-· registra un pago de 150 de Ana López`;
+· registra un pago de 150 de Ana López
+· apunta en la ficha de Ana que es alérgica`;
 function jarvisResponder(txt){
   const t=norm(txt);
   if(!t)return "Dime algo 🙂";
   if(/^(hola|buenas|hey|jarvis)\b/.test(t)&&t.length<25)return `Hola 👋 Soy Jarvis. ${jvResumen()}\n\nPregúntame lo que quieras o escribe <b>ayuda</b>.`;
   if(/ayuda|qu[eé] puedes|opciones|comandos/.test(t))return JV_AYUDA;
-  // órdenes primero (modifican datos)
+  // ---- ÓRDENES que modifican datos (van primero) ----
+  if(/\b(apunta|anota|a[nñ]ade nota|nota)\b.*\b(ficha|que|:)/.test(t))return jvNota(t);
+  if(/\b(cancela|anula|quita|elimina|borra)\b.*\bcita/.test(t))return jvCancelar(t);
+  if(/\bconfirma\b/.test(t))return jvConfirmar(t);
+  if(/\b(mueve|cambia|pasa|traslada|aplaza|retrasa|adelanta)\b.*\bcita/.test(t))return jvMover(t);
   if(/\bagend|\bp[oó]n(le)?\s+cita|\bcitar?\b.*\b(ma[nñ]ana|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\d)/.test(t))return jvAgendar(t);
   if(/\b(crea|crear|nuevo|nueva|a[nñ]ade)\b.*\b(paciente|ficha)\b|^crea\s+[a-z]/.test(t))return jvCrearPaciente(t);
-  if(/\b(registra|apunta|anota|cobra|cobro)\b.*\b(pago|€|eur|\d)/.test(t))return jvPago(t);
-  // consultas
+  if(/\b(registra|cobra|cobro|apunta)\b.*\b(pago|€|eur|\d)/.test(t))return jvPago(t);
+  // ---- CONSULTAS ----
   if(/hueco|libre|disponib/.test(t))return jvHuecos(t);
+  if(/sin confirmar|no confirmad|por confirmar/.test(t))return jvSinConfirmar();
+  if(/cumple/.test(t))return jvCumples(t);
+  if(/pacientes? nuevos?|del qr|se (?:han )?registrad|autoregistr/.test(t))return jvNuevos();
+  if(/tel[eé]fono|tlf|m[oó]vil|llama|escr[ií]bele|contacto/.test(t))return jvContacto(t);
+  if(/presupuesto/.test(t)&&/sin acept|pendiente|no acept|seguimiento/.test(t))return jvPresuPendientes();
+  if(/caja|cobrad|he cobrado|ingresos? de hoy/.test(t))return jvCaja(t);
+  if(/semana/.test(t))return jvSemana();
   if(/debe|deben|pendiente|saldo|moroso/.test(t))return jvSaldos();
-  if(/factur|ingres|cobrad|dinero|caja|econom/.test(t))return jvDinero();
+  if(/factur|ingres|dinero|econom|balance/.test(t))return jvDinero();
   if(/avisar|recordator|whatsapp/.test(t))return jvRecordatorios();
   if(/resumen|c[oó]mo va|qu[eé] tal|d[ií]a de hoy|situaci/.test(t))return jvResumen();
-  if(/busca|ficha de|datos de|informacion de/.test(t))return jvBuscar(t);
+  if(/busca|ficha de|datos de|informacion de|qui[eé]n es/.test(t))return jvBuscar(t);
+  // agenda de un doctor concreto ("qué tiene Javier mañana", "agenda de Marta")
+  if(/(qu[eé] tiene|agenda de|citas? de|tiene)/.test(t)&&jvDoctor(t)){const r=jvAgendaDoctor(t);if(r)return r;}
   if(/cita/.test(t)){const f=jvFecha(t)||hoyISO();return jvCitasDe(f);}
-  if(/cuantos pacientes|numero de pacientes|total de pacientes/.test(t))return `Tienes <b>${DB.pacientes().length}</b> pacientes registrados.`;
+  if(/cu[aá]ntos pacientes|n[uú]mero de pacientes|total de pacientes/.test(t))return `Tienes <b>${DB.pacientes().length}</b> pacientes registrados.`;
   const f=jvFecha(t);if(f)return jvCitasDe(f);
   return `No he entendido eso 🤔\n\n${JV_AYUDA}`;
 }
@@ -1452,7 +1599,7 @@ function jvIniciar(){
   if(!c.dataset.ini){c.dataset.ini="1";
     jvPinta(`Hola 👋 Soy <b>Jarvis</b>, tu asistente privado.\n\n${jvResumen()}\n\nEscribe <b>ayuda</b> para ver todo lo que puedo hacer.`,"jv");
   }
-  const sug=["Citas de hoy","Citas de mañana","¿Quién me debe dinero?","¿A quién hay que avisar?","Cómo va el día","Ayuda"];
+  const sug=["Citas de hoy","Citas de esta semana","Citas sin confirmar","¿Quién me debe dinero?","Caja de hoy","Presupuestos sin aceptar","Pacientes nuevos","¿A quién hay que avisar?","Cómo va el día","Ayuda"];
   document.getElementById("jvSug").innerHTML=sug.map(s=>`<button data-sug="${esc(s)}">${esc(s)}</button>`).join("");
   document.querySelectorAll("#jvSug [data-sug]").forEach(b=>b.addEventListener("click",()=>{
     document.getElementById("jvTexto").value=b.dataset.sug;jvEnviar();}));
