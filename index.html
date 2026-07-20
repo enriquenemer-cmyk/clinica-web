@@ -613,6 +613,21 @@
     </div>
 
     <div class="card">
+      <h2>🦷 Periodontograma</h2>
+      <div class="sub">Sondaje de 6 puntos por diente. Los índices se calculan solos y puedes comparar con sondajes anteriores.</div>
+      <div class="kpi" id="peKpi"></div>
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted);font-weight:600">Fecha</label>
+        <input id="pe_fecha" type="date" style="width:auto"/>
+        <label style="font-size:13px;color:var(--muted);font-weight:600">Ver sondaje</label>
+        <select id="pe_hist" style="width:auto;min-width:150px"></select>
+        <button class="main" id="pe_guardar">💾 Guardar sondaje</button>
+        <button class="ghost" id="pe_nuevo">➕ Nuevo</button>
+      </div>
+      <div id="peLista"></div>
+    </div>
+
+    <div class="card">
       <h2>💳 Plan de pago a plazos</h2>
       <div class="sub">Divide un tratamiento en cuotas y ve marcándolas según cobras. Te avisa de las vencidas.</div>
       <div class="kpi" id="ppKpi"></div>
@@ -1467,7 +1482,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderPlan(p);renderPlanPago(p);renderRecetas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
+  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);perioActual=null;document.getElementById("pe_fecha").value=hoyISO();renderPerio(p);renderPlan(p);renderPlanPago(p);renderRecetas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1802,6 +1817,20 @@ document.getElementById("fb_imprimir").addEventListener("click",imprimirFormular
 document.getElementById("dz_borrar").addEventListener("click",borrarTodosLosDatos);
 document.getElementById("rc_add").addEventListener("click",anadirReceta);
 document.getElementById("pp_crear").addEventListener("click",crearPlanPago);
+document.getElementById("pe_guardar").addEventListener("click",guardarPerio);
+document.getElementById("pe_nuevo").addEventListener("click",()=>{
+  perioActual={fecha:hoyISO(),datos:{},ausentes:[]};
+  document.getElementById("pe_fecha").value=hoyISO();
+  document.getElementById("pe_hist").value="";
+  renderPerio(DB.pacientes().find(x=>x.id===fichaId));toast("Sondaje nuevo en blanco","info");
+});
+document.getElementById("pe_hist").addEventListener("change",e=>{
+  const p=DB.pacientes().find(x=>x.id===fichaId);if(!p)return;
+  const i=e.target.value;
+  perioActual=i===""?{fecha:hoyISO(),datos:{},ausentes:[]}:JSON.parse(JSON.stringify((p.perio||[])[Number(i)]));
+  document.getElementById("pe_fecha").value=perioActual.fecha||hoyISO();
+  renderPerio(p);
+});
 document.getElementById("co_guardar").addEventListener("click",()=>{
   const C={};document.querySelectorAll("[data-com]").forEach(i=>{const v=Number(i.value)||0;if(v>0)C[i.dataset.com]=v;});
   setCfg({comisiones:C});toast("Comisiones guardadas");
@@ -1924,6 +1953,103 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Periodontograma ====================
+const PERIO_SUP=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+const PERIO_INF=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+const PERIO_SITIOS=[["DV","Distovestibular"],["V","Vestibular"],["MV","Mesiovestibular"],
+                    ["DP","Distopalatino/lingual"],["P","Palatino/lingual"],["MP","Mesiopalatino/lingual"]];
+let perioActual=null; // {fecha, datos:{pieza:{sitio:{p:mm,s:sangra}}}, ausentes:[]}
+function colorPerio(mm){
+  if(mm==null||mm==="")return "";
+  const v=Number(mm);
+  if(v<=3)return "background:var(--okbg);color:var(--ok)";
+  if(v<=5)return "background:var(--warnbg);color:var(--warn)";
+  return "background:var(--dangerbg);color:var(--danger);font-weight:800";
+}
+function indicesPerio(d){
+  let n=0,sang=0,s4=0,s6=0,suma=0;
+  Object.values(d.datos||{}).forEach(pieza=>Object.values(pieza).forEach(s=>{
+    if(s.p==null||s.p==="")return;
+    const v=Number(s.p);n++;suma+=v;
+    if(v>=4)s4++;if(v>=6)s6++;if(s.s)sang++;
+  }));
+  return {sitios:n,sangrado:n?Math.round(sang/n*100):0,s4,s6,media:n?(suma/n).toFixed(1):"—"};
+}
+function tablaPerioArcada(piezas,d){
+  const cab=piezas.map(p=>`<th style="padding:3px;font-size:10px;text-align:center;${(d.ausentes||[]).includes(p)?"opacity:.35;text-decoration:line-through":""}">
+    <span data-perioaus="${p}" style="cursor:pointer" title="Marcar/desmarcar como ausente">${p}</span></th>`).join("");
+  const filas=PERIO_SITIOS.map(([k,nombre])=>`<tr>
+    <td style="font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;padding-right:6px" title="${nombre}">${k}</td>
+    ${piezas.map(pz=>{
+      const aus=(d.ausentes||[]).includes(pz);
+      const s=((d.datos||{})[pz]||{})[k]||{};
+      if(aus)return '<td style="background:var(--gris)"></td>';
+      return `<td style="padding:1px">
+        <input data-perio="${pz}|${k}" value="${s.p!=null?s.p:""}" inputmode="numeric" maxlength="2"
+          style="width:30px;padding:3px 0;text-align:center;font-size:11.5px;border-radius:5px;${colorPerio(s.p)}"/>
+        <div data-sangra="${pz}|${k}" title="Marcar sangrado" style="height:5px;margin-top:1px;border-radius:3px;cursor:pointer;background:${s.s?"var(--danger)":"var(--borde)"}"></div>
+      </td>`;}).join("")}</tr>`).join("");
+  return `<div class="tablewrap" style="margin-bottom:12px"><table style="min-width:0"><thead><tr><th></th>${cab}</tr></thead><tbody>${filas}</tbody></table></div>`;
+}
+function renderPerio(p){
+  const cont=document.getElementById("peLista");if(!cont)return;
+  const hist=(p&&p.perio)||[];
+  const sel=document.getElementById("pe_hist");
+  if(sel){sel.innerHTML='<option value="">— Nuevo sondaje —</option>'+hist.map((h,i)=>`<option value="${i}">${esc(fechaBonita(h.fecha))}</option>`).join("");}
+  if(!perioActual)perioActual={fecha:hoyISO(),datos:{},ausentes:[]};
+  const d=perioActual;
+  const idx=indicesPerio(d);
+  document.getElementById("peKpi").innerHTML=`
+    <div class="b"><div class="n" style="color:${idx.sangrado>25?"var(--danger)":idx.sangrado>10?"var(--warn)":"var(--ok)"}">${idx.sangrado}%</div><div class="t">Sangrado al sondaje</div></div>
+    <div class="b"><div class="n">${idx.media}</div><div class="t">Profundidad media (mm)</div></div>
+    <div class="b"><div class="n" style="color:${idx.s4?"var(--warn)":"var(--ok)"}">${idx.s4}</div><div class="t">Puntos ≥ 4 mm</div></div>
+    <div class="b"><div class="n" style="color:${idx.s6?"var(--danger)":"var(--ok)"}">${idx.s6}</div><div class="t">Puntos ≥ 6 mm</div></div>`;
+  cont.innerHTML=`<div style="font-weight:700;font-size:12px;margin-bottom:5px;color:var(--muted)">ARCADA SUPERIOR</div>`+
+    tablaPerioArcada(PERIO_SUP,d)+
+    `<div style="font-weight:700;font-size:12px;margin:14px 0 5px;color:var(--muted)">ARCADA INFERIOR</div>`+
+    tablaPerioArcada(PERIO_INF,d)+
+    `<div class="hint">Escribe los milímetros. La <b>barra de debajo</b> marca sangrado (pulsa para activarla). Pulsa el <b>número del diente</b> para marcarlo como ausente.</div>`;
+  // eventos
+  cont.querySelectorAll("[data-perio]").forEach(i=>i.addEventListener("input",()=>{
+    const[pz,k]=i.dataset.perio.split("|");
+    const v=i.value.replace(/\D/g,"").slice(0,2);i.value=v;
+    d.datos[pz]=d.datos[pz]||{};d.datos[pz][k]=d.datos[pz][k]||{};
+    d.datos[pz][k].p=v===""?null:Number(v);
+    i.style.cssText=`width:30px;padding:3px 0;text-align:center;font-size:11.5px;border-radius:5px;${colorPerio(v)}`;
+    document.getElementById("peKpi").innerHTML="";const x=indicesPerio(d);
+    document.getElementById("peKpi").innerHTML=`
+      <div class="b"><div class="n" style="color:${x.sangrado>25?"var(--danger)":x.sangrado>10?"var(--warn)":"var(--ok)"}">${x.sangrado}%</div><div class="t">Sangrado al sondaje</div></div>
+      <div class="b"><div class="n">${x.media}</div><div class="t">Profundidad media (mm)</div></div>
+      <div class="b"><div class="n" style="color:${x.s4?"var(--warn)":"var(--ok)"}">${x.s4}</div><div class="t">Puntos ≥ 4 mm</div></div>
+      <div class="b"><div class="n" style="color:${x.s6?"var(--danger)":"var(--ok)"}">${x.s6}</div><div class="t">Puntos ≥ 6 mm</div></div>`;
+  }));
+  cont.querySelectorAll("[data-sangra]").forEach(b=>b.addEventListener("click",()=>{
+    const[pz,k]=b.dataset.sangra.split("|");
+    d.datos[pz]=d.datos[pz]||{};d.datos[pz][k]=d.datos[pz][k]||{};
+    d.datos[pz][k].s=!d.datos[pz][k].s;
+    b.style.background=d.datos[pz][k].s?"var(--danger)":"var(--borde)";
+    renderPerio(DB.pacientes().find(x=>x.id===fichaId));
+  }));
+  cont.querySelectorAll("[data-perioaus]").forEach(t=>t.addEventListener("click",()=>{
+    const pz=Number(t.dataset.perioaus);
+    d.ausentes=d.ausentes||[];
+    d.ausentes=d.ausentes.includes(pz)?d.ausentes.filter(x=>x!==pz):d.ausentes.concat([pz]);
+    renderPerio(DB.pacientes().find(x=>x.id===fichaId));
+  }));
+}
+function guardarPerio(){
+  if(!fichaId||!perioActual)return;
+  const idx=indicesPerio(perioActual);
+  if(!idx.sitios)return toast("Rellena al menos un punto de sondaje","err");
+  const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);if(k<0)return;
+  perioActual.fecha=document.getElementById("pe_fecha").value||hoyISO();
+  perioActual.indices=idx;
+  A[k].perio=(A[k].perio||[]).filter(h=>h.fecha!==perioActual.fecha).concat([JSON.parse(JSON.stringify(perioActual))])
+    .sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  DB.setPacientes(A);
+  logAcc("Periodontograma guardado",(A[k].nombre||"")+" · sangrado "+idx.sangrado+"% · "+idx.s4+" puntos ≥4mm");
+  renderPerio(A[k]);toast("Periodontograma guardado");
+}
 // ==================== Citas recurrentes ====================
 function initRepetir(){
   const cada=document.getElementById("c_cada"),veces=document.getElementById("c_veces");
