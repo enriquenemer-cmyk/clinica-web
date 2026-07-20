@@ -797,6 +797,30 @@
     </div>
 
     <div class="card">
+      <h2>📥 Importar pacientes desde otro programa</h2>
+      <div class="sub">Exporta tus pacientes a Excel o CSV desde tu programa actual y tráelos aquí. Podrás revisar todo antes de guardar nada.</div>
+      <div class="toolbar">
+        <input type="file" id="im_file" accept=".csv,.txt,text/csv" style="max-width:250px"/>
+        <span class="hint">o pega directamente desde Excel 👇</span>
+      </div>
+      <textarea id="im_pegar" rows="4" placeholder="Copia las filas en Excel (con la fila de títulos) y pégalas aquí…"></textarea>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="ghost" id="im_leer">🔍 Leer y previsualizar</button>
+        <button class="ghost" id="im_limpiar">Empezar de nuevo</button>
+      </div>
+      <div id="imMapeo" style="display:none">
+        <div style="font-weight:700;font-size:13px;margin:16px 0 8px">1 · Dime qué columna es cada dato</div>
+        <div class="permgrid" id="imCampos"></div>
+        <div style="font-weight:700;font-size:13px;margin:18px 0 8px">2 · Comprueba que se ve bien</div>
+        <div id="imPreview"></div>
+        <div class="toolbar" style="margin-top:14px">
+          <button class="main" id="im_importar">✅ Importar pacientes</button>
+          <span class="hint" id="im_info"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>⏱️ Duración de los tratamientos</h2>
       <div class="sub">Cada tratamiento ocupa lo que necesita. Al elegir el motivo de la cita, la agenda reserva ese tiempo.</div>
       <div class="toolbar">
@@ -1632,6 +1656,21 @@ document.getElementById("ad_guardar").addEventListener("click",async()=>{
   document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
   toast("Contraseña cambiada. Úsala la próxima vez que entres.");
 });
+document.getElementById("im_leer").addEventListener("click",()=>{
+  const t=document.getElementById("im_pegar").value.trim();
+  if(t)return leerImportacion(t);
+  const f=document.getElementById("im_file").files&&document.getElementById("im_file").files[0];
+  if(!f){toast("Elige un archivo o pega los datos","err");return;}
+  const fr=new FileReader();
+  fr.onload=()=>leerImportacion(fr.result);
+  fr.onerror=()=>toast("No pude leer el archivo","err");
+  fr.readAsText(f,"utf-8");
+});
+document.getElementById("im_limpiar").addEventListener("click",()=>{
+  impFilas=null;document.getElementById("im_pegar").value="";document.getElementById("im_file").value="";
+  document.getElementById("imMapeo").style.display="none";
+});
+document.getElementById("im_importar").addEventListener("click",importarPacientes);
 document.getElementById("gs_add").addEventListener("click",()=>{
   const imp=Number(document.getElementById("gs_importe").value);
   const con=document.getElementById("gs_concepto").value.trim();
@@ -1724,6 +1763,104 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Importar pacientes ====================
+const CAMPOS_IMP=[
+  {k:"nombre",n:"Nombre y apellidos",req:true,pistas:["nombre","apellido","paciente","titular","razon"]},
+  {k:"dni",n:"DNI / NIE",pistas:["dni","nie","documento","identidad","nif"]},
+  {k:"telefono",n:"Teléfono",pistas:["telefono","tlf","fijo","contacto"]},
+  {k:"movil",n:"Móvil",pistas:["movil","celular","whatsapp"]},
+  {k:"email",n:"E-mail",pistas:["email","correo","mail"]},
+  {k:"nacimiento",n:"Fecha de nacimiento",pistas:["nacimiento","nacio","fecha nac","edad"]},
+  {k:"direccion",n:"Dirección",pistas:["direccion","domicilio","calle"]},
+  {k:"cp",n:"Código postal",pistas:["cp","postal","codigo"]},
+  {k:"cobertura",n:"Cobertura / seguro",pistas:["cobertura","seguro","mutua","aseguradora","poliza"]},
+  {k:"notas",n:"Notas",pistas:["nota","observacion","comentario"]}
+];
+let impFilas=null,impCabecera=null;
+function parseTabla(texto){
+  const t=String(texto||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n").trim();
+  if(!t)return null;
+  const primera=t.split("\n")[0];
+  const sep=primera.includes("\t")?"\t":(primera.split(";").length>primera.split(",").length?";":",");
+  const filas=[];let campo="",fila=[],dentro=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(c==='"'){ if(dentro&&t[i+1]==='"'){campo+='"';i++;} else dentro=!dentro; }
+    else if(c===sep&&!dentro){fila.push(campo);campo="";}
+    else if(c==="\n"&&!dentro){fila.push(campo);filas.push(fila);fila=[];campo="";}
+    else campo+=c;
+  }
+  fila.push(campo);filas.push(fila);
+  return filas.filter(f=>f.some(x=>String(x).trim()!==""));
+}
+function autoMapear(cab){
+  const m={};
+  CAMPOS_IMP.forEach(c=>{
+    const idx=cab.findIndex(h=>{const n=norm(h);return c.pistas.some(p=>n.includes(p));});
+    if(idx>=0&&!Object.values(m).includes(idx))m[c.k]=idx;
+  });
+  return m;
+}
+function leerImportacion(texto){
+  const filas=parseTabla(texto);
+  if(!filas||filas.length<2){toast("No he podido leer filas. Incluye la fila de títulos.","err");return;}
+  impCabecera=filas[0].map(x=>String(x).trim());
+  impFilas=filas.slice(1);
+  const mapa=autoMapear(impCabecera);
+  document.getElementById("imCampos").innerHTML=CAMPOS_IMP.map(c=>`
+    <label class="permchk" style="flex-direction:column;align-items:flex-start;gap:5px;cursor:default">
+      <span style="font-size:12px;color:var(--muted)">${esc(c.n)}${c.req?' <b style="color:var(--danger)">*</b>':""}</span>
+      <select data-imp="${c.k}" style="width:100%">
+        <option value="">— ninguna —</option>
+        ${impCabecera.map((h,i)=>`<option value="${i}"${mapa[c.k]===i?" selected":""}>${esc(h||"columna "+(i+1))}</option>`).join("")}
+      </select></label>`).join("");
+  document.querySelectorAll("[data-imp]").forEach(s=>s.addEventListener("change",previewImportacion));
+  document.getElementById("imMapeo").style.display="block";
+  previewImportacion();
+  toast(`Leídas ${impFilas.length} filas`,"info");
+}
+function filaAPaciente(f){
+  const p={};
+  document.querySelectorAll("[data-imp]").forEach(s=>{
+    if(s.value==="")return;
+    const v=String(f[Number(s.value)]||"").trim();
+    if(v)p[s.dataset.imp]=v;
+  });
+  if(p.nacimiento){                       // normalizar dd/mm/aaaa -> aaaa-mm-dd
+    const m=p.nacimiento.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if(m){const a=m[3].length===2?"19"+m[3]:m[3];p.nacimiento=`${a}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;}
+  }
+  ["telefono","movil"].forEach(k=>{if(p[k])p[k]=p[k].replace(/[^\d+]/g,"");});
+  return p;
+}
+function previewImportacion(){
+  if(!impFilas)return;
+  const muestra=impFilas.slice(0,5).map(filaAPaciente);
+  const cols=["nombre","dni","telefono","movil","email","cobertura"];
+  const validos=impFilas.map(filaAPaciente).filter(p=>p.nombre);
+  const sinNombre=impFilas.length-validos.length;
+  const ya=DB.pacientes();
+  const dup=validos.filter(p=>ya.some(x=>(p.dni&&x.dni&&norm(x.dni)===norm(p.dni))||(p.telefono&&x.telefono&&x.telefono.replace(/\D/g,"")===p.telefono.replace(/\D/g,""))));
+  document.getElementById("imPreview").innerHTML=`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead>
+    <tbody>${muestra.map(p=>`<tr>${cols.map(c=>`<td>${esc(p[c]||"—")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  document.getElementById("im_info").innerHTML=
+    `<b>${validos.length}</b> pacientes a importar${sinNombre?` · <span style="color:var(--warn)">${sinNombre} filas sin nombre se omitirán</span>`:""}${dup.length?` · <span style="color:var(--danger)">${dup.length} ya existen (se omitirán)</span>`:""}`;
+  window.__impValidos=validos;
+}
+function importarPacientes(){
+  const V=window.__impValidos||[];
+  if(!V.length){toast("No hay pacientes válidos para importar","err");return;}
+  const ya=DB.pacientes();
+  const nuevos=V.filter(p=>!ya.some(x=>(p.dni&&x.dni&&norm(x.dni)===norm(p.dni))||(p.telefono&&x.telefono&&x.telefono.replace(/\D/g,"")===p.telefono.replace(/\D/g,""))));
+  if(!nuevos.length){toast("Todos esos pacientes ya estaban","err");return;}
+  if(!confirm(`Se van a añadir ${nuevos.length} pacientes.\n\n¿Continuar?`))return;
+  const A=ya.concat(nuevos.map(p=>Object.assign({id:uid("pac"),creado:Date.now(),importado:true},p)));
+  DB.setPacientes(A);
+  logAcc("Pacientes importados",nuevos.length+" pacientes");
+  toast(`✅ ${nuevos.length} pacientes importados`);
+  document.getElementById("imMapeo").style.display="none";
+  document.getElementById("im_pegar").value="";impFilas=null;
+}
 // ==================== Gastos y cierre de caja ====================
 const CAT_GASTO=["Material","Laboratorio","Alquiler","Nóminas","Suministros","Marketing","Impuestos","Otros"];
 function gastos(){return (cfg().gastos||[]);}
