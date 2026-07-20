@@ -524,6 +524,42 @@
       <h2>📋 Cuestionario de salud <span class="pill v" style="vertical-align:middle">autorregistro</span></h2>
       <div id="f_cuest"></div>
     </div>
+
+    <div class="card">
+      <h2>✍️ Consentimientos firmados</h2>
+      <div class="sub">El paciente firma en la pantalla y queda guardado con su fecha. Puedes imprimirlo cuando quieras.</div>
+      <div class="toolbar">
+        <select id="cs_tipo" style="min-width:260px"></select>
+        <button class="main" id="cs_nuevo">✍️ Firmar consentimiento</button>
+      </div>
+      <div id="csLista"></div>
+    </div>
+
+    <div class="card">
+      <h2>📷 Fotos y radiografías</h2>
+      <div class="sub">Imágenes del paciente (antes/después, radiografías). Se comprimen solas para no ocupar.</div>
+      <div class="toolbar">
+        <input type="file" id="ft_file" accept="image/*" style="max-width:260px"/>
+        <input id="ft_nota" placeholder="Descripción (ej. antes del tratamiento)" style="min-width:230px"/>
+        <button class="main" id="ft_subir">⬆️ Añadir imagen</button>
+      </div>
+      <div id="ftLista"></div>
+    </div>
+  </div>
+
+  <div id="firmaModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.7);backdrop-filter:blur(4px);z-index:9998;align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--card);border-radius:16px;padding:24px;max-width:620px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.4)">
+      <h2 id="fm_titulo" style="margin:0 0 6px;font-size:17px">Consentimiento</h2>
+      <div id="fm_texto" style="font-size:12.5px;line-height:1.6;color:var(--muted);background:var(--gris);border:1px solid var(--borde);border-radius:11px;padding:14px;max-height:210px;overflow-y:auto;margin-bottom:14px;white-space:pre-wrap"></div>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Firma del paciente</label>
+      <div style="border:1.5px dashed var(--borde);border-radius:11px;background:#fff">
+        <canvas id="fm_canvas" style="width:100%;height:170px;display:block;touch-action:none;border-radius:11px"></canvas>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap">
+        <button class="ghost" id="fm_limpiar">🧽 Borrar firma</button>
+        <div style="display:flex;gap:8px"><button class="ghost" id="fm_cerrar">Cancelar</button><button class="main" id="fm_guardar">Guardar firmado</button></div>
+      </div>
+    </div>
   </div>
 
   <!-- ===================== LEER ===================== -->
@@ -1120,7 +1156,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);
+  renderOdontograma(p);renderCuestionario(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1438,6 +1474,12 @@ document.getElementById("ad_guardar").addEventListener("click",async()=>{
   document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
   toast("Contraseña cambiada. Úsala la próxima vez que entres.");
 });
+document.getElementById("cs_nuevo").addEventListener("click",abrirFirma);
+document.getElementById("fm_cerrar").addEventListener("click",()=>document.getElementById("firmaModal").style.display="none");
+document.getElementById("fm_limpiar").addEventListener("click",()=>{const cv=document.getElementById("fm_canvas");firmaCtx.fillStyle="#fff";firmaCtx.fillRect(0,0,cv.width,cv.height);});
+document.getElementById("fm_guardar").addEventListener("click",guardarConsentimiento);
+document.getElementById("ft_subir").addEventListener("click",subirFoto);
+initFirmaCanvas();poblarConsentTipos();
 document.getElementById("lg_actualizar").addEventListener("click",renderLog);
 document.getElementById("lg_limpiar").addEventListener("click",()=>{
   if(!confirm("¿Vaciar el registro de actividad? No se puede deshacer."))return;
@@ -1490,6 +1532,207 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Fotos y radiografías ====================
+const MAX_FOTOS=12;
+function comprimeImagen(file,maxLado,calidad){
+  return new Promise((ok,err)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>err(new Error("No se pudo leer el archivo"));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>err(new Error("El archivo no es una imagen válida"));
+      img.onload=()=>{
+        let{width:w,height:h}=img;
+        if(Math.max(w,h)>maxLado){const f=maxLado/Math.max(w,h);w=Math.round(w*f);h=Math.round(h*f);}
+        const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,w,h);cx.drawImage(img,0,0,w,h);
+        ok(cv.toDataURL("image/jpeg",calidad));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function subirFoto(){
+  if(!fichaId)return;
+  const inp=document.getElementById("ft_file");const f=inp.files&&inp.files[0];
+  if(!f){toast("Elige primero una imagen","err");return;}
+  const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);if(i<0)return;
+  if((A[i].fotos||[]).length>=MAX_FOTOS){toast(`Máximo ${MAX_FOTOS} imágenes por paciente`,"err");return;}
+  const btn=document.getElementById("ft_subir");btn.disabled=true;btn.textContent="Subiendo…";
+  try{
+    const dataUrl=await comprimeImagen(f,1400,.62);
+    const id=uid("img");
+    if(servidorOK){
+      const r=await fetch("/api/foto",{method:"POST",headers:{"content-type":"application/json",...authHeaders()},body:JSON.stringify({id,dataUrl})});
+      if(!r.ok)throw new Error("El servidor no pudo guardar la imagen");
+      A[i].fotos=(A[i].fotos||[]).concat([{id,fecha:hoyISO(),nota:document.getElementById("ft_nota").value.trim(),remota:true}]);
+    }else{
+      A[i].fotos=(A[i].fotos||[]).concat([{id,fecha:hoyISO(),nota:document.getElementById("ft_nota").value.trim(),data:dataUrl}]);
+    }
+    DB.setPacientes(A);
+    logAcc("Imagen añadida",(A[i].nombre||"")+" · "+(document.getElementById("ft_nota").value.trim()||"sin descripción"));
+    inp.value="";document.getElementById("ft_nota").value="";
+    renderFotos(A[i]);toast("Imagen guardada");
+  }catch(e){toast(e.message||"No se pudo subir la imagen","err");}
+  btn.disabled=false;btn.textContent="⬆️ Añadir imagen";
+}
+async function pintaImagen(el,fo){
+  if(fo.data){el.src=fo.data;return;}
+  try{
+    const r=await fetch("/api/foto?id="+encodeURIComponent(fo.id),{headers:authHeaders()});
+    if(!r.ok)throw 0;
+    const j=await r.json();el.src=j.dataUrl;
+  }catch{el.alt="No se pudo cargar";el.style.display="none";}
+}
+function renderFotos(p){
+  const cont=document.getElementById("ftLista");if(!cont)return;
+  const L=(p&&p.fotos)||[];
+  if(!L.length){cont.innerHTML='<div class="hint">Sin imágenes. Puedes añadir fotos del antes/después o radiografías.</div>';return;}
+  cont.innerHTML=`<div class="hint" style="margin-bottom:10px">${L.length} de ${MAX_FOTOS} imágenes</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">`+
+    L.slice().reverse().map(fo=>`<div style="border:1px solid var(--borde);border-radius:12px;overflow:hidden;background:var(--card)">
+      <img data-img="${fo.id}" style="width:100%;height:120px;object-fit:cover;display:block;background:var(--gris);cursor:zoom-in" alt="imagen"/>
+      <div style="padding:8px 10px"><div style="font-size:12px;font-weight:600">${esc(fo.nota||"Sin descripción")}</div>
+        <div class="hint" style="display:flex;justify-content:space-between;align-items:center">${esc(fechaBonita(fo.fecha))}
+        <button class="ghost" data-delimg="${fo.id}" style="padding:2px 7px;color:var(--danger)">🗑️</button></div></div>
+    </div>`).join("")+"</div>";
+  cont.querySelectorAll("[data-img]").forEach(el=>{
+    const fo=L.find(x=>x.id===el.dataset.img);pintaImagen(el,fo);
+    el.addEventListener("click",()=>{if(el.src)window.open(el.src,"_blank");});
+  });
+  cont.querySelectorAll("[data-delimg]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!confirm("¿Borrar esta imagen?"))return;
+    const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
+    const fo=(A[i].fotos||[]).find(x=>x.id===b.dataset.delimg);
+    if(fo&&fo.remota&&servidorOK){try{await fetch("/api/foto?id="+encodeURIComponent(fo.id),{method:"DELETE",headers:authHeaders()});}catch{}}
+    A[i].fotos=(A[i].fotos||[]).filter(x=>x.id!==b.dataset.delimg);
+    DB.setPacientes(A);logAcc("Imagen borrada","");renderFotos(A[i]);toast("Imagen borrada");
+  }));
+}
+// ==================== Consentimientos firmados ====================
+const CONSENT={
+ rgpd:{t:"Protección de datos (RGPD)",x:`Autorizo el tratamiento de mis datos personales y de salud por parte de la clínica, con la finalidad de prestarme asistencia odontológica, gestionar mi historia clínica y contactarme para citas y recordatorios.
+
+Los datos se conservarán durante los plazos legales y no se cederán a terceros salvo obligación legal o para la gestión de mi seguro dental.
+
+Puedo ejercer mis derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad dirigiéndome a la clínica.`},
+ general:{t:"Tratamiento odontológico general",x:`Se me ha informado del diagnóstico, del tratamiento propuesto, de sus alternativas, de los riesgos generales y de los cuidados posteriores, y he podido preguntar todas mis dudas.
+
+Entiendo que la odontología no es una ciencia exacta y que no puede garantizarse un resultado concreto, y que el éxito depende también de mi higiene y de acudir a las revisiones.
+
+Doy mi consentimiento para que se me realice el tratamiento indicado.`},
+ endodoncia:{t:"Endodoncia",x:`Se me ha explicado que la endodoncia consiste en retirar el nervio dental, limpiar y sellar los conductos para conservar el diente.
+
+Riesgos posibles: molestias los días siguientes, fractura del diente o de instrumentos dentro del conducto, conductos no localizables, necesidad de retratamiento, cirugía o incluso extracción si el diente no evoluciona bien. Es habitual necesitar después una corona para proteger el diente.
+
+Acepto el tratamiento tras haber sido informado/a.`},
+ extraccion:{t:"Extracción dental",x:`Se me ha informado de la necesidad de extraer la pieza indicada y de las alternativas existentes.
+
+Riesgos posibles: dolor e inflamación, sangrado, infección, alveolitis, lesión de dientes o empastes vecinos, comunicación con el seno maxilar en piezas superiores, y alteración temporal o permanente de la sensibilidad del labio o la lengua en piezas inferiores.
+
+Me comprometo a seguir las indicaciones posteriores. Acepto la extracción.`},
+ implante:{t:"Implante dental",x:`Se me ha explicado el procedimiento de colocación de implante dental, sus fases y su duración aproximada.
+
+Riesgos posibles: inflamación, infección, falta de integración del implante y necesidad de retirarlo, lesión nerviosa, afectación del seno maxilar y necesidad de injerto óseo.
+
+Entiendo que debo mantener una higiene rigurosa y acudir a las revisiones para que el implante dure. Acepto el tratamiento.`},
+ imagenes:{t:"Uso de imágenes clínicas",x:`Autorizo a la clínica a tomar fotografías y radiografías con fines diagnósticos y de seguimiento de mi tratamiento, que formarán parte de mi historia clínica.
+
+(Marcar solo si procede) Autorizo además su uso con fines docentes o divulgativos de forma anónima, sin que aparezcan datos que permitan identificarme.`}
+};
+let firmaCtx=null,firmando=false,tipoFirma=null;
+function poblarConsentTipos(){
+  const s=document.getElementById("cs_tipo");if(!s)return;
+  s.innerHTML=Object.keys(CONSENT).map(k=>`<option value="${k}">${esc(CONSENT[k].t)}</option>`).join("");
+}
+function abrirFirma(){
+  const k=document.getElementById("cs_tipo").value;tipoFirma=k;
+  document.getElementById("fm_titulo").textContent=CONSENT[k].t;
+  document.getElementById("fm_texto").textContent=CONSENT[k].x;
+  const m=document.getElementById("firmaModal");m.style.display="flex";
+  const cv=document.getElementById("fm_canvas");
+  cv.width=cv.offsetWidth*2;cv.height=340;
+  firmaCtx=cv.getContext("2d");firmaCtx.scale(2,2);
+  firmaCtx.lineWidth=2.2;firmaCtx.lineCap="round";firmaCtx.strokeStyle="#0f172a";
+  firmaCtx.fillStyle="#fff";firmaCtx.fillRect(0,0,cv.width,cv.height);
+}
+function posFirma(e,cv){const r=cv.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
+function initFirmaCanvas(){
+  const cv=document.getElementById("fm_canvas");if(!cv)return;
+  const empezar=e=>{firmando=true;const p=posFirma(e,cv);firmaCtx.beginPath();firmaCtx.moveTo(p.x,p.y);e.preventDefault();};
+  const mover=e=>{if(!firmando)return;const p=posFirma(e,cv);firmaCtx.lineTo(p.x,p.y);firmaCtx.stroke();e.preventDefault();};
+  const parar=()=>{firmando=false;};
+  ["mousedown","touchstart"].forEach(ev=>cv.addEventListener(ev,empezar));
+  ["mousemove","touchmove"].forEach(ev=>cv.addEventListener(ev,mover));
+  ["mouseup","mouseleave","touchend"].forEach(ev=>cv.addEventListener(ev,parar));
+}
+function firmaVacia(){
+  const cv=document.getElementById("fm_canvas");const d=firmaCtx.getImageData(0,0,cv.width,cv.height).data;
+  for(let i=0;i<d.length;i+=4){if(d[i]<240||d[i+1]<240||d[i+2]<240)return false;}
+  return true;
+}
+function guardarConsentimiento(){
+  if(!fichaId)return;
+  if(firmaVacia()){toast("El paciente debe firmar antes de guardar","err");return;}
+  const cv=document.getElementById("fm_canvas");
+  const chico=document.createElement("canvas");chico.width=460;chico.height=140;
+  chico.getContext("2d").drawImage(cv,0,0,460,140);
+  const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);if(i<0)return;
+  A[i].consentimientos=(A[i].consentimientos||[]).concat([{
+    id:uid("cons"),tipo:tipoFirma,titulo:CONSENT[tipoFirma].t,texto:CONSENT[tipoFirma].x,
+    fecha:hoyISO(),firma:chico.toDataURL("image/png")}]);
+  DB.setPacientes(A);
+  logAcc("Consentimiento firmado",CONSENT[tipoFirma].t+" · "+(A[i].nombre||""));
+  document.getElementById("firmaModal").style.display="none";
+  renderConsentimientos(A[i]);toast("Consentimiento guardado y firmado");
+}
+function renderConsentimientos(p){
+  const cont=document.getElementById("csLista");if(!cont)return;
+  const L=(p&&p.consentimientos)||[];
+  if(!L.length){cont.innerHTML='<div class="hint">Este paciente aún no ha firmado ningún consentimiento.</div>';return;}
+  cont.innerHTML=L.slice().reverse().map(c=>`<div class="recrow">
+    <div style="display:flex;align-items:center;gap:14px">
+      <img src="${c.firma}" alt="firma" style="height:42px;border:1px solid var(--borde);border-radius:7px;background:#fff"/>
+      <div><div style="font-weight:700">${esc(c.titulo||c.tipo)}</div><div class="hint">Firmado el ${esc(fechaBonita(c.fecha))}</div></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="ghost" data-impcons="${c.id}">🖨️ Imprimir</button>
+      <button class="ghost" data-delcons="${c.id}" style="color:var(--danger)">🗑️</button>
+    </div></div>`).join("");
+  cont.querySelectorAll("[data-impcons]").forEach(b=>b.addEventListener("click",()=>imprimirConsentimiento(b.dataset.impcons)));
+  cont.querySelectorAll("[data-delcons]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("¿Borrar este consentimiento firmado?"))return;
+    const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
+    A[i].consentimientos=(A[i].consentimientos||[]).filter(x=>x.id!==b.dataset.delcons);
+    DB.setPacientes(A);logAcc("Consentimiento borrado","");renderConsentimientos(A[i]);
+  }));
+}
+function imprimirConsentimiento(id){
+  const p=DB.pacientes().find(x=>x.id===fichaId);if(!p)return;
+  const c=(p.consentimientos||[]).find(x=>x.id===id);if(!c)return;
+  const F=datosFiscales();
+  const w=window.open("","_blank","width=800,height=900");if(!w)return toast("Permite las ventanas emergentes","err");
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(c.titulo)}</title>
+  <style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:#0f172a;padding:46px;max-width:760px;margin:auto;font-size:14px;line-height:1.65}
+  .cab{border-bottom:3px solid #0d9488;padding-bottom:16px;margin-bottom:26px}
+  .marca{font-size:24px;font-weight:800;color:#1f5c4d;letter-spacing:2px}
+  .mut{color:#64748b;font-size:12.5px}h1{font-size:18px;margin:22px 0 14px}
+  .txt{white-space:pre-wrap;margin-bottom:34px}
+  .firma{border-top:1px solid #cbd5e1;padding-top:10px;margin-top:8px;width:300px}
+  @media print{body{padding:14px}}</style></head><body>
+  <div class="cab"><div class="marca">DKV</div><div class="mut" style="letter-spacing:1.5px;font-size:10px">ESPACIO DE SALUD</div>
+  ${F.nombre?`<div style="margin-top:8px;font-weight:700">${esc(F.nombre)}</div><div class="mut">${esc(F.dir||"")} ${esc(F.ciudad||"")}</div>`:""}</div>
+  <h1>${esc(c.titulo)}</h1>
+  <div class="mut">Paciente: <b style="color:#0f172a">${esc(p.nombre||"")}</b>${p.dni?" · DNI/NIE: "+esc(p.dni):""}<br>Fecha: ${esc(fechaBonita(c.fecha))}</div>
+  <div class="txt" style="margin-top:18px">${esc(c.texto)}</div>
+  <div style="display:flex;gap:60px;flex-wrap:wrap">
+    <div><img src="${c.firma}" style="height:80px"/><div class="firma mut">Firma del paciente</div></div>
+    <div><div style="height:80px"></div><div class="firma mut">Por la clínica</div></div>
+  </div>
+  <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
+}
 // ==================== Registro de actividad ====================
 function logAcc(accion,detalle){
   try{
