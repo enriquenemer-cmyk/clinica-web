@@ -204,18 +204,41 @@
   .odorow{display:flex;gap:4px;margin-bottom:7px;min-width:560px}
   .diente{flex:1;min-width:30px;border:1px solid var(--borde);border-radius:8px;text-align:center;padding:9px 0;font-size:11px;cursor:pointer;font-weight:600;color:#334155;transition:.1s}
   .diente:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
-  @media(prefers-color-scheme:dark){
-    :root{--bg:#0b1220;--card:#151f32;--txt:#e5edf7;--muted:#94a3b8;--borde:#28344a;--gris:#111b2c;
+  /* ---- Modo oscuro: se activa con la clase .oscuro en <html> ---- */
+  html.oscuro{--bg:#0b1220;--bg2:#070d18;--card:#151f32;--txt:#e5edf7;--muted:#94a3b8;--borde:#28344a;--gris:#111b2c;
       --primary-soft:rgba(45,212,191,.16);--okbg:rgba(5,150,105,.20);--warnbg:rgba(180,83,9,.22);--dangerbg:rgba(225,29,72,.20);
       --ok:#34d399;--warn:#fbbf24;--danger:#fb7185;--primary-d:#5eead4;
       --kpibg:linear-gradient(180deg,#1b2740,#151f32);
       --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 22px rgba(0,0,0,.42)}
-    .topbar{background:rgba(11,18,32,.85)}
-    .search,input.search,.cita,.caldia,.odolegend button,input,select,textarea{background:var(--card);color:var(--txt)}
-    .search::placeholder,input::placeholder,textarea::placeholder{color:#7b8aa3}
-    .pill.g{background:#243149;color:#cbd5e1}
-    .card:hover{box-shadow:0 2px 6px rgba(0,0,0,.42),0 12px 34px rgba(0,0,0,.48)}
-    .kpi .b:hover{box-shadow:0 8px 24px rgba(0,0,0,.45)}
+  html.oscuro .topbar{background:rgba(11,18,32,.85)}
+  html.oscuro .search,html.oscuro input.search,html.oscuro .cita,html.oscuro .caldia,html.oscuro .odolegend button,
+  html.oscuro input,html.oscuro select,html.oscuro textarea{background:var(--card);color:var(--txt)}
+  html.oscuro .search::placeholder,html.oscuro input::placeholder,html.oscuro textarea::placeholder{color:#7b8aa3}
+  html.oscuro .pill.g{background:#243149;color:#cbd5e1}
+  html.oscuro .card:hover{box-shadow:0 2px 6px rgba(0,0,0,.42),0 12px 34px rgba(0,0,0,.48)}
+  html.oscuro .kpi .b:hover{box-shadow:0 8px 24px rgba(0,0,0,.45)}
+  html.oscuro .jvchat{background:#0d1626}
+  html.oscuro .vacio{background:var(--gris)}
+  /* ---- Estados vacíos ---- */
+  .vacio{text-align:center;padding:34px 20px;color:var(--muted);background:var(--gris);border:1.5px dashed var(--borde);border-radius:14px}
+  .vacio .ico{font-size:38px;display:block;margin-bottom:10px;opacity:.75}
+  .vacio b{display:block;color:var(--txt);font-size:14.5px;margin-bottom:4px}
+  .vacio span{font-size:13px;line-height:1.55;display:block;max-width:420px;margin:0 auto}
+  .vacio button{margin-top:14px}
+  /* ---- Impresión ---- */
+  @media print{
+    .sidebar,.topbar,.toolbar,nav,#toasts,.jvsug,.jvinput,.jvhead,button,.usalir,.syncdot,.userchip{display:none!important}
+    .appmain{margin-left:0!important}
+    .content{padding:0!important;max-width:100%!important}
+    .card{box-shadow:none!important;border:1px solid #d8dee8!important;break-inside:avoid;page-break-inside:avoid;margin-bottom:14px!important}
+    .card:hover{box-shadow:none!important}
+    body{background:#fff!important;font-size:12px}
+    .page{display:none!important}.page.on{display:block!important}
+    .kpi .b{border:1px solid #d8dee8!important;box-shadow:none!important}
+    a{text-decoration:none;color:#0f172a!important}
+    .tablewrap{overflow:visible!important;border:1px solid #d8dee8!important}
+    table{min-width:0!important;font-size:11px}
+    th{background:#f1f5f9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
   .odorow .sep{flex:0 0 16px;min-width:16px;border:0;cursor:default;background:transparent;box-shadow:none}
 </style>
@@ -243,6 +266,7 @@
   <div class="appmain">
     <div class="topbar">
       <div class="pagetitle" id="pageTitle">Inicio</div>
+      <button class="ghost" id="btnTema" title="Cambiar entre claro, oscuro y automático" style="padding:7px 11px;font-size:15px;line-height:1">🌗</button>
       <div class="syncdot" id="syncDot" title="Estado de la conexión con el servidor"><i></i><span>Conectando…</span></div>
       <div class="userchip" id="userChip" style="display:none"><div class="uavatar" id="uAvatar">·</div><div class="uinfo"><b></b><small></small></div><button class="usalir" id="btnSalir" title="Cerrar sesión">Salir</button></div>
       <input class="search" id="g_buscar" placeholder="Buscar paciente…   ( / )"/>
@@ -261,8 +285,8 @@
       </div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>Citas de hoy</h2><div id="citasHoy"></div><div class="hint" id="citasHoyVacio">No hay citas para hoy.</div></div>
-      <div class="card"><h2>Próximas citas</h2><div id="citasProximas"></div><div class="hint" id="citasProximasVacio">No hay próximas citas.</div></div>
+      <div class="card"><h2>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
+      <div class="card"><h2>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
     </div>
     <div class="card">
       <h2>🔔 Recordatorios (hoy y mañana)</h2>
@@ -315,7 +339,7 @@
       <div id="agendaCal" style="display:none"></div>
       <div id="agendaDia" style="display:none"></div>
       <div id="agendaLista"></div>
-      <div class="hint" id="agendaVacia">No hay citas agendadas todavía.</div>
+      <div class="vacio" id="agendaVacia"><span class="ico">🗓️</span><b>La agenda está vacía</b><span>Crea tu primera cita con el formulario de arriba.</span></div>
     </div>
   </div>
 
@@ -449,7 +473,7 @@
         <table><thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Cobertura</th><th>Citas</th><th>Presup.</th></tr></thead>
         <tbody id="pacientesBody"></tbody></table>
       </div>
-      <div class="hint" id="pacientesVacio">Aún no hay pacientes. Pulsa «Nuevo paciente» o léelos desde un presupuesto.</div>
+      <div class="vacio" id="pacientesVacio"><span class="ico">👥</span><b>Todavía no tienes pacientes</b><span>Crea el primero con «+ Nuevo paciente», o deja que se registren solos escaneando tu código QR.</span></div>
     </div>
   </div>
 
@@ -645,7 +669,7 @@
       <div class="sub" style="margin-bottom:8px">Puedes cambiar el <b>Estado</b>, el <b>Auxiliar</b> y <b>¿Cita?</b> directamente en la tabla.</div>
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Doctor</th><th>Presup.</th><th>Venta</th><th>Auxiliar</th><th>Estado</th><th>Cita</th><th></th></tr></thead>
       <tbody id="presuBody"></tbody></table></div>
-      <div class="hint" id="presuVacio">Aún no hay presupuestos.</div>
+      <div class="vacio" id="presuVacio"><span class="ico">🧾</span><b>Aún no hay presupuestos</b><span>Puedes crearlos con la cámara desde «Leer presupuesto».</span></div>
     </div>
   </div>
 
@@ -669,7 +693,7 @@
       <h2>Resumen de cobros</h2>
       <div class="kpi" id="pg_kpi"></div>
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Importe</th><th>Forma</th><th>Concepto</th><th></th></tr></thead><tbody id="pg_body"></tbody></table></div>
-      <div class="hint" id="pg_vacio">Aún no hay pagos registrados.</div>
+      <div class="vacio" id="pg_vacio"><span class="ico">💳</span><b>Todavía no hay cobros</b><span>Registra el primer pago con el formulario de arriba.</span></div>
     </div>
     <div class="card">
       <h2>📄 Facturas emitidas</h2>
@@ -891,6 +915,22 @@ function aplicarPermisos(){
   if(act){const k=act.id.replace("page-","");
     if(k!=="ficha"&&!puede(k)){const primera=(SECCIONES.find(x=>puede(x.k))||{k:"inicio"}).k;ir(primera);}}
 }
+// ==================== Tema claro / oscuro / automático ====================
+const TEMAS={auto:{ico:"🌗",txt:"Automático (según tu dispositivo)"},claro:{ico:"☀️",txt:"Modo claro"},oscuro:{ico:"🌙",txt:"Modo oscuro"}};
+function temaActual(){return localStorage.getItem("scanner_tema")||"auto";}
+function aplicarTema(){
+  const t=temaActual();
+  const oscuro=t==="oscuro"||(t==="auto"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
+  document.documentElement.classList.toggle("oscuro",oscuro);
+  const b=document.getElementById("btnTema");
+  if(b){b.textContent=TEMAS[t].ico;b.title=TEMAS[t].txt+" · pulsa para cambiar";}
+}
+function cambiarTema(){
+  const orden=["auto","claro","oscuro"];
+  const t=orden[(orden.indexOf(temaActual())+1)%3];
+  localStorage.setItem("scanner_tema",t);aplicarTema();toast(TEMAS[t].txt,"info");
+}
+if(window.matchMedia)window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change",()=>{if(temaActual()==="auto")aplicarTema();});
 // ==================== Avisos flotantes (toast) ====================
 function toast(msg,tipo){
   const c=document.getElementById("toasts");if(!c)return;
@@ -1479,6 +1519,7 @@ document.getElementById("fm_cerrar").addEventListener("click",()=>document.getEl
 document.getElementById("fm_limpiar").addEventListener("click",()=>{const cv=document.getElementById("fm_canvas");firmaCtx.fillStyle="#fff";firmaCtx.fillRect(0,0,cv.width,cv.height);});
 document.getElementById("fm_guardar").addEventListener("click",guardarConsentimiento);
 document.getElementById("ft_subir").addEventListener("click",subirFoto);
+document.getElementById("btnTema").addEventListener("click",cambiarTema);
 document.getElementById("lg_actualizar").addEventListener("click",renderLog);
 document.getElementById("lg_limpiar").addEventListener("click",()=>{
   if(!confirm("¿Vaciar el registro de actividad? No se puede deshacer."))return;
@@ -2621,7 +2662,7 @@ function fechasPorDefecto(){
 // Avisar si se sale con cambios sin guardar en la ficha
 window.addEventListener("beforeunload",()=>{limpiarBorradores();});
 
-initFirmaCanvas();poblarConsentTipos();
+aplicarTema();initFirmaCanvas();poblarConsentTipos();
 poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();limpiarBorradores();fechasPorDefecto();aplicarPermisos();initSync();
 </script>
 </body>
