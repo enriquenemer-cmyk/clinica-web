@@ -1829,6 +1829,57 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Mejora de imagen para el lector ====================
+// Escala, pasa a gris, estira el contraste y binariza (Otsu). Sube mucho el acierto del OCR.
+function mejorarParaOCR(dataUrl,escala){
+  return new Promise((ok,err)=>{
+    const img=new Image();
+    img.onerror=()=>err(new Error("imagen no válida"));
+    img.onload=()=>{
+      const f=escala||2, w=Math.min(img.width*f,3000), h=Math.round(img.height*(w/img.width));
+      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      const cx=cv.getContext("2d");cx.imageSmoothingQuality="high";cx.drawImage(img,0,0,w,h);
+      const d=cx.getImageData(0,0,w,h),p=d.data,hist=new Array(256).fill(0);
+      for(let i=0;i<p.length;i+=4){
+        const g=(p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114)|0;
+        p[i]=p[i+1]=p[i+2]=g;hist[g]++;
+      }
+      // umbral de Otsu
+      const tot=w*h;let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];
+      let sumB=0,wB=0,mx=0,umbral=128;
+      for(let i=0;i<256;i++){
+        wB+=hist[i];if(!wB)continue;const wF=tot-wB;if(!wF)break;
+        sumB+=i*hist[i];
+        const mB=sumB/wB,mF=(sum-sumB)/wF,between=wB*wF*(mB-mF)*(mB-mF);
+        if(between>mx){mx=between;umbral=i;}
+      }
+      for(let i=0;i<p.length;i+=4){
+        const v=p[i]<umbral?0:255;p[i]=p[i+1]=p[i+2]=v;
+      }
+      cx.putImageData(d,0,0);
+      ok(cv.toDataURL("image/png"));
+    };
+    img.src=dataUrl;
+  });
+}
+// ==================== Validación de DNI y teléfono ====================
+const LETRAS_DNI="TRWAGMYFPDXBNJZSQVHLCKE";
+function validaDNI(v){
+  const s=String(v||"").toUpperCase().replace(/[^0-9A-Z]/g,"");
+  const m=s.match(/^([XYZ]?)(\d{7,8})([A-Z])$/);
+  if(!m)return {ok:false,valor:s,motivo:"formato"};
+  const pre={X:"0",Y:"1",Z:"2"}[m[1]]||"";
+  const num=Number(pre+m[2]);
+  const correcta=LETRAS_DNI[num%23];
+  if(m[3]===correcta)return {ok:true,valor:s};
+  // la letra no cuadra: puede ser que el OCR leyera mal la letra
+  return {ok:false,valor:s,motivo:"letra",sugerencia:m[1]+m[2]+correcta};
+}
+function validaTelefono(v){
+  const s=String(v||"").replace(/\D/g,"");
+  if(/^[679]\d{8}$/.test(s))return {ok:true,valor:s};
+  return {ok:false,valor:s,motivo:s.length!==9?"debe tener 9 cifras":"debe empezar por 6, 7 o 9"};
+}
 // ==================== Escanear formulario de papel ====================
 // Palabras que buscamos en la foto para marcar los avisos médicos
 const PISTAS_AVISO={a_latex:["latex"],a_anestesicos:["anestesic"],a_medicamentos:["medicament"],a_metales:["metales","niquel","cromo"],
@@ -1897,6 +1948,9 @@ function renderRevisionEscaner(d){
   const n=Object.keys(d.avisos||{}).length,du=Object.keys(d.dudosos||{}).length;
   document.getElementById("esc_texto").innerHTML=`Detectados <b>${n}</b> avisos con «Sí»`+
     (du?` · <span style="color:var(--warn)"><b>${du}</b> preguntas no las he podido leer bien: compruébalas en la foto</span>`:"");
+  validarCamposEscaner(d);
+  ["esc_dni","esc_tel","esc_nombre"].forEach(id=>{const e=document.getElementById(id);
+    if(e&&!e.dataset.val){e.dataset.val="1";e.addEventListener("input",()=>validarCamposEscaner(null));}});
   document.getElementById("escPaso1").style.display="none";
   document.getElementById("escPaso2").style.display="block";
 }
@@ -1906,22 +1960,66 @@ async function leerFormularioPapel(){
   const prog=document.getElementById("esc_prog");prog.style.display="block";prog.textContent="Preparando el lector…";
   const btn=document.getElementById("esc_leer");btn.disabled=true;
   try{
-    escFoto=await comprimeImagen(f,1600,.72);
+    escFoto=await comprimeImagen(f,1800,.8);
+    const mejorada=await mejorarParaOCR(escFoto,2);
     const w=await Tesseract.createWorker("spa",1,{logger:m=>{if(m.status==="recognizing text")prog.textContent="Leyendo la hoja… "+(m.progress*100|0)+"%";}});
-    const{data:{text}}=await w.recognize(escFoto);
+    // Pase 1: foto tal cual
+    const r1=await w.recognize(escFoto);
+    prog.textContent="Segunda lectura para comprobar…";
+    // Pase 2: imagen mejorada (contraste y blanco/negro)
+    const r2=await w.recognize(mejorada);
     await w.terminate();
-    escTexto=text;
+    escTexto=r1.data.text+"\n"+r2.data.text;
+    const d1=parseFormulario(r1.data.text), d2=parseFormulario(r2.data.text);
+    // Combinamos: si las dos lecturas coinciden -> fiable; si no, avisamos
+    const d={avisos:Object.assign({},d2.avisos,d1.avisos),dudosos:Object.assign({},d1.dudosos,d2.dudosos),coincide:{}};
+    ["nombre","dni","telefono","email","nacimiento"].forEach(k=>{
+      const a=d1[k],b=d2[k];
+      d[k]=a||b||"";
+      d.coincide[k]=!!(a&&b&&norm(a)===norm(b));
+      if(a&&b&&norm(a)!==norm(b))d.alternativa=Object.assign(d.alternativa||{},{[k]:b});
+    });
     document.getElementById("esc_img").src=escFoto;
-    renderRevisionEscaner(parseFormulario(text));
-    toast("Hoja leída. Revisa los datos antes de guardar","info");
+    renderRevisionEscaner(d);
+    toast("Hoja leída con doble comprobación","info");
   }catch(e){toast("No pude leer la foto: "+(e.message||""),"err");}
   prog.style.display="none";btn.disabled=false;
+}
+// Marca en verde/rojo la fiabilidad de cada campo
+function validarCamposEscaner(d){
+  const pon=(id,estado,txt)=>{
+    const inp=document.getElementById(id);if(!inp)return;
+    inp.style.borderColor=estado==="ok"?"var(--ok)":estado==="mal"?"var(--danger)":"var(--warn)";
+    inp.style.borderWidth="2px";
+    let av=document.getElementById(id+"_av");
+    if(!av){av=document.createElement("div");av.id=id+"_av";av.className="hint";av.style.marginTop="4px";inp.parentElement.appendChild(av);}
+    av.innerHTML=txt;
+    av.style.color=estado==="ok"?"var(--ok)":estado==="mal"?"var(--danger)":"var(--warn)";
+  };
+  const dni=document.getElementById("esc_dni").value;
+  if(dni){const v=validaDNI(dni);
+    if(v.ok)pon("esc_dni","ok","✓ DNI válido (la letra cuadra)");
+    else if(v.sugerencia)pon("esc_dni","mal",`✗ La letra no cuadra. ¿Será <b>${esc(v.sugerencia)}</b>? Compruébalo en la foto`);
+    else pon("esc_dni","mal","✗ No parece un DNI/NIE válido — revísalo en la foto");
+  }else pon("esc_dni","aviso","Sin DNI leído");
+  const tel=document.getElementById("esc_tel").value;
+  if(tel){const v=validaTelefono(tel);
+    pon("esc_tel",v.ok?"ok":"mal",v.ok?((d&&d.coincide&&d.coincide.telefono)?"✓ Correcto y leído igual en las dos pasadas":"✓ Formato correcto — confírmalo en la foto"):"✗ "+v.motivo);
+  }else pon("esc_tel","mal","✗ No he podido leer el teléfono — escríbelo mirando la foto");
+  const nom=document.getElementById("esc_nombre").value;
+  pon("esc_nombre",nom?((d&&d.coincide&&d.coincide.nombre)?"ok":"aviso"):"mal",
+    nom?((d&&d.coincide&&d.coincide.nombre)?"✓ Leído igual en las dos pasadas":"⚠ Solo lo he leído una vez — compruébalo"):"✗ Escribe el nombre mirando la foto");
 }
 async function guardarEscaneado(){
   const nombre=document.getElementById("esc_nombre").value.trim();
   const tel=document.getElementById("esc_tel").value.replace(/\D/g,"");
   if(!nombre){toast("Falta el nombre del paciente","err");return;}
   if(!tel){toast("Falta el teléfono (compruébalo en la foto)","err");return;}
+  const vt=validaTelefono(tel);
+  if(!vt.ok&&!confirm(`El teléfono "${tel}" no parece correcto (${vt.motivo}).\n\n¿Guardarlo igualmente?`))return;
+  const dniEsc=document.getElementById("esc_dni").value.trim();
+  if(dniEsc){const vd=validaDNI(dniEsc);
+    if(!vd.ok&&!confirm(`El DNI "${dniEsc}" no es válido${vd.sugerencia?" (¿quizá "+vd.sugerencia+"?)":""}.\n\n¿Guardarlo igualmente?`))return;}
   const ya=DB.pacientes().find(p=>(p.telefono||"").replace(/\D/g,"")===tel);
   if(ya&&!confirm(`Ya existe "${ya.nombre}" con ese teléfono.\n\n¿Crear otro paciente igualmente?`))return;
   const etiquetas=Object.assign({},ALERTA_ROJA,ALERTA_AMBAR);
