@@ -1221,7 +1221,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);renderAlertas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
+  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1659,7 +1659,7 @@ function alertasPaciente(p){
   (p.alertas||[]).forEach(a=>out.push({n:2,t:a}));
   return out.sort((a,b)=>b.n-a.n);
 }
-function renderAlertas(p){
+function renderAlertasMedicas(p){
   const cont=document.getElementById("f_alertas");if(!cont)return;
   const A=alertasPaciente(p);
   if(!A.length){cont.style.display="none";cont.innerHTML="";return;}
