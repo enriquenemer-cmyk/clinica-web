@@ -2134,7 +2134,7 @@ function enPeriodo(fecha,anio,trim){
   return m>=d&&m<=h;
 }
 // Importes en formato español: 1.234,56 €
-function fmtEur(n){return new Intl.NumberFormat("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2}).format(num(n))+" €";}
+function fmtEur(n){return new Intl.NumberFormat("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:"always"}).format(num(n))+" €";}
 function pct(n){return num(n).toString().replace(".",",")+"%";}
 // Qué hay que presentar en el periodo elegido
 function obligaciones(anio,trim){
