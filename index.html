@@ -297,6 +297,7 @@
       </div>
     </div>
     <div class="grid2">
+      <div class="card" id="setupCard" style="display:none"><h2>🚀 Pon en marcha tu clínica</h2><div class="sub">Cuatro pasos para dejarlo todo listo. Desaparecerá solo cuando los completes.</div><div id="setupLista"></div></div>
       <div class="card" id="salaCard" style="display:none"><h2>🪑 Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
       <div class="card"><h2>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
       <div class="card"><h2>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
@@ -602,6 +603,21 @@
     </div>
 
     <div class="card">
+      <h2>💊 Recetas</h2>
+      <div class="sub">Elige un medicamento habitual o escribe otro. Se imprime con los datos de la clínica.</div>
+      <div class="grid2">
+        <div class="field"><label>Medicamento</label><select id="rc_med"></select></div>
+        <div class="field"><label>…o escríbelo</label><input id="rc_otro" placeholder="Otro medicamento"/></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Pauta</label><input id="rc_pauta" placeholder="Se rellena sola al elegir medicamento"/></div>
+        <div class="field"><label>Doctor</label><select id="rc_doctor"></select></div>
+      </div>
+      <button class="main" id="rc_add">💊 Emitir e imprimir receta</button>
+      <div id="rcLista" style="margin-top:16px"></div>
+    </div>
+
+    <div class="card">
       <h2>✍️ Consentimientos firmados</h2>
       <div class="sub">El paciente firma en la pantalla y queda guardado con su fecha. Puedes imprimirlo cuando quieras.</div>
       <div class="toolbar">
@@ -850,6 +866,12 @@
     </div>
 
     <div class="card">
+      <h2>🖨️ Formulario de registro en papel</h2>
+      <div class="sub">Imprime hojas en blanco para los pacientes que prefieran rellenarlo a mano. Luego puedes escanearlas desde Pacientes.</div>
+      <button class="main" id="fb_imprimir">🖨️ Imprimir formulario en blanco</button>
+    </div>
+
+    <div class="card">
       <h2>📥 Importar pacientes desde otro programa</h2>
       <div class="sub">Exporta tus pacientes a Excel o CSV desde tu programa actual y tráelos aquí. Podrás revisar todo antes de guardar nada.</div>
       <div class="toolbar">
@@ -918,6 +940,12 @@
         <div style="display:flex;gap:10px;align-items:center"><input id="fc_iva" type="number" min="0" max="21" style="width:100px"/>
         <span class="hint">Los tratamientos dentales suelen estar <b>exentos de IVA</b> (0%). Consúltalo con tu gestoría.</span></div></div>
       <button class="main" id="fc_guardar">Guardar datos de facturación</button><span id="fc_ok" class="hint" style="color:var(--verde)"></span>
+    </div>
+
+    <div class="card" style="border-color:var(--danger)">
+      <h2 style="color:var(--danger)">⚠️ Empezar de cero</h2>
+      <div class="sub">Borra todos los pacientes, citas, presupuestos, pagos, gastos y facturas. <b>Se conservan</b> los doctores, horarios, usuarios y ajustes. Úsalo solo cuando termines de hacer pruebas.</div>
+      <button class="ghost" id="dz_borrar" style="color:var(--danger);border-color:var(--danger)">🗑️ Borrar todos los datos</button>
     </div>
 
     <div class="card">
@@ -1278,7 +1306,7 @@ function ir(pagina){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
   document.getElementById("page-"+pagina).classList.add("on");
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
-  if(pagina==="inicio"){renderInicio();renderSalaEspera();}
+  if(pagina==="inicio"){renderInicio();renderSalaEspera();renderSetup();}
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
   if(pagina==="recordatorios"){renderRecordatoriosWA();renderRevision();renderEspera();}
   if(pagina==="jarvis")jvIniciar();
@@ -1397,7 +1425,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderPlan(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
+  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderPlan(p);renderRecetas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1722,6 +1750,13 @@ function abrirRecepcion(){
   else toast("Formulario abierto: rellénalo con el paciente","info");
 }
 document.getElementById("p_recepcion").addEventListener("click",abrirRecepcion);
+document.getElementById("fb_imprimir").addEventListener("click",imprimirFormularioBlanco);
+document.getElementById("dz_borrar").addEventListener("click",borrarTodosLosDatos);
+document.getElementById("rc_add").addEventListener("click",anadirReceta);
+document.getElementById("rc_med").addEventListener("change",()=>{
+  const i=document.getElementById("rc_med").value;
+  if(i!==""){document.getElementById("rc_pauta").value=RECETAS[Number(i)].p;document.getElementById("rc_otro").value="";}
+});
 document.getElementById("p_escanear").addEventListener("click",abrirEscaner);
 document.getElementById("esc_leer").addEventListener("click",leerFormularioPapel);
 document.getElementById("esc_guardar").addEventListener("click",guardarEscaneado);
@@ -1836,6 +1871,177 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Asistente de puesta en marcha ====================
+function pasosSetup(){
+  const C=cfg();
+  return [
+    {k:"clave",t:"Cambia tu contraseña",d:"Ahora entras con la que viene de fábrica",
+     ok:!!C.adminHash,ir:()=>{ir("usuarios");setTimeout(()=>document.getElementById("ad_pass1").focus(),300);}},
+    {k:"horarios",t:"Pon el horario de tus doctores",d:"Sin esto la agenda no puede ofrecerte huecos",
+     ok:Object.keys(C.horarios||{}).length>0,ir:()=>{ir("ajustes");setTimeout(()=>document.getElementById("h_tabla").scrollIntoView({block:"center"}),350);}},
+    {k:"duraciones",t:"Indica cuánto dura cada tratamiento",d:"Para que una revisión y una endodoncia no ocupen lo mismo",
+     ok:(C.duraciones||[]).length>0,ir:()=>{ir("ajustes");setTimeout(()=>document.getElementById("duLista").scrollIntoView({block:"center"}),350);}},
+    {k:"fiscal",t:"Rellena tus datos de facturación",d:"Necesario para poder emitir facturas",
+     ok:!!(C.fiscal&&C.fiscal.nombre&&C.fiscal.nif),ir:()=>{ir("ajustes");setTimeout(()=>document.getElementById("fc_nombre").scrollIntoView({block:"center"}),350);}}
+  ];
+}
+function renderSetup(){
+  const card=document.getElementById("setupCard"),cont=document.getElementById("setupLista");
+  if(!card||!cont)return;
+  if(!esAdmin()){card.style.display="none";return;}
+  const P=pasosSetup(),faltan=P.filter(x=>!x.ok);
+  if(!faltan.length){card.style.display="none";return;}
+  card.style.display="";
+  cont.innerHTML=`<div class="hint" style="margin-bottom:12px">Te faltan <b>${faltan.length}</b> de ${P.length}</div>`+
+    P.map((x,i)=>`<div class="recrow" style="${x.ok?"opacity:.55":""}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:28px;height:28px;border-radius:50%;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;
+          background:${x.ok?"var(--okbg)":"var(--primary-soft)"};color:${x.ok?"var(--ok)":"var(--primary-d)"}">${x.ok?"✓":i+1}</div>
+        <div><div style="font-weight:700${x.ok?";text-decoration:line-through":""}">${esc(x.t)}</div>
+          <div class="hint">${esc(x.d)}</div></div></div>
+      ${x.ok?'<span class="pill v">hecho</span>':`<button class="main" data-setup="${x.k}" style="padding:8px 15px">Hacerlo</button>`}
+    </div>`).join("");
+  cont.querySelectorAll("[data-setup]").forEach(b=>b.addEventListener("click",()=>{
+    const paso=P.find(x=>x.k===b.dataset.setup);if(paso)paso.ir();
+  }));
+}
+// ==================== Formulario en blanco para imprimir ====================
+const PREGUNTAS_PAPEL=[["a_metales","Metales (cromo, níquel, cobalto…)"],["a_latex","Látex"],["a_anestesicos","Anestésicos"],["a_medicamentos","Medicamentos"],["e_corazon","Problemas de corazón (soplos, válvulas, infarto, angina, marcapasos…)"],["e_artritis","Artritis"],["e_ulcera","Úlcera gástrica/duodenal, hernia hiatal, gastritis"],["e_hepatitis","Hepatitis o problema hepático"],["e_renal","Problema renal (insuficiencia renal)"],["e_tiroides","Trastornos del tiroides"],["e_hemorragias","Hemorragias abundantes tras heridas/cirugías/extracciones"],["e_hematomas","Se producen hematomas con facilidad"],["e_cicatriz","Tardan en cicatrizar las heridas"],["e_diabetes","Diabetes"],["e_hipertension","Hipertensión arterial"],["e_tbc","Tuberculosis, SIDA, Hepatitis B/C/A"],["e_epilepsia","Epilepsia"],["radio","¿Radioterapia o quimioterapia?"],["colesterol","¿Colesterol o triglicéridos altos?"],["embarazo","Si es mujer, ¿podría estar embarazada?"],["lactancia","¿En período de lactancia?"],["anticonceptivos","¿Toma anticonceptivos?"],["apnea","¿Tiene apnea del sueño?"],["sedacion","¿Le interesaría sedación para el tratamiento?"],["problema_dental","¿Problema grave en un tratamiento dental anterior?"],["color_dientes","¿Descontento con el color de sus dientes?"],["sangran","¿Le sangran las encías?"],["sensibilidad","¿Sensibilidad al frío o calor?"],["periodontitis","¿Antecedentes familiares de periodontitis?"],["bruxismo","¿Rechina o aprieta los dientes?"],["chasquidos","¿Chasquidos al abrir/cerrar la boca?"],["sequedad","¿Sequedad o ardor en la boca?"],["alcohol","¿Alcohol/sustancias con frecuencia?"],["aliento","¿Mal aliento?"],["estetica","¿Satisfecho con la estética de labios/tercio inferior?"],["mousedown","touchstart"],["mousemove","touchmove"]];
+function imprimirFormularioBlanco(){
+  const F=datosFiscales();
+  const w=window.open("","_blank","width=820,height=1000");
+  if(!w)return toast("Permite las ventanas emergentes","err");
+  const filas=PREGUNTAS_PAPEL.map(([k,t])=>
+    `<tr><td>${esc(t)}</td><td class="c">Sí [&nbsp;&nbsp;]</td><td class="c">No [&nbsp;&nbsp;]</td></tr>`).join("");
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Formulario de registro</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:26px;max-width:760px;margin:auto;font-size:12px}
+  .marca{font-size:21px;font-weight:900;color:#1f5c4d;letter-spacing:2px}
+  .sub{font-size:8.5px;letter-spacing:1.5px;color:#555}
+  h1{font-size:15px;margin:14px 0 3px;border-bottom:2px solid #0d9488;padding-bottom:5px}
+  h2{font-size:12px;margin:14px 0 6px;background:#f1f5f9;padding:5px 8px;border-radius:4px}
+  .campo{margin-bottom:11px}.campo b{font-size:10px;display:block;color:#555;margin-bottom:2px}
+  .linea{border-bottom:1px solid #999;height:17px}
+  .g2{display:flex;gap:16px}.g2>div{flex:1}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  td{padding:3.5px 5px;border-bottom:1px solid #eee}
+  td.c{width:66px;text-align:center;font-family:monospace;white-space:nowrap}
+  .firma{margin-top:20px;display:flex;gap:34px}.firma>div{flex:1}
+  .fbox{border:1px solid #999;height:64px;border-radius:4px}
+  .pie{margin-top:14px;font-size:8.5px;color:#666;line-height:1.4}
+  @media print{body{padding:10px}}</style></head><body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><div class="marca">DKV</div><div class="sub">ESPACIO DE SALUD</div></div>
+    <div style="text-align:right;font-size:10px;color:#555">${esc(F.nombre||"")}<br>${esc(F.tel||"")}</div>
+  </div>
+  <h1>FICHA DE REGISTRO DE PACIENTE</h1>
+  <div class="g2"><div class="campo"><b>NOMBRE Y APELLIDOS</b><div class="linea"></div></div></div>
+  <div class="g2">
+    <div class="campo"><b>DNI / NIE</b><div class="linea"></div></div>
+    <div class="campo"><b>FECHA DE NACIMIENTO</b><div class="linea"></div></div>
+  </div>
+  <div class="g2">
+    <div class="campo"><b>TELÉFONO</b><div class="linea"></div></div>
+    <div class="campo"><b>E-MAIL</b><div class="linea"></div></div>
+  </div>
+  <div class="campo"><b>MOTIVO DE LA CONSULTA</b><div class="linea"></div></div>
+  <h2>CUESTIONARIO DE SALUD · marque con una X</h2>
+  <table>${filas}</table>
+  <div class="firma">
+    <div><div style="font-size:10px;color:#555;margin-bottom:3px">FIRMA DEL PACIENTE</div><div class="fbox"></div></div>
+    <div><div style="font-size:10px;color:#555;margin-bottom:3px">FECHA</div><div class="fbox"></div></div>
+  </div>
+  <div class="pie">Declaro que los datos facilitados son ciertos y autorizo el tratamiento de mis datos personales
+  por la clínica para la atención sanitaria, conforme al RGPD. Puedo ejercer mis derechos de acceso, rectificación,
+  supresión y oposición dirigiéndome a la clínica.</div>
+  <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
+}
+// ==================== Empezar de cero ====================
+async function borrarTodosLosDatos(){
+  const t=prompt('⚠️ Esto borrará TODOS los pacientes, citas, presupuestos, pagos, gastos y facturas.\n\nNo se puede deshacer.\n\nEscribe BORRAR (en mayúsculas) para confirmar:');
+  if(t!=="BORRAR")return toast("Cancelado, no se ha borrado nada","info");
+  if(!confirm("Última confirmación.\n\n¿Seguro que quieres dejar la plataforma vacía?"))return;
+  DB.pacientes().forEach(p=>marcarBorrado(p.id));   // para que no vuelvan con la sincronización
+  DB.setPacientes([]);DB.setCitas([]);DB.setPresupuestos([]);DB.setPagos([]);
+  setCfg({gastos:[],facturas:[],papelera:[],espera:[],log:[]});
+  logAcc("BORRADO TOTAL","La administradora vació la plataforma");
+  toast("Plataforma vaciada. Los doctores y ajustes se mantienen.");
+  await new Promise(r=>setTimeout(r,900));
+  try{await pushStore();}catch{}
+  renderInicio();refrescarActual();
+}
+// ==================== Recetas ====================
+const RECETAS=[
+  {n:"Amoxicilina 750 mg",p:"1 comprimido cada 8 horas durante 7 días"},
+  {n:"Amoxicilina/Clavulánico 875/125 mg",p:"1 comprimido cada 8 horas durante 7 días"},
+  {n:"Ibuprofeno 600 mg",p:"1 comprimido cada 8 horas si dolor, con alimento (máx. 3 al día)"},
+  {n:"Paracetamol 1 g",p:"1 comprimido cada 8 horas si dolor o fiebre"},
+  {n:"Metronidazol 250 mg",p:"1 comprimido cada 8 horas durante 7 días"},
+  {n:"Clorhexidina 0,12% colutorio",p:"Enjuagar 15 ml durante 30 segundos, 2 veces al día, 15 días"},
+  {n:"Clindamicina 300 mg",p:"1 cápsula cada 8 horas durante 7 días (alergia a penicilina)"},
+  {n:"Dexketoprofeno 25 mg",p:"1 comprimido cada 8 horas si dolor intenso"}
+];
+function renderRecetas(p){
+  const cont=document.getElementById("rcLista");if(!cont)return;
+  const sel=document.getElementById("rc_med");
+  if(sel&&!sel.options.length)sel.innerHTML='<option value="">— Elige medicamento —</option>'+RECETAS.map((r,i)=>`<option value="${i}">${esc(r.n)}</option>`).join("");
+  const d=document.getElementById("rc_doctor");
+  if(d&&!d.options.length){const L=DB.get(KEY.lis,LISTAS_DEF);d.innerHTML='<option value="">— Doctor —</option>'+(L.doctores||[]).map(x=>`<option>${esc(x)}</option>`).join("");}
+  const R=((p&&p.recetas)||[]).slice().reverse();
+  if(!R.length){cont.innerHTML='<div class="hint">Sin recetas emitidas para este paciente.</div>';return;}
+  cont.innerHTML=R.map(r=>`<div class="recrow">
+    <div><div style="font-weight:700">${esc(r.med)}</div><div class="hint">${esc(r.pauta)} · ${esc(fechaBonita(r.fecha))} · ${esc(r.doctor||"—")}</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="ghost" data-imprec="${r.id}">🖨️</button>
+      <button class="ghost" data-delrec="${r.id}" style="color:var(--danger)">🗑️</button></div></div>`).join("");
+  cont.querySelectorAll("[data-imprec]").forEach(b=>b.addEventListener("click",()=>imprimirReceta(b.dataset.imprec)));
+  cont.querySelectorAll("[data-delrec]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("¿Borrar esta receta?"))return;
+    const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
+    A[i].recetas=(A[i].recetas||[]).filter(x=>x.id!==b.dataset.delrec);
+    DB.setPacientes(A);renderRecetas(A[i]);
+  }));
+}
+function anadirReceta(){
+  if(!fichaId)return;
+  const i=document.getElementById("rc_med").value;
+  const med=i!==""?RECETAS[Number(i)].n:document.getElementById("rc_otro").value.trim();
+  if(!med)return toast("Elige un medicamento o escríbelo","err");
+  const pauta=document.getElementById("rc_pauta").value.trim()||(i!==""?RECETAS[Number(i)].p:"");
+  if(!pauta)return toast("Escribe la pauta (cada cuánto y cuántos días)","err");
+  const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);if(k<0)return;
+  const r={id:uid("rec"),med,pauta,doctor:document.getElementById("rc_doctor").value,fecha:hoyISO()};
+  A[k].recetas=(A[k].recetas||[]).concat([r]);
+  DB.setPacientes(A);logAcc("Receta emitida",(A[k].nombre||"")+" · "+med);
+  ["rc_otro","rc_pauta"].forEach(x=>document.getElementById(x).value="");document.getElementById("rc_med").value="";
+  renderRecetas(A[k]);toast("Receta guardada");
+  imprimirReceta(r.id);
+}
+function imprimirReceta(id){
+  const p=DB.pacientes().find(x=>x.id===fichaId);if(!p)return;
+  const r=(p.recetas||[]).find(x=>x.id===id);if(!r)return;
+  const F=datosFiscales();
+  const w=window.open("","_blank","width=760,height=900");if(!w)return toast("Permite las ventanas emergentes","err");
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Receta</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;padding:42px;max-width:640px;margin:auto;color:#111;font-size:14px}
+  .marca{font-size:22px;font-weight:900;color:#1f5c4d;letter-spacing:2px}
+  .sub{font-size:9px;letter-spacing:1.5px;color:#555}
+  h1{font-size:17px;margin:22px 0 4px;border-bottom:2px solid #0d9488;padding-bottom:6px}
+  .mut{color:#555;font-size:12.5px}
+  .med{background:#f1f5f9;border-left:4px solid #0d9488;padding:16px 18px;border-radius:6px;margin:22px 0}
+  .med b{font-size:17px;display:block;margin-bottom:6px}
+  .firma{margin-top:56px;border-top:1px solid #999;width:250px;padding-top:6px;font-size:11px;color:#555}
+  @media print{body{padding:14px}}</style></head><body>
+  <div class="marca">DKV</div><div class="sub">ESPACIO DE SALUD</div>
+  ${F.nombre?`<div style="margin-top:8px;font-weight:700">${esc(F.nombre)}</div><div class="mut">${esc(F.dir||"")} ${esc(F.ciudad||"")}${F.tel?" · Tel: "+esc(F.tel):""}</div>`:""}
+  <h1>RECETA</h1>
+  <div class="mut">Paciente: <b style="color:#111">${esc(p.nombre||"")}</b>${p.dni?" · DNI: "+esc(p.dni):""}<br>Fecha: ${esc(fechaBonita(r.fecha))}</div>
+  <div class="med"><b>${esc(r.med)}</b>${esc(r.pauta)}</div>
+  <div class="mut" style="font-size:11.5px">Si aparece cualquier reacción adversa, suspenda el tratamiento y contacte con la clínica.</div>
+  <div class="firma">${esc(r.doctor||"")}<br>Firma y nº de colegiado</div>
+  <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
+}
 // ==================== Mejora de imagen para el lector ====================
 // Escala, pasa a gris, estira el contraste y binariza (Otsu). Sube mucho el acierto del OCR.
 function mejorarParaOCR(dataUrl,escala){
@@ -3579,7 +3785,7 @@ function fechasPorDefecto(){
 // Avisar si se sale con cambios sin guardar en la ficha
 window.addEventListener("beforeunload",()=>{limpiarBorradores();});
 
-aplicarTema();initFirmaCanvas();poblarConsentTipos();
+aplicarTema();initFirmaCanvas();poblarConsentTipos();setTimeout(renderSetup,400);
 poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();limpiarBorradores();fechasPorDefecto();aplicarPermisos();initSync();
 </script>
 </body>
