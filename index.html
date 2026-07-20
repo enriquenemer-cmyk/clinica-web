@@ -311,6 +311,7 @@
       <button data-page="informes"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Informes</span></button>
       <button data-page="presupuestos"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg><span>Presupuestos</span></button>
       <button data-page="pagos"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><span>Pagos</span></button>
+      <button data-page="proveedores"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M3 9l1-5h16l1 5M4 9h16v11H4zM9 13h6"/></svg><span>Proveedores</span></button>
       <button data-page="ajustes"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2l1.8 1.8M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg><span>Ajustes</span></button>
     </nav>
     <div class="sidefoot">Espacio de Salud<br><b>DKV</b></div>
@@ -1044,6 +1045,18 @@
 
   <!-- ===================== AJUSTES ===================== -->
 
+  <div class="page" id="page-proveedores">
+    <div class="card">
+      <h2>🏭 Proveedores y pedidos</h2>
+      <div class="sub">Guarda tus proveedores, qué te venden y a qué precio. Haz un pedido y envíalo por correo en un clic.</div>
+      <div class="toolbar">
+        <input id="pr_buscar" placeholder="Buscar proveedor…" style="min-width:220px"/>
+        <button class="main" id="pr_nuevo">➕ Nuevo proveedor</button>
+      </div>
+      <div id="prLista"></div>
+    </div>
+  </div>
+
   <div class="page" id="page-ajustes">
     <div class="card">
       <h2>Ajustes · listas</h2><div class="sub">Un nombre por línea. Afecta a los desplegables de toda la plataforma.</div>
@@ -1311,10 +1324,10 @@ function poblarPacientesSelect(){
 }
 
 // ==================== Navegación ====================
-const TITULOS={inicio:"Inicio",jarvis:"Jarvis",usuarios:"Usuarios y permisos",contabilidad:"Contabilidad",informes:"Informes",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
+const TITULOS={inicio:"Inicio",jarvis:"Jarvis",usuarios:"Usuarios y permisos",contabilidad:"Contabilidad",informes:"Informes",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",proveedores:"Proveedores y pedidos",ajustes:"Ajustes"};
 
 // ==================== Sesión y permisos ====================
-const SECCIONES=[{k:"inicio",n:"Inicio"},{k:"agenda",n:"Agenda"},{k:"recordatorios",n:"Recordatorios"},{k:"pacientes",n:"Pacientes y fichas"},{k:"leer",n:"Leer presupuesto (foto)"},{k:"contabilidad",n:"Contabilidad"},{k:"informes",n:"Informes del negocio"},{k:"presupuestos",n:"Presupuestos"},{k:"pagos",n:"Pagos y cobros"},{k:"ajustes",n:"Ajustes (y usuarios)"}];
+const SECCIONES=[{k:"inicio",n:"Inicio"},{k:"agenda",n:"Agenda"},{k:"recordatorios",n:"Recordatorios"},{k:"pacientes",n:"Pacientes y fichas"},{k:"leer",n:"Leer presupuesto (foto)"},{k:"contabilidad",n:"Contabilidad"},{k:"informes",n:"Informes del negocio"},{k:"presupuestos",n:"Presupuestos"},{k:"pagos",n:"Pagos y cobros"},{k:"proveedores",n:"Proveedores y pedidos"},{k:"ajustes",n:"Ajustes (y usuarios)"}];
 const PERM_TODO=()=>SECCIONES.reduce((o,s)=>(o[s.k]=true,o),{});
 function sesion(){try{return JSON.parse(localStorage.getItem("scanner_sesion"))||null}catch{return null}}
 function guardarSesion(s){localStorage.setItem("scanner_sesion",JSON.stringify(s));aplicarPermisos();}
@@ -1522,6 +1535,7 @@ function ir(pagina){
   if(pagina==="informes"){renderInformes();renderComisionesInforme();}
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();renderFacturas();renderGastos();renderCaja();fechasPorDefecto();}
+  if(pagina==="proveedores"){provAbierto=null;renderProveedoresPanel();}
   if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();renderDuraciones();renderBloqueos();renderComisionesAjustes();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
@@ -2087,6 +2101,8 @@ document.querySelectorAll("[data-libro]").forEach(b=>b.addEventListener("click",
   [r,document.getElementById("gs_importe"),document.getElementById("gs_base")].forEach(x=>{if(x){x.addEventListener("change",calcRet);x.addEventListener("input",calcRet);}});
 })();
 document.getElementById("fx_leer").addEventListener("click",leerFacturaProveedor);
+document.getElementById("pr_nuevo").addEventListener("click",()=>formProveedor(null));
+document.getElementById("pr_buscar").addEventListener("input",()=>{provAbierto=null;renderProveedoresPanel();});
 document.getElementById("pc_buscar").addEventListener("input",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
 document.getElementById("pc_filtro").addEventListener("change",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
 document.getElementById("pv_exportar").addEventListener("click",()=>{
@@ -2367,6 +2383,161 @@ function proveedoresResumen(anio){
     const c=g.categoria||"Otros";m.categorias[c]=(m.categorias[c]||0)+num(g.importe);
   });
   return Object.values(map).sort((a,b)=>b.total-a.total);
+}
+// ==================== Proveedores y pedidos ====================
+function provs(){return (cfg().provs||[]);}
+function pedidos(){return (cfg().pedidos||[]);}
+let provAbierto=null;
+let carrito={};   // {idProducto: cantidad} para el pedido en curso
+function gastadoCon(nombre){
+  return gastos().filter(g=>norm(g.proveedor||"")===norm(nombre||"")).reduce((s,g)=>s+num(g.importe),0);
+}
+function renderProveedoresPanel(){
+  const cont=document.getElementById("prLista");if(!cont)return;
+  // ---- FICHA DE UN PROVEEDOR ABIERTO ----
+  if(provAbierto){
+    const p=provs().find(x=>x.id===provAbierto);
+    if(!p){provAbierto=null;return renderProveedoresPanel();}
+    const cat=p.productos||[];
+    const totalCarrito=cat.filter(x=>carrito[x.id]>0).reduce((s,x)=>s+num(x.precio)*carrito[x.id],0);
+    const nLineas=Object.values(carrito).filter(c=>c>0).length;
+    cont.innerHTML=`<button class="ghost" id="pr_volver" style="margin-bottom:14px">← Volver a proveedores</button>
+      <div class="cbtit">🏭 ${esc(p.nombre)} ${p.habitual?'<span class="pill v">habitual</span>':""}
+        <span class="n">${p.email?"✉️ "+esc(p.email):"sin email"} ${p.tel?" · 📞 "+esc(p.tel):""}</span></div>
+      <div class="hint" style="margin-bottom:12px">${p.contacto?"Contacto: "+esc(p.contacto)+" · ":""}${p.nif?"NIF: "+esc(p.nif)+" · ":""}Gastado con este proveedor: <b>${fmtEur(gastadoCon(p.nombre))}</b>
+        <button class="ghost" id="pr_editar" style="padding:3px 9px;margin-left:8px">✏️ Editar datos</button></div>
+
+      <div style="font-weight:700;font-size:13px;margin:10px 0 8px">📦 Catálogo · lo que te vende</div>
+      <div class="toolbar">
+        <input id="pd_nombre" placeholder="Producto (ej. Guantes nitrilo M)" style="min-width:200px"/>
+        <input id="pd_ref" placeholder="Referencia" style="width:120px"/>
+        <input id="pd_precio" type="number" min="0" step="0.01" placeholder="Precio €" style="width:110px"/>
+        <button class="ghost" id="pd_add">➕ Añadir producto</button>
+      </div>
+      ${cat.length?`<div class="tablewrap"><table class="conta"><thead><tr>
+        <th>Producto</th><th>Ref.</th><th class="num">Precio</th><th class="num" style="width:150px">Cantidad a pedir</th><th></th></tr></thead><tbody>`+
+        cat.map(x=>`<tr>
+          <td><b>${esc(x.nombre)}</b></td><td>${esc(x.ref||"—")}</td><td class="num">${fmtEur(x.precio)}</td>
+          <td class="num"><input type="number" min="0" data-cant="${x.id}" value="${carrito[x.id]||""}" placeholder="0" style="width:70px;text-align:center"/></td>
+          <td><button class="ghost" data-delprod="${x.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`).join("")+
+        `</tbody></table></div>`:'<div class="hint">Aún no hay productos. Añade lo que te vende para poder pedirlo.</div>'}
+
+      ${nLineas?`<div style="margin-top:16px;padding:15px;border:1.5px solid var(--primary);border-radius:12px;background:var(--primary-soft)">
+        <div style="font-weight:700;margin-bottom:8px">🛒 Pedido: ${nLineas} producto${nLineas>1?"s":""} · Total ${fmtEur(totalCarrito)}</div>
+        <div class="toolbar" style="margin-bottom:0">
+          <button class="main" id="pr_email"${p.email?"":" disabled title='Añade el email del proveedor'"}>📧 Enviar pedido por correo</button>
+          <button class="ghost" id="pr_imprimir">🖨️ Imprimir pedido</button>
+          <button class="ghost" id="pr_vaciar">Vaciar</button>
+        </div></div>`:'<div class="hint" style="margin-top:14px">Pon una cantidad en los productos que quieras pedir.</div>'}
+
+      ${(pedidos().filter(x=>x.provId===p.id).length)?`<div style="font-weight:700;font-size:13px;margin:20px 0 8px">🕐 Pedidos anteriores</div>`+
+        pedidos().filter(x=>x.provId===p.id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).map(x=>
+          `<div class="recrow"><div><b>${esc(fmtFecha(x.fecha))}</b> · ${x.lineas.length} productos · ${fmtEur(x.total)} ${x.enviado?'<span class="pill v">enviado</span>':""}</div>
+          <button class="ghost" data-repedir="${x.id}">🔁 Repetir</button></div>`).join(""):""}`;
+    // eventos ficha
+    cont.querySelector("#pr_volver").addEventListener("click",()=>{provAbierto=null;carrito={};renderProveedoresPanel();});
+    cont.querySelector("#pr_editar").addEventListener("click",()=>formProveedor(p));
+    const add=cont.querySelector("#pd_add");
+    if(add)add.addEventListener("click",()=>{
+      const n=document.getElementById("pd_nombre").value.trim();
+      const pr=Number(document.getElementById("pd_precio").value)||0;
+      if(!n)return toast("Escribe el nombre del producto","err");
+      const P=provs().slice();const i=P.findIndex(x=>x.id===p.id);
+      P[i].productos=(P[i].productos||[]).concat([{id:uid("prod"),nombre:n,ref:document.getElementById("pd_ref").value.trim(),precio:pr}]);
+      setCfg({provs:P});renderProveedoresPanel();toast("Producto añadido");
+    });
+    cont.querySelectorAll("[data-cant]").forEach(i=>i.addEventListener("input",()=>{
+      carrito[i.dataset.cant]=Number(i.value)||0;renderProveedoresPanel();
+      const foco=document.querySelector(`[data-cant="${i.dataset.cant}"]`);if(foco){foco.focus();foco.setSelectionRange(foco.value.length,foco.value.length);}
+    }));
+    cont.querySelectorAll("[data-delprod]").forEach(b=>b.addEventListener("click",()=>{
+      const P=provs().slice();const i=P.findIndex(x=>x.id===p.id);
+      P[i].productos=(P[i].productos||[]).filter(x=>x.id!==b.dataset.delprod);
+      setCfg({provs:P});delete carrito[b.dataset.delprod];renderProveedoresPanel();
+    }));
+    const em=cont.querySelector("#pr_email");if(em)em.addEventListener("click",()=>enviarPedido(p,false));
+    const im=cont.querySelector("#pr_imprimir");if(im)im.addEventListener("click",()=>enviarPedido(p,true));
+    const vc=cont.querySelector("#pr_vaciar");if(vc)vc.addEventListener("click",()=>{carrito={};renderProveedoresPanel();});
+    cont.querySelectorAll("[data-repedir]").forEach(b=>b.addEventListener("click",()=>{
+      const ped=pedidos().find(x=>x.id===b.dataset.repedir);if(!ped)return;
+      carrito={};ped.lineas.forEach(l=>{if(l.prodId)carrito[l.prodId]=l.cant;});renderProveedoresPanel();toast("Pedido cargado, revísalo","info");
+    }));
+    return;
+  }
+  // ---- LISTA GENERAL ----
+  const q=norm((document.getElementById("pr_buscar")||{}).value||"");
+  let L=provs().slice();
+  if(q)L=L.filter(p=>norm(p.nombre).includes(q));
+  L.sort((a,b)=>(b.habitual?1:0)-(a.habitual?1:0)||gastadoCon(b.nombre)-gastadoCon(a.nombre));
+  if(!provs().length){cont.innerHTML='<div class="vacio"><span class="ico">🏭</span><b>Aún no tienes proveedores</b><span>Añade tu laboratorio, el de material, el de suministros… con su email para poder hacerles pedidos.</span></div>';return;}
+  cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">`+
+    L.map(p=>`<div class="folder" data-prov="${p.id}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <span style="font-size:26px">🏭</span>
+        <div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre)} ${p.habitual?"⭐":""}</div>
+        <div class="hint">${(p.productos||[]).length} productos${p.email?" · ✉️":""}</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="hint">gastado</span><span style="font-weight:800;color:var(--primary-d)">${fmtEur(gastadoCon(p.nombre))}</span></div>
+    </div>`).join("")+`</div>`;
+  cont.querySelectorAll("[data-prov]").forEach(el=>el.addEventListener("click",()=>{provAbierto=el.dataset.prov;carrito={};renderProveedoresPanel();}));
+}
+function formProveedor(p){
+  const ed=!!p;p=p||{};
+  const cont=document.getElementById("prLista");
+  cont.innerHTML=`<button class="ghost" id="pf_cancelar" style="margin-bottom:14px">← Cancelar</button>
+    <div class="cbtit">${ed?"✏️ Editar proveedor":"➕ Nuevo proveedor"}</div>
+    <div class="grid2">
+      <div class="field"><label>Nombre <b style="color:var(--danger)">*</b></label><input id="pf_nombre" value="${esc(p.nombre||"")}"/></div>
+      <div class="field"><label>Email (para los pedidos)</label><input id="pf_email" type="email" value="${esc(p.email||"")}"/></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Teléfono</label><input id="pf_tel" value="${esc(p.tel||"")}"/></div>
+      <div class="field"><label>Persona de contacto</label><input id="pf_contacto" value="${esc(p.contacto||"")}"/></div>
+      <div class="field"><label>NIF/CIF</label><input id="pf_nif" value="${esc(p.nif||"")}"/></div>
+    </div>
+    <label class="chk" style="display:flex;gap:9px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
+      <input type="checkbox" id="pf_habitual" ${p.habitual?"checked":""} style="width:auto;accent-color:var(--primary)"/> ⭐ Proveedor habitual (de los que más compras)</label>
+    <div class="field" style="margin-top:12px"><label>Notas</label><textarea id="pf_notas" rows="2">${esc(p.notas||"")}</textarea></div>
+    <button class="main" id="pf_guardar">${ed?"Guardar cambios":"Crear proveedor"}</button>`;
+  cont.querySelector("#pf_cancelar").addEventListener("click",()=>{provAbierto=ed?p.id:null;renderProveedoresPanel();});
+  cont.querySelector("#pf_guardar").addEventListener("click",()=>{
+    const g=id=>document.getElementById(id).value.trim();
+    if(!g("pf_nombre"))return toast("Pon el nombre del proveedor","err");
+    const P=provs().slice();
+    const datos={nombre:g("pf_nombre"),email:g("pf_email"),tel:g("pf_tel"),contacto:g("pf_contacto"),
+      nif:g("pf_nif").toUpperCase(),habitual:document.getElementById("pf_habitual").checked,notas:g("pf_notas")};
+    if(ed){const i=P.findIndex(x=>x.id===p.id);Object.assign(P[i],datos);provAbierto=p.id;}
+    else{const np=Object.assign({id:uid("prov"),productos:[]},datos);P.push(np);provAbierto=np.id;}
+    setCfg({provs:P});logAcc(ed?"Proveedor editado":"Proveedor creado",datos.nombre);
+    renderProveedoresPanel();toast("Proveedor guardado");
+  });
+}
+function enviarPedido(p,soloImprimir){
+  const cat=p.productos||[];
+  const lineas=cat.filter(x=>carrito[x.id]>0).map(x=>({prodId:x.id,nombre:x.nombre,ref:x.ref||"",precio:num(x.precio),cant:carrito[x.id]}));
+  if(!lineas.length)return toast("Pon cantidades antes de enviar","err");
+  const total=lineas.reduce((s,l)=>s+l.precio*l.cant,0);
+  const F=datosFiscales();
+  // guardar el pedido
+  const ped={id:uid("ped"),provId:p.id,fecha:hoyISO(),lineas,total,enviado:!soloImprimir};
+  setCfg({pedidos:pedidos().concat([ped])});
+  logAcc("Pedido a proveedor",p.nombre+" · "+fmtEur(total));
+  const cuerpo=`Buenos días${p.contacto?" "+p.contacto:""}:\n\nOs hacemos el siguiente pedido:\n\n`+
+    lineas.map(l=>`• ${l.cant} x ${l.nombre}${l.ref?" (ref. "+l.ref+")":""} — ${fmtEur(l.precio*l.cant)}`).join("\n")+
+    `\n\nTOTAL: ${fmtEur(total)}\n\nEnviar a:\n${F.nombre||"la clínica"}\n${F.dir||""} ${F.ciudad||""}\n${F.tel?"Tel: "+F.tel:""}\n\nGracias y un saludo.`;
+  if(soloImprimir){
+    const w=window.open("","_blank");if(!w)return toast("Permite las ventanas emergentes","err");
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>Pedido</title>
+      <div style="font-family:Arial;padding:40px;max-width:600px;margin:auto;white-space:pre-wrap;font-size:14px">
+      <div style="font-size:22px;font-weight:900;color:#1f5c4d;letter-spacing:2px">DKV</div>
+      <h2>PEDIDO · ${esc(fmtFecha(hoyISO()))}</h2><b>Para: ${esc(p.nombre)}</b>\n\n${esc(cuerpo)}</div>
+      <script>window.print()<\/script>`);w.document.close();
+  }else{
+    const asunto="Pedido "+(F.nombre||"clínica dental")+" - "+fmtFecha(hoyISO());
+    location.href=`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+    toast("Se abrirá tu correo con el pedido listo para enviar");
+  }
+  carrito={};renderProveedoresPanel();
 }
 // ==================== Carpetas económicas de pacientes ====================
 let pacienteCarpeta=null;
