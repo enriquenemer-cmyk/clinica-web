@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Clínica DKV"/>
 <title>Clínica — Pacientes, Agenda y Presupuestos</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 <style>
   :root{--bg:#eef2f7;--bg2:#e4eaf2;--sidebar:#0e1626;--sidebar2:#142033;--primary:#0d9488;--primary-d:#0f766e;--primary-soft:#d3f7f1;
@@ -856,6 +857,15 @@
       <div id="cbResumen"></div>
     </div>
     <div class="card">
+      <h2>🏢 Proveedores</h2>
+      <div class="sub">Se crean solos al registrar gastos. Aquí ves cuánto gastas con cada uno y sus datos fiscales.</div>
+      <div class="toolbar">
+        <button class="ghost" id="pv_exportar">⬇️ Exportar proveedores</button>
+      </div>
+      <div id="pvLista"></div>
+    </div>
+
+    <div class="card">
       <h2>🧮 Tu pago trimestral de IRPF (modelo 130)</h2>
       <div class="sub"><b>Cálculo orientativo</b> para que sepas cuánto apartar. La cifra oficial la calcula tu gestoría.</div>
       <div id="cb130"></div>
@@ -974,6 +984,14 @@
     <div class="card">
       <h2>💸 Gastos</h2>
       <div class="sub">Material, laboratorio, alquiler, nóminas… Sin esto solo ves ingresos, no el beneficio real.</div>
+      <div style="border:1.5px dashed var(--primary);border-radius:12px;padding:14px;margin-bottom:16px;background:var(--primary-soft)">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">📄 ¿Tienes la factura en PDF o foto? Léela automáticamente</div>
+        <div class="toolbar" style="margin-bottom:0">
+          <input type="file" id="fx_file" accept=".pdf,image/*" style="max-width:250px"/>
+          <button class="main" id="fx_leer">🔍 Leer factura</button>
+          <span class="hint" id="fx_estado"></span>
+        </div>
+      </div>
       <div class="grid3">
         <div class="field"><label>Fecha</label><input id="gs_fecha" type="date"/></div>
         <div class="field"><label>Hora</label><input id="gs_hora" type="time"/></div>
@@ -2040,6 +2058,15 @@ document.querySelectorAll("[data-libro]").forEach(b=>b.addEventListener("click",
   };
   [r,document.getElementById("gs_importe"),document.getElementById("gs_base")].forEach(x=>{if(x){x.addEventListener("change",calcRet);x.addEventListener("input",calcRet);}});
 })();
+document.getElementById("fx_leer").addEventListener("click",leerFacturaProveedor);
+document.getElementById("pv_exportar").addEventListener("click",()=>{
+  const anio=document.getElementById("cb_anio").value;
+  const P=proveedoresResumen(anio);
+  if(!P.length)return toast("No hay proveedores que exportar","err");
+  csvDescarga("proveedores-"+anio,["Proveedor","NIF","NumFacturas","Base","IVA","Retenido","Total","UltimaFactura","Categorias"],
+    P.map(p=>[p.nombre,p.nif,p.facturas,p.base.toFixed(2),p.iva.toFixed(2),p.retencion.toFixed(2),p.total.toFixed(2),p.ultima,Object.keys(p.categorias).join(" / ")]));
+  toast("Proveedores exportados");
+});
 document.getElementById("cb_ver").addEventListener("click",renderContabilidad);
 document.getElementById("cb_anio").addEventListener("change",renderContabilidad);
 document.getElementById("cb_trim").addEventListener("change",renderContabilidad);
@@ -2179,6 +2206,142 @@ function renderObligaciones(anio,trim){
       o.ret115>0?"Retenido al arrendador. Se lo ingresas tú a Hacienda.":"Sin alquileres con retención en este periodo.")+
     caja("Modelo 111","Retenciones de profesionales",o.ret111,
       o.ret111>0?"Retenido a profesionales o personal.":"Sin retenciones de profesionales en este periodo.");
+}
+// ==================== Leer facturas de proveedor (PDF o foto) ====================
+async function textoDePDF(file){
+  const buf=await file.arrayBuffer();
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let txt="";
+  for(let i=1;i<=Math.min(pdf.numPages,4);i++){
+    const pg=await pdf.getPage(i);
+    const c=await pg.getTextContent();
+    txt+=c.items.map(x=>x.str).join(" ")+"\n";
+  }
+  return txt;
+}
+function parseFactura(t){
+  const T=" "+String(t).replace(/\s+/g," ")+" ";
+  const d={};
+  const numero=v=>{const n=parseFloat(String(v).replace(/\./g,"").replace(",","."));return isNaN(n)?null:n;};
+  // NIF/CIF (evitamos coger el nuestro si aparece)
+  const nifs=[...T.matchAll(/\b([A-HJ-NP-SUVW]\d{7}[0-9A-J]|\d{8}[A-Z]|[XYZ]\d{7}[A-Z])\b/g)].map(m=>m[1]);
+  const mio=(datosFiscales().nif||"").toUpperCase();
+  d.nif=(nifs.find(n=>n!==mio)||nifs[0]||"").toUpperCase();
+  // fecha
+  const f=T.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
+  if(f)d.fecha=`${f[3]}-${String(f[2]).padStart(2,"0")}-${String(f[1]).padStart(2,"0")}`;
+  // número de factura
+  const nf=T.match(/(?:factura|fra\.?|n[ºo°]\.?\s*factura|invoice)\s*(?:n[ºo°]\.?|num\.?|:)?\s*([A-Z0-9][A-Z0-9\/\-\.]{2,20})/i);
+  if(nf)d.numfac=nf[1].replace(/[.,;:]$/,"");
+  // importes: buscamos etiquetas típicas
+  const cap=(re)=>{const m=T.match(re);return m?numero(m[1]):null;};
+  d.base=cap(/(?:base\s*imponible|base)\s*:?\s*([\d.,]+)\s*(?:€|EUR)?/i);
+  d.total=cap(/(?:total\s*factura|importe\s*total|total\s*a\s*pagar|total)\s*:?\s*([\d.,]+)\s*(?:€|EUR)?/i);
+  const ivaPct=T.match(/\b(21|10|4)\s*%/);
+  if(ivaPct)d.ivaPct=Number(ivaPct[1]);
+  d.cuota=cap(/(?:cuota\s*iva|iva\s*\(?\d{1,2}\s*%?\)?)\s*:?\s*([\d.,]+)\s*(?:€|EUR)?/i);
+  // retención
+  const ret=T.match(/(?:retenci[oó]n|irpf)\s*\(?(\d{1,2})\s*%/i);
+  if(ret)d.retPct=Number(ret[1]);
+  // proveedor: la línea con más mayúsculas cerca del NIF, o las primeras palabras
+  if(d.nif){
+    const i=T.indexOf(d.nif);
+    const antes=T.slice(Math.max(0,i-90),i);
+    const cand=antes.match(/([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ&.\s]{4,45}(?:S\.?L\.?|S\.?A\.?|SLU|SCP)?)\s*$/);
+    if(cand)d.proveedor=cand[1].replace(/\b(cif|nif|n\.i\.f\.|c\.i\.f\.)\b/gi,"").trim();
+  }
+  if(!d.proveedor){
+    const prim=String(t).split("\n").map(x=>x.trim()).filter(x=>x.length>3)[0]||"";
+    d.proveedor=prim.slice(0,45);
+  }
+  // coherencia: si falta algo lo deducimos
+  if(d.base&&d.ivaPct!=null&&!d.total)d.total=Math.round(d.base*(1+d.ivaPct/100)*100)/100;
+  if(d.total&&d.ivaPct!=null&&!d.base)d.base=Math.round(d.total/(1+d.ivaPct/100)*100)/100;
+  if(d.base&&d.total&&d.cuota==null)d.cuota=Math.round((d.total-d.base)*100)/100;
+  return d;
+}
+async function leerFacturaProveedor(){
+  const inp=document.getElementById("fx_file");
+  const f=inp.files&&inp.files[0];
+  const est=document.getElementById("fx_estado");
+  if(!f){toast("Elige el PDF o la foto de la factura","err");return;}
+  const btn=document.getElementById("fx_leer");btn.disabled=true;est.textContent="Leyendo…";
+  try{
+    let texto="";
+    if(/pdf$/i.test(f.name)||f.type==="application/pdf"){
+      est.textContent="Leyendo el PDF…";
+      texto=await textoDePDF(f);
+      if(texto.replace(/\s/g,"").length<30){
+        est.textContent="El PDF es una imagen escaneada, usando el lector de imágenes…";
+        texto="";  // PDF escaneado: no hay texto que extraer
+      }
+    }
+    if(!texto){
+      est.textContent="Leyendo la imagen…";
+      const dataUrl=/pdf$/i.test(f.name)?null:await comprimeImagen(f,1800,.8);
+      if(!dataUrl){est.textContent="";toast("Ese PDF está escaneado: haz una foto de la factura","err");btn.disabled=false;return;}
+      const mej=await mejorarParaOCR(dataUrl,2);
+      const w=await Tesseract.createWorker("spa",1);
+      const r=await w.recognize(mej);await w.terminate();
+      texto=r.data.text;
+    }
+    const d=parseFactura(texto);
+    const g=id=>document.getElementById(id);
+    if(d.proveedor)g("gs_proveedor").value=d.proveedor;
+    if(d.nif)g("gs_nif").value=d.nif;
+    if(d.numfac)g("gs_numfac").value=d.numfac;
+    if(d.fecha)g("gs_fecha").value=d.fecha;
+    if(d.base)g("gs_base").value=d.base;
+    if(d.total)g("gs_importe").value=d.total;
+    if(d.ivaPct!=null)g("gs_iva").value=String(d.ivaPct);
+    if(d.retPct)g("gs_ret").value=String(d.retPct);
+    g("gs_importe").dispatchEvent(new Event("input"));
+    const leidos=["proveedor","nif","numfac","fecha","base","total"].filter(k=>d[k]);
+    est.innerHTML=`<b style="color:var(--ok)">✓ Leídos ${leidos.length} datos</b> · <b style="color:var(--warn)">revísalos antes de guardar</b>`;
+    toast("Factura leída. Comprueba los importes antes de guardar","info");
+  }catch(e){est.textContent="";toast("No pude leer la factura: "+(e.message||""),"err");}
+  btn.disabled=false;
+}
+// ==================== Proveedores ====================
+function proveedoresResumen(anio){
+  const G=gastos().filter(g=>!anio||(g.fecha||"").slice(0,4)===String(anio));
+  const map={};
+  G.forEach(g=>{
+    const k=(g.proveedor||"(sin proveedor)").trim();
+    if(!map[k])map[k]={nombre:k,nif:g.nif||"",facturas:0,base:0,iva:0,total:0,retencion:0,ultima:"",categorias:{}};
+    const m=map[k];
+    m.facturas++;m.base+=num(g.base||g.importe);m.iva+=num(g.cuotaIva||0);m.total+=num(g.importe);
+    m.retencion+=num(g.base||g.importe)*num(g.retPct||0)/100;
+    if(!m.nif&&g.nif)m.nif=g.nif;
+    if((g.fecha||"")>m.ultima)m.ultima=g.fecha||"";
+    const c=g.categoria||"Otros";m.categorias[c]=(m.categorias[c]||0)+num(g.importe);
+  });
+  return Object.values(map).sort((a,b)=>b.total-a.total);
+}
+function renderProveedores(){
+  const cont=document.getElementById("pvLista");if(!cont)return;
+  const anio=(document.getElementById("cb_anio")||{}).value||"";
+  const P=proveedoresResumen(anio);
+  if(!P.length){cont.innerHTML='<div class="hint">Aún no hay proveedores. Se crean solos al registrar gastos con proveedor.</div>';return;}
+  const tot=P.reduce((s,p)=>s+p.total,0);
+  cont.innerHTML=`<div class="hint" style="margin-bottom:10px"><b>${P.length}</b> proveedores · <b>${fmtEur(tot)}</b> en total durante ${esc(anio)}</div>
+    <div class="tablewrap"><table class="conta"><thead><tr>
+      <th>Proveedor</th><th>NIF</th><th class="num">Facturas</th><th class="num">Base</th><th class="num">IVA</th>
+      <th class="num">Retenido</th><th class="num">TOTAL</th><th>Última</th><th class="num">% del gasto</th></tr></thead><tbody>`+
+    P.map(p=>`<tr>
+      <td><b>${esc(p.nombre)}</b><div class="hint">${Object.keys(p.categorias).map(c=>esc(c)).join(", ")}</div></td>
+      <td>${esc(p.nif||"—")}</td><td class="num">${p.facturas}</td>
+      <td class="num">${fmtEur(p.base)}</td><td class="num">${fmtEur(p.iva)}</td>
+      <td class="num">${p.retencion?fmtEur(p.retencion):"—"}</td>
+      <td class="num"><b>${fmtEur(p.total)}</b></td>
+      <td>${p.ultima?esc(fmtFecha(p.ultima)):"—"}</td>
+      <td class="num">${Math.round(p.total/(tot||1)*100)}%</td></tr>`).join("")+
+    `<tr class="tot"><td colspan="3">TOTALES</td>
+      <td class="num">${fmtEur(P.reduce((s,p)=>s+p.base,0))}</td>
+      <td class="num">${fmtEur(P.reduce((s,p)=>s+p.iva,0))}</td>
+      <td class="num">${fmtEur(P.reduce((s,p)=>s+p.retencion,0))}</td>
+      <td class="num">${fmtEur(tot)}</td><td colspan="2"></td></tr></tbody></table></div>`;
 }
 // ---- Diario detallado: todos los movimientos por día y hora, con saldo acumulado ----
 function movimientosDiarios(anio,trim){
@@ -2436,7 +2599,7 @@ function renderContabilidad(){
       ⚖️ <b>Recuerda:</b> esto es tu registro ordenado, no una declaración de impuestos. Los servicios sanitarios dentales suelen estar
       <b>exentos de IVA</b> (art. 20 Ley 37/1992), por lo que tus ingresos pueden ir sin IVA y el soportado no siempre es deducible.
       <b>Confírmalo siempre con tu gestoría.</b></div>`;
-  renderObligaciones(anio,trim);render130();renderBienes();
+  renderObligaciones(anio,trim);render130();renderBienes();renderProveedores();
   // comparativa por trimestres
   const comp=[1,2,3,4].map(t=>{const x=datosContables(anio,t);return {t,i:x.totIngresos,g:x.totGastos,r:x.resultado};});
   document.getElementById("cbTrimestres").innerHTML=`<div class="tablewrap"><table class="conta"><thead><tr>
