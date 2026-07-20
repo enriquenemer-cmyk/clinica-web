@@ -486,6 +486,7 @@
         <h2 style="margin:0;flex:1">Pacientes</h2>
         <input id="p_buscar" placeholder="🔍 Buscar por nombre o DNI"/>
         <button class="ghost" id="p_export">⬇️ Exportar</button>
+        <button class="ghost" id="p_escanear" title="Escanear un formulario relleno en papel">📸 Escanear formulario</button>
         <button class="ghost" id="p_recepcion" title="Abrir el formulario completo para rellenarlo con el paciente">🖥️ Registrar en recepción</button>
         <button class="main" id="p_nuevo">＋ Nuevo paciente</button>
       </div>
@@ -619,6 +620,56 @@
         <button class="main" id="ft_subir">⬆️ Añadir imagen</button>
       </div>
       <div id="ftLista"></div>
+    </div>
+  </div>
+
+  <div id="escanModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.72);backdrop-filter:blur(4px);z-index:9998;align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--card);border-radius:16px;padding:24px;max-width:940px;width:100%;max-height:94vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.45)">
+      <h2 style="margin:0 0 5px;font-size:18px">📸 Escanear formulario de papel</h2>
+      <div class="sub">Haz una foto del formulario relleno. Guardaré la hoja en su ficha y te ayudaré a pasar los datos.</div>
+
+      <div id="escPaso1">
+        <div class="toolbar">
+          <input type="file" id="esc_file" accept="image/*" capture="environment" style="max-width:280px"/>
+          <button class="main" id="esc_leer">🔍 Leer formulario</button>
+          <button class="ghost" id="esc_cerrar1">Cancelar</button>
+        </div>
+        <div id="esc_prog" class="hint" style="display:none;margin-top:10px"></div>
+      </div>
+
+      <div id="escPaso2" style="display:none">
+        <div class="alertabox" style="margin:14px 0">
+          <div class="cab" style="color:var(--warn)"><span style="font-size:20px">👀</span><b>Revisa antes de guardar</b></div>
+          <div style="font-size:12.5px;color:var(--warn);font-weight:600">El lector se equivoca con los números escritos a mano. <b>Comprueba especialmente el teléfono y el DNI</b> mirando la foto.</div>
+        </div>
+        <div class="grid2">
+          <div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:8px">La foto</div>
+            <img id="esc_img" style="width:100%;border:1px solid var(--borde);border-radius:12px;cursor:zoom-in" alt="formulario"/>
+            <div class="hint" style="margin-top:6px">Pulsa la foto para verla grande</div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:8px">Los datos</div>
+            <div class="field"><label>Nombre y apellidos <b style="color:var(--danger)">*</b></label><input id="esc_nombre"/></div>
+            <div class="grid2">
+              <div class="field"><label>DNI / NIE</label><input id="esc_dni"/></div>
+              <div class="field"><label>Teléfono <b style="color:var(--danger)">*</b></label><input id="esc_tel"/></div>
+            </div>
+            <div class="grid2">
+              <div class="field"><label>E-mail</label><input id="esc_email"/></div>
+              <div class="field"><label>Nacimiento</label><input id="esc_nac" type="date"/></div>
+            </div>
+            <div class="field"><label>Avisos médicos detectados (marca los que veas en el papel)</label>
+              <div id="esc_avisos" class="permgrid" style="max-height:210px;overflow-y:auto"></div></div>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:16px;margin-bottom:0">
+          <button class="main" id="esc_guardar">✅ Guardar paciente</button>
+          <button class="ghost" id="esc_otra">📸 Otra foto</button>
+          <button class="ghost" id="esc_cerrar2">Cancelar</button>
+          <span class="hint" id="esc_texto"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1664,6 +1715,12 @@ function abrirRecepcion(){
   else toast("Formulario abierto: rellénalo con el paciente","info");
 }
 document.getElementById("p_recepcion").addEventListener("click",abrirRecepcion);
+document.getElementById("p_escanear").addEventListener("click",abrirEscaner);
+document.getElementById("esc_leer").addEventListener("click",leerFormularioPapel);
+document.getElementById("esc_guardar").addEventListener("click",guardarEscaneado);
+document.getElementById("esc_otra").addEventListener("click",()=>{document.getElementById("escPaso1").style.display="block";document.getElementById("escPaso2").style.display="none";document.getElementById("esc_file").value="";});
+["esc_cerrar1","esc_cerrar2"].forEach(id=>document.getElementById(id).addEventListener("click",cerrarEscaner));
+document.getElementById("esc_img").addEventListener("click",()=>{if(escFoto)window.open(escFoto,"_blank");});
 document.getElementById("q_recepcion").addEventListener("click",abrirRecepcion);
 document.getElementById("im_leer").addEventListener("click",()=>{
   const t=document.getElementById("im_pegar").value.trim();
@@ -1772,6 +1829,115 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Escanear formulario de papel ====================
+// Palabras que buscamos en la foto para marcar los avisos médicos
+const PISTAS_AVISO={a_latex:["latex"],a_anestesicos:["anestesic"],a_medicamentos:["medicament"],a_metales:["metales","niquel","cromo"],
+  e_corazon:["corazon","soplo","infarto","marcapasos"],e_diabetes:["diabetes"],e_hipertension:["hipertension","tension arterial"],
+  e_hemorragias:["hemorragia"],e_hepatitis:["hepatitis","higado","hepatico"],e_epilepsia:["epilepsia"],e_renal:["renal","riñon","rinon"],
+  e_tiroides:["tiroides"],e_tbc:["tuberculosis","sida","vih"],embarazo:["embarazo","embarazada"],lactancia:["lactancia"],
+  fumador:["fumador","fuma"],bruxismo:["bruxismo","rechina","aprieta"],e_ulcera:["ulcera","gastritis"],apnea:["apnea"]};
+let escFoto=null,escTexto="";
+function abrirEscaner(){
+  document.getElementById("escanModal").style.display="flex";
+  document.getElementById("escPaso1").style.display="block";
+  document.getElementById("escPaso2").style.display="none";
+  document.getElementById("esc_file").value="";escFoto=null;escTexto="";
+}
+function cerrarEscaner(){document.getElementById("escanModal").style.display="none";}
+function parseFormulario(t){
+  const T=" "+String(t).replace(/\s+/g," ")+" ";const N=norm(T);
+  const d={};
+  const mDni=T.match(/\b(\d{8}\s?[A-Za-z]|[XYZxyz]\s?\d{7}\s?[A-Za-z])\b/);
+  if(mDni)d.dni=mDni[1].replace(/\s/g,"").toUpperCase();
+  const mTel=T.match(/\b([67]\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}|9\d{8})\b/);
+  if(mTel)d.telefono=mTel[1].replace(/\D/g,"");
+  const mMail=T.match(/[\w.\-]+@[\w\-]+\.\w{2,}/);
+  if(mMail)d.email=mMail[0].toLowerCase();
+  const mFec=T.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
+  if(mFec)d.nacimiento=`${mFec[3]}-${String(mFec[2]).padStart(2,"0")}-${String(mFec[1]).padStart(2,"0")}`;
+  // nombre: lo que sigue a la etiqueta "nombre"
+  const iN=N.indexOf("nombre");
+  if(iN>=0){
+    const trozo=T.slice(iN+6,iN+70).replace(/^[\s:y]*(apellidos?)?[\s:]*/i,"");
+    const corte=trozo.split(/\b(dni|nie|documento|tel|telefono|fecha|nacimiento|email|correo)\b/i)[0];
+    const limpio=corte.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ\s'-]/g," ").replace(/\s+/g," ").trim();
+    if(limpio.length>=4)d.nombre=limpio.toUpperCase().slice(0,60);
+  }
+  // casillas marcadas: buscamos la palabra clave y una X cerca de "si"
+  d.avisos={};
+  Object.keys(PISTAS_AVISO).forEach(k=>{
+    for(const p of PISTAS_AVISO[k]){
+      const i=N.indexOf(p);if(i<0)continue;
+      const ventana=N.slice(i,i+70);
+      if(/s[ií]\s*[\[\(|]?\s*[x✓v]/i.test(ventana)){d.avisos[k]=true;break;}
+    }
+  });
+  return d;
+}
+function renderRevisionEscaner(d){
+  document.getElementById("esc_nombre").value=d.nombre||"";
+  document.getElementById("esc_dni").value=d.dni||"";
+  document.getElementById("esc_tel").value=d.telefono||"";
+  document.getElementById("esc_email").value=d.email||"";
+  document.getElementById("esc_nac").value=d.nacimiento||"";
+  const todos=Object.assign({},ALERTA_ROJA,ALERTA_AMBAR);
+  document.getElementById("esc_avisos").innerHTML=Object.keys(todos).map(k=>{
+    const on=!!(d.avisos||{})[k];
+    return `<label class="permchk${on?" on":""}" style="font-size:12.5px"><input type="checkbox" data-av="${k}" ${on?"checked":""}/> ${esc(todos[k])}</label>`;
+  }).join("");
+  document.querySelectorAll("#esc_avisos input[data-av]").forEach(i=>i.addEventListener("change",()=>i.closest(".permchk").classList.toggle("on",i.checked)));
+  const n=Object.keys(d.avisos||{}).length;
+  document.getElementById("esc_texto").innerHTML=`Detectados <b>${n}</b> avisos marcados con «Sí»`;
+  document.getElementById("escPaso1").style.display="none";
+  document.getElementById("escPaso2").style.display="block";
+}
+async function leerFormularioPapel(){
+  const f=document.getElementById("esc_file").files&&document.getElementById("esc_file").files[0];
+  if(!f){toast("Elige o haz una foto del formulario","err");return;}
+  const prog=document.getElementById("esc_prog");prog.style.display="block";prog.textContent="Preparando el lector…";
+  const btn=document.getElementById("esc_leer");btn.disabled=true;
+  try{
+    escFoto=await comprimeImagen(f,1600,.72);
+    const w=await Tesseract.createWorker("spa",1,{logger:m=>{if(m.status==="recognizing text")prog.textContent="Leyendo la hoja… "+(m.progress*100|0)+"%";}});
+    const{data:{text}}=await w.recognize(escFoto);
+    await w.terminate();
+    escTexto=text;
+    document.getElementById("esc_img").src=escFoto;
+    renderRevisionEscaner(parseFormulario(text));
+    toast("Hoja leída. Revisa los datos antes de guardar","info");
+  }catch(e){toast("No pude leer la foto: "+(e.message||""),"err");}
+  prog.style.display="none";btn.disabled=false;
+}
+async function guardarEscaneado(){
+  const nombre=document.getElementById("esc_nombre").value.trim();
+  const tel=document.getElementById("esc_tel").value.replace(/\D/g,"");
+  if(!nombre){toast("Falta el nombre del paciente","err");return;}
+  if(!tel){toast("Falta el teléfono (compruébalo en la foto)","err");return;}
+  const ya=DB.pacientes().find(p=>(p.telefono||"").replace(/\D/g,"")===tel);
+  if(ya&&!confirm(`Ya existe "${ya.nombre}" con ese teléfono.\n\n¿Crear otro paciente igualmente?`))return;
+  const etiquetas=Object.assign({},ALERTA_ROJA,ALERTA_AMBAR);
+  const respuestas={};
+  document.querySelectorAll("#esc_avisos input[data-av]").forEach(i=>{if(i.checked)respuestas[i.dataset.av]="Sí";});
+  const p={id:uid("pac"),nombre:nombre.toUpperCase(),dni:document.getElementById("esc_dni").value.trim().toUpperCase(),
+    telefono:tel,email:document.getElementById("esc_email").value.trim(),nacimiento:document.getElementById("esc_nac").value,
+    creado:Date.now(),autoregistro:true,origenPapel:true,
+    cuestionario:{fecha:hoyISO(),respuestas,etiquetas,textos:{},origen:"formulario en papel escaneado"},fotos:[]};
+  // guardar la hoja escaneada en su ficha
+  const btn=document.getElementById("esc_guardar");btn.disabled=true;btn.textContent="Guardando…";
+  try{
+    const idImg=uid("img");
+    if(servidorOK&&escFoto){
+      const r=await fetch("/api/foto",{method:"POST",headers:{"content-type":"application/json",...authHeaders()},body:JSON.stringify({id:idImg,dataUrl:escFoto})});
+      if(r.ok)p.fotos=[{id:idImg,fecha:hoyISO(),nota:"Formulario de registro firmado (papel)",remota:true}];
+    }else if(escFoto){p.fotos=[{id:idImg,fecha:hoyISO(),nota:"Formulario de registro firmado (papel)",data:escFoto}];}
+  }catch{}
+  DB.setPacientes(DB.pacientes().concat([p]));
+  logAcc("Paciente por formulario escaneado",p.nombre);
+  btn.disabled=false;btn.textContent="✅ Guardar paciente";
+  cerrarEscaner();renderPacientes();
+  toast("Paciente creado con su hoja adjunta");
+  abrirFicha(p.id);
+}
 // ==================== Importar pacientes ====================
 const CAMPOS_IMP=[
   {k:"nombre",n:"Nombre y apellidos",req:true,pistas:["nombre","apellido","paciente","titular","razon"]},
