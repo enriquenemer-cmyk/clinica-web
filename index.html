@@ -821,6 +821,13 @@
         <button class="ghost" id="cb_imprimir">🖨️ Imprimir resumen</button>
       </div>
       <div class="kpi" id="cbKpi"></div>
+      <div class="jvsug" style="margin:6px 0 14px">
+        <button data-libro="resumen">📊 Resumen</button>
+        <button data-libro="ingresos">💶 Libro de ingresos</button>
+        <button data-libro="gastos">💸 Libro de gastos</button>
+        <button data-libro="iva">🧾 Desglose de IVA</button>
+        <button data-libro="categorias">📂 Gasto por categoría</button>
+      </div>
       <div id="cbResumen"></div>
     </div>
     <div class="card">
@@ -955,6 +962,11 @@
         <div class="field"><label>Base imponible (€)</label><input id="gs_base" type="number" min="0" step="0.01" placeholder="100.00"/></div>
         <div class="field"><label>IVA (%)</label><select id="gs_iva"></select></div>
         <div class="field"><label>Total (€)</label><input id="gs_importe" type="number" min="0" step="0.01" placeholder="121.00"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Retención IRPF (%)</label><select id="gs_ret"></select></div>
+        <div class="field"><label>Forma de pago</label><select id="gs_forma"></select></div>
+        <div class="field"><label>&nbsp;</label><div class="hint" id="gs_liquido" style="padding-top:12px"></div></div>
       </div>
       <div class="toolbar">
         <label class="chk" style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
@@ -1952,6 +1964,7 @@ document.getElementById("gs_add").addEventListener("click",()=>{
     categoria:g("gs_cat").value,concepto:con,importe:total,
     base:Math.round(b*100)/100,ivaPct:pct,cuotaIva:Math.round((total-b)*100)/100,
     proveedor:g("gs_proveedor").value.trim(),nif:g("gs_nif").value.trim().toUpperCase(),
+    retPct:Number(g("gs_ret").value)||0,forma:g("gs_forma").value,
     numfac:g("gs_numfac").value.trim(),deducible:g("gs_deducible").checked}])});
   logAcc("Gasto registrado",con+" · "+imp+"€");
   ["gs_concepto","gs_importe","gs_base","gs_proveedor","gs_nif","gs_numfac"].forEach(x=>document.getElementById(x).value="");
@@ -1982,6 +1995,24 @@ document.getElementById("bi_add").addEventListener("click",()=>{
   ["bi_desc","bi_importe"].forEach(x=>g(x).value="");
   renderBienes();renderContabilidad();toast("Bien registrado");
 });
+document.querySelectorAll("[data-libro]").forEach(b=>b.addEventListener("click",()=>{
+  window.__cbLibro=b.dataset.libro;
+  document.querySelectorAll("[data-libro]").forEach(x=>x.style.borderColor=x===b?"var(--primary)":"");
+  renderContabilidad();
+}));
+(()=>{const r=document.getElementById("gs_ret"),fp=document.getElementById("gs_forma");
+  if(r&&!r.options.length)r.innerHTML=[0,1,2,7,15,19].map(v=>`<option value="${v}">${v}%${v===19?" (alquiler)":v===15?" (profesionales)":v===7?" (nuevos autónomos)":""}</option>`).join("");
+  if(fp&&!fp.options.length)fp.innerHTML=["Transferencia","Tarjeta","Efectivo","Domiciliado","Otro"].map(v=>`<option>${v}</option>`).join("");
+  const calcRet=()=>{
+    const t=Number(document.getElementById("gs_importe").value)||0;
+    const b=Number(document.getElementById("gs_base").value)||0;
+    const rp=Number(r.value)||0;const el=document.getElementById("gs_liquido");
+    if(!el)return;
+    const base=b>0?b:t/(1+(Number(document.getElementById("gs_iva").value)||0)/100);
+    el.innerHTML=rp?`Retención <b>${(base*rp/100).toFixed(2)}€</b> → pagas <b>${(t-base*rp/100).toFixed(2)}€</b>`:"";
+  };
+  [r,document.getElementById("gs_importe"),document.getElementById("gs_base")].forEach(x=>{if(x){x.addEventListener("change",calcRet);x.addEventListener("input",calcRet);}});
+})();
 document.getElementById("cb_ver").addEventListener("click",renderContabilidad);
 document.getElementById("cb_anio").addEventListener("change",renderContabilidad);
 document.getElementById("cb_trim").addEventListener("change",renderContabilidad);
@@ -2077,6 +2108,34 @@ function enPeriodo(fecha,anio,trim){
   if(!Number(trim))return true;
   const[d,h]=TRIMESTRES[Number(trim)-1];
   return m>=d&&m<=h;
+}
+// Devuelve cada apunte con TODA su trazabilidad: de dónde sale, quién, qué documento
+function datosContablesDetalle(anio,trim){
+  const P=DB.pacientes(),C=DB.citas();
+  const nombreDe=id=>(P.find(x=>x.id===id)||{}).nombre||"";
+  const nifDe=id=>(P.find(x=>x.id===id)||{}).dni||"";
+  const F=facturas().filter(f=>enPeriodo(f.fecha,anio,trim));
+  const PG=DB.pagos().filter(p=>enPeriodo(p.fecha,anio,trim));
+  const facturados=new Set(F.map(f=>f.pagoId));
+  const ingresos=[
+    ...F.map(f=>{const pg=DB.pagos().find(x=>x.id===f.pagoId)||{};
+      return {fecha:f.fecha,doc:f.numero,tipo:"Factura",quien:nombreDe(f.pacienteId),nif:nifDe(f.pacienteId),
+        concepto:f.concepto||"",forma:pg.forma||"",base:num(f.base),ivaPct:num(f.iva),iva:num(f.cuota),
+        total:num(f.total),origen:"Factura "+f.numero,pacienteId:f.pacienteId};}),
+    // cobros que aún no tienen factura emitida
+    ...PG.filter(p=>!facturados.has(p.id)).map(p=>({fecha:p.fecha,doc:"—",tipo:"Cobro sin factura",
+        quien:nombreDe(p.pacienteId),nif:nifDe(p.pacienteId),concepto:p.concepto||"",forma:p.forma||"",
+        base:num(p.importe),ivaPct:0,iva:0,total:num(p.importe),origen:"Cobro registrado en Pagos",pacienteId:p.pacienteId}))
+  ].sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
+  const gs=gastos().filter(g=>enPeriodo(g.fecha,anio,trim)).map(g=>{
+    const base=num(g.base||g.importe),ret=num(g.retPct||0);
+    return {fecha:g.fecha,doc:g.numfac||"—",tipo:g.categoria||"Otros",quien:g.proveedor||"",nif:g.nif||"",
+      concepto:g.concepto||"",forma:g.forma||"",base,ivaPct:num(g.ivaPct||0),iva:num(g.cuotaIva||0),
+      retPct:ret,retencion:Math.round(base*ret)/100,total:num(g.importe),
+      liquido:Math.round((num(g.importe)-base*ret/100)*100)/100,
+      deducible:g.deducible!==false,origen:"Gasto registrado en Pagos › Gastos"};
+  }).sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
+  return {ingresos,gastos:gs};
 }
 function datosContables(anio,trim){
   // INGRESOS: facturas emitidas si las hay; si no, los cobros registrados
@@ -2201,12 +2260,58 @@ function renderContabilidad(){
       filas.map(f=>`<tr>${cols.map(c=>`<td>${c[2]?c[2](f):esc(f[c[0]]||"—")}</td>`).join("")}</tr>`).join("")+
       `</tbody></table></div>`:'<div class="hint">Sin movimientos en este periodo.</div>');
   const eur=k=>f=>num(f[k]).toFixed(2)+"€";
+  const det=datosContablesDetalle(anio,trim);
+  const suma=(a,k)=>a.reduce((s,x)=>s+num(x[k]),0);
+  const pie=(cols,filas)=>`<tr style="background:var(--gris);font-weight:800"><td colspan="${cols.findIndex(c=>c[3])}">TOTALES (${filas.length})</td>`+
+    cols.filter(c=>c[3]).map(c=>`<td>${suma(filas,c[0]).toFixed(2)}€</td>`).join("")+`<td></td></tr>`;
+  const tablaT=(titulo,filas,cols,nota)=>`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">${titulo} <span class="hint">(${filas.length} apuntes)</span></div>`+
+    (nota?`<div class="hint" style="margin-bottom:8px">${nota}</div>`:"")+
+    (filas.length?`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>`+
+      filas.map(f=>`<tr>${cols.map(c=>`<td>${c[2]?c[2](f):esc(f[c[0]]!=null&&f[c[0]]!==""?f[c[0]]:"—")}</td>`).join("")}</tr>`).join("")+
+      pie(cols,filas)+`</tbody></table></div>`:'<div class="hint">Sin movimientos en este periodo.</div>');
+  const e=k=>f=>num(f[k]).toFixed(2)+"€";
+  const COLS_ING=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Nº documento"],["tipo","Tipo"],
+    ["quien","Paciente"],["nif","NIF/DNI"],["concepto","Concepto"],["forma","Cobrado en"],
+    ["base","Base",e("base"),1],["ivaPct","%IVA",f=>f.ivaPct+"%"],["iva","Cuota IVA",e("iva"),1],["total","TOTAL",e("total"),1],
+    ["origen","De dónde sale",f=>`<span class="hint">${esc(f.origen)}</span>`]];
+  const COLS_GAS=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Nº factura"],["quien","Proveedor"],["nif","NIF"],
+    ["tipo","Categoría"],["concepto","Concepto"],["forma","Pagado con"],
+    ["base","Base",e("base"),1],["ivaPct","%IVA",f=>f.ivaPct+"%"],["iva","Cuota IVA",e("iva"),1],
+    ["retPct","%Ret.",f=>f.retPct?f.retPct+"%":"—"],["retencion","Retención",e("retencion"),1],
+    ["total","TOTAL",e("total"),1],["liquido","Líquido pagado",e("liquido"),1],
+    ["deducible","Deducible",f=>f.deducible?'<span class="pill v">sí</span>':'<span class="pill g">no</span>']];
+  // desglose de IVA por tipo (lo que pide el modelo 303)
+  const tiposIva=[...new Set([...det.ingresos.map(x=>x.ivaPct),...det.gastos.map(x=>x.ivaPct)])].sort((a,b)=>a-b);
+  const tablaIva=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">🧾 DESGLOSE DE IVA POR TIPO</div>
+    <div class="hint" style="margin-bottom:8px">Así es como lo pide el modelo 303. Recuerda que los tratamientos sanitarios suelen ir exentos (0%).</div>
+    <div class="tablewrap"><table><thead><tr><th>Tipo</th><th>Base repercutido</th><th>Cuota repercutida</th><th>Base soportado</th><th>Cuota soportada</th></tr></thead><tbody>`+
+    tiposIva.map(t=>{
+      const ri=det.ingresos.filter(x=>x.ivaPct===t),rg=det.gastos.filter(x=>x.ivaPct===t&&x.deducible);
+      return `<tr><td><b>${t}%</b></td><td>${suma(ri,"base").toFixed(2)}€</td><td>${suma(ri,"iva").toFixed(2)}€</td>
+        <td>${suma(rg,"base").toFixed(2)}€</td><td>${suma(rg,"iva").toFixed(2)}€</td></tr>`;}).join("")+
+    `<tr style="background:var(--gris);font-weight:800"><td>TOTAL</td>
+      <td>${suma(det.ingresos,"base").toFixed(2)}€</td><td>${suma(det.ingresos,"iva").toFixed(2)}€</td>
+      <td>${suma(det.gastos.filter(g=>g.deducible),"base").toFixed(2)}€</td><td>${suma(det.gastos.filter(g=>g.deducible),"iva").toFixed(2)}€</td></tr>
+    </tbody></table></div>`;
+  // gasto por categoría
+  const cats=[...new Set(det.gastos.map(g=>g.tipo))];
+  const totG=suma(det.gastos,"total")||1;
+  const tablaCat=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">📂 EN QUÉ SE VA EL DINERO</div>`+
+    (cats.length?cats.map(c=>{const f=det.gastos.filter(g=>g.tipo===c);const t=suma(f,"total");
+      return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <b>${esc(c)}</b><span>${t.toFixed(2)}€ · ${Math.round(t/totG*100)}%</span></div>
+        <div style="height:9px;background:var(--gris);border-radius:5px;overflow:hidden;border:1px solid var(--borde)">
+        <div style="height:100%;width:${Math.round(t/totG*100)}%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div></div>`;}).join("")
+      :'<div class="hint">Sin gastos en este periodo.</div>');
+  window.__cbVistas={
+    ingresos:tablaT("💶 LIBRO DE INGRESOS",det.ingresos,COLS_ING,"Cada línea indica de dónde sale: de una factura emitida o de un cobro registrado."),
+    gastos:tablaT("💸 LIBRO DE GASTOS",det.gastos,COLS_GAS,"Incluye retención de IRPF (alquiler, profesionales…) y el líquido que realmente pagaste."),
+    iva:tablaIva,categorias:tablaCat,
+    resumen:tablaT("💶 INGRESOS",det.ingresos,COLS_ING.slice(0,8).concat([COLS_ING[10]]))+
+            tablaT("💸 GASTOS",det.gastos,COLS_GAS.slice(0,8).concat([COLS_GAS[12],COLS_GAS[14]]))
+  };
   document.getElementById("cbResumen").innerHTML=
-    tabla("💶 INGRESOS",d.ingresos,[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Documento"],["quien","Paciente"],
-      ["concepto","Concepto"],["base","Base",eur("base")],["iva","IVA",eur("iva")],["total","Total",eur("total")]])+
-    tabla("💸 GASTOS",d.gastos,[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Nº factura"],["quien","Proveedor"],
-      ["nif","NIF"],["categoria","Categoría"],["base","Base",eur("base")],["iva","IVA",eur("iva")],["total","Total",eur("total")],
-      ["deducible","Deducible",f=>f.deducible?'<span class="pill v">sí</span>':'<span class="pill g">no</span>']])+
+    (window.__cbVistas[window.__cbLibro||"resumen"]||window.__cbVistas.resumen)+
     `<div class="hint" style="margin-top:14px;padding:12px;background:var(--gris);border-radius:10px;border:1px solid var(--borde)">
       ⚖️ <b>Recuerda:</b> esto es tu registro ordenado, no una declaración de impuestos. Los servicios sanitarios dentales suelen estar
       <b>exentos de IVA</b> (art. 20 Ley 37/1992), por lo que tus ingresos pueden ir sin IVA y el soportado no siempre es deducible.
@@ -2227,12 +2332,20 @@ function renderContabilidad(){
 function exportarContabilidad(){
   const anio=document.getElementById("cb_anio").value,trim=document.getElementById("cb_trim").value;
   const d=datosContables(anio,trim);
+  const det=datosContablesDetalle(anio,trim);
   const filas=[
-    ...d.ingresos.map(x=>["INGRESO",x.fecha,x.doc,x.quien,"",x.concepto,"",num(x.base).toFixed(2),num(x.iva).toFixed(2),num(x.total).toFixed(2),""]),
-    ...d.gastos.map(x=>["GASTO",x.fecha,x.doc,x.quien,x.nif,x.concepto,x.categoria,num(x.base).toFixed(2),num(x.iva).toFixed(2),num(x.total).toFixed(2),x.deducible?"SI":"NO"])
+    ...det.ingresos.map(x=>["INGRESO",x.fecha,x.doc,x.tipo,x.quien,x.nif,x.concepto,x.forma,
+      num(x.base).toFixed(2),x.ivaPct,num(x.iva).toFixed(2),"0","0.00",num(x.total).toFixed(2),num(x.total).toFixed(2),"SI",x.origen]),
+    ...det.gastos.map(x=>["GASTO",x.fecha,x.doc,x.tipo,x.quien,x.nif,x.concepto,x.forma,
+      num(x.base).toFixed(2),x.ivaPct,num(x.iva).toFixed(2),x.retPct,num(x.retencion).toFixed(2),
+      num(x.total).toFixed(2),num(x.liquido).toFixed(2),x.deducible?"SI":"NO",x.origen])
   ].sort((a,b)=>(a[1]||"").localeCompare(b[1]||""));
+  // los bienes de inversión van en su propio libro
+  bienes().forEach(b=>{const am=amortizacionAnual(b,anio);
+    if(am>0)filas.push(["AMORTIZACION",anio+"-12-31",b.id,b.tipo||"Inmovilizado",b.desc,"","Amortización del ejercicio","",
+      am.toFixed(2),0,"0.00","0","0.00",am.toFixed(2),am.toFixed(2),"SI","Bien comprado el "+fmtFecha(b.fecha)+" por "+num(b.importe).toFixed(2)+"€ al "+b.pct+"%"]);});
   csvDescarga(`libro-${anio}${Number(trim)?"-T"+trim:""}`,
-    ["Tipo","Fecha","Documento","Contraparte","NIF","Concepto","Categoria","Base","IVA","Total","Deducible"],filas);
+    ["Tipo","Fecha","Documento","Categoria","Contraparte","NIF","Concepto","FormaPago","Base","PctIVA","CuotaIVA","PctRetencion","Retencion","Total","Liquido","Deducible","Origen"],filas);
   toast("Libro exportado. Envíaselo a tu gestoría");
 }
 function imprimirContabilidad(){
