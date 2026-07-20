@@ -107,6 +107,21 @@
   .syncdot.off i{background:#ef4444}
   @keyframes pulse{50%{opacity:.35}}
   @media(max-width:620px){.syncdot span{display:none}.syncdot{padding:6px}}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 6px 4px 4px;border-radius:24px;background:var(--gris);border:1px solid var(--borde)}
+  .uavatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:0 0 30px}
+  .uinfo{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+  .uinfo b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+  .uinfo small{font-size:10px;color:var(--muted);font-weight:600}
+  .usalir{background:none;border:0;color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 9px;border-radius:14px;transition:.13s}
+  .usalir:hover{background:var(--dangerbg);color:var(--danger)}
+  @media(max-width:760px){.uinfo{display:none}}
+  .userow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--borde);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--card);flex-wrap:wrap}
+  .userow.off{opacity:.55}
+  .permgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:6px}
+  .permchk{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1.5px solid var(--borde);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.13s;background:var(--card)}
+  .permchk:hover{border-color:var(--primary)}
+  .permchk input{width:auto;margin:0;flex:0 0 auto;accent-color:var(--primary)}
+  .permchk.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary-d)}
   .telbtn{display:inline-flex;align-items:center;gap:5px;color:var(--primary-d);text-decoration:none;font-weight:600}
   .telbtn:hover{text-decoration:underline}
   .wabtn{color:#25d366;text-decoration:none;font-size:15px;margin-left:7px}
@@ -183,6 +198,7 @@
     <div class="topbar">
       <div class="pagetitle" id="pageTitle">Inicio</div>
       <div class="syncdot" id="syncDot" title="Estado de la conexión con el servidor"><i></i><span>Conectando…</span></div>
+      <div class="userchip" id="userChip" style="display:none"><div class="uavatar" id="uAvatar">·</div><div class="uinfo"><b></b><small></small></div><button class="usalir" id="btnSalir" title="Cerrar sesión">Salir</button></div>
       <input class="search" id="g_buscar" placeholder="Buscar paciente…   ( / )"/>
     </div>
     <div class="content">
@@ -455,6 +471,27 @@
       <button class="main" id="guardarListas">Guardar listas</button><span id="ajustesOK" class="hint" style="color:var(--verde)"></span>
     </div>
 
+    <div class="card" id="cardUsuarios">
+      <h2>👥 Usuarios y permisos</h2>
+      <div class="sub">Crea una cuenta para cada persona del equipo y marca a qué secciones puede entrar. Cada uno entrará con <b>su usuario y su contraseña</b>.</div>
+      <div id="u_lista"></div>
+      <div style="border:1.5px dashed var(--borde);border-radius:14px;padding:18px;margin-top:14px">
+        <div style="font-weight:700;margin-bottom:12px" id="u_formTitulo">➕ Nuevo usuario</div>
+        <div class="grid3">
+          <div class="field"><label>Nombre de la persona</label><input id="u_nombre" placeholder="Ej. María García"/></div>
+          <div class="field"><label>Usuario (para entrar)</label><input id="u_usuario" placeholder="Ej. maria" autocomplete="off"/></div>
+          <div class="field"><label>Contraseña</label><input id="u_pass" type="text" placeholder="Mínimo 4 caracteres" autocomplete="new-password"/></div>
+        </div>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin:6px 0 2px">¿A qué secciones puede entrar?</label>
+        <div class="permgrid" id="u_permisos"></div>
+        <div class="toolbar" style="margin-top:14px;margin-bottom:0">
+          <button class="main" id="u_guardar">Crear usuario</button>
+          <button class="ghost" id="u_cancelar" style="display:none">Cancelar</button>
+          <span class="hint">El administrador (contraseña maestra) siempre tiene acceso total.</span>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <h2>🕐 Horario de los doctores</h2>
       <div class="sub">Define qué días y a qué horas pasa consulta cada doctor. Al agendar una cita, la plataforma te ofrecerá solo las horas libres de ese doctor.</div>
@@ -563,22 +600,27 @@ function pedirLogin(){
   o.innerHTML=`<div style="background:#fff;border-radius:16px;padding:26px;width:330px;max-width:90%;box-shadow:0 20px 60px rgba(0,0,0,.35)">
     <div style="font-size:34px;text-align:center">🔒</div>
     <h2 style="text-align:center;margin:6px 0 4px;font-size:18px">Acceso al panel</h2>
-    <p style="text-align:center;color:#64748b;font-size:13px;margin:0 0 16px">Introduce la contraseña de la clínica</p>
-    <input id="loginPass" type="password" placeholder="Contraseña" style="width:100%;padding:11px;border:1px solid #e8edf3;border-radius:10px;font-size:15px"/>
-    <div id="loginErr" style="color:#e11d48;font-size:13px;margin-top:8px;display:none">Contraseña incorrecta.</div>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin:0 0 16px">Introduce tu usuario y contraseña</p>
+    <input id="loginUser" placeholder="Usuario" autocomplete="username" style="width:100%;padding:11px;border:1px solid #e8edf3;border-radius:10px;font-size:15px;margin-bottom:9px"/>
+    <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password" style="width:100%;padding:11px;border:1px solid #e8edf3;border-radius:10px;font-size:15px"/>
+    <div id="loginErr" style="color:#e11d48;font-size:13px;margin-top:8px;display:none">Usuario o contraseña incorrectos.</div>
     <button id="loginBtn" style="width:100%;margin-top:12px;background:#0d9488;color:#fff;border:0;border-radius:10px;padding:12px;font-weight:700;cursor:pointer">Entrar</button>
   </div>`;
   document.body.appendChild(o);
   const intentar=async()=>{
     const p=document.getElementById("loginPass").value;
-    try{const r=await fetch("/api/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:p})});
-      if(r.ok){panelPass=p;localStorage.setItem("scanner_pass",p);o.remove();initSync();}
+    const u=(document.getElementById("loginUser")||{}).value||"";
+    try{const r=await fetch("/api/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({usuario:u,password:p})});
+      if(r.ok){const d=await r.json().catch(()=>({}));
+        panelPass=d.token||p;localStorage.setItem("scanner_pass",panelPass);
+        guardarSesion({nombre:d.nombre||"Usuario",rol:d.rol||"personal",permisos:d.permisos||null});
+        o.remove();initSync();}
       else document.getElementById("loginErr").style.display="block";
     }catch{document.getElementById("loginErr").style.display="block";}
   };
   document.getElementById("loginBtn").addEventListener("click",intentar);
-  document.getElementById("loginPass").addEventListener("keydown",e=>{if(e.key==="Enter")intentar();});
-  setTimeout(()=>document.getElementById("loginPass").focus(),50);
+  ["loginPass","loginUser"].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener("keydown",ev=>{if(ev.key==="Enter")intentar();});});
+  setTimeout(()=>{const e=document.getElementById("loginUser");if(e)e.focus();},50);
 }
 const uid=(p)=>p+Date.now()+Math.floor(Math.random()*1000);
 const esc=(s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -601,6 +643,31 @@ function poblarPacientesSelect(){
 // ==================== Navegación ====================
 const TITULOS={inicio:"Inicio",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
 
+// ==================== Sesión y permisos ====================
+const SECCIONES=[{k:"inicio",n:"Inicio"},{k:"agenda",n:"Agenda"},{k:"recordatorios",n:"Recordatorios"},{k:"pacientes",n:"Pacientes y fichas"},{k:"leer",n:"Leer presupuesto (foto)"},{k:"presupuestos",n:"Presupuestos"},{k:"pagos",n:"Pagos y cobros"},{k:"ajustes",n:"Ajustes (y usuarios)"}];
+const PERM_TODO=()=>SECCIONES.reduce((o,s)=>(o[s.k]=true,o),{});
+function sesion(){try{return JSON.parse(localStorage.getItem("scanner_sesion"))||null}catch{return null}}
+function guardarSesion(s){localStorage.setItem("scanner_sesion",JSON.stringify(s));aplicarPermisos();}
+function cerrarSesion(){localStorage.removeItem("scanner_sesion");localStorage.removeItem("scanner_pass");location.reload();}
+function esAdmin(){const s=sesion();return !s||s.rol==="admin";}
+function puede(sec){const s=sesion();if(!s||!s.permisos)return true;return s.permisos[sec]!==false;}
+function aplicarPermisos(){
+  const s=sesion();
+  document.querySelectorAll("nav button[data-page]").forEach(b=>{
+    b.style.display=puede(b.dataset.page)?"":"none";
+  });
+  const chip=document.getElementById("userChip");
+  if(chip){
+    if(s){chip.style.display="";chip.querySelector("b").textContent=s.nombre||"Usuario";document.getElementById("uAvatar").textContent=(s.nombre||"U").trim().charAt(0).toUpperCase();
+      chip.querySelector("small").textContent=s.rol==="admin"?"Administrador":"Personal";}
+    else chip.style.display="none";
+  }
+  const cu=document.getElementById("cardUsuarios");if(cu)cu.style.display=esAdmin()?"":"none";
+  // si está en una página sin permiso, lo mandamos a la primera permitida
+  const act=document.querySelector(".page.on");
+  if(act){const k=act.id.replace("page-","");
+    if(k!=="ficha"&&!puede(k)){const primera=(SECCIONES.find(x=>puede(x.k))||{k:"inicio"}).k;ir(primera);}}
+}
 // ==================== Avisos flotantes (toast) ====================
 function toast(msg,tipo){
   const c=document.getElementById("toasts");if(!c)return;
@@ -740,6 +807,7 @@ function limpiarBorradores(){
   if(B.length!==A.length)DB.setPacientes(B);
 }
 function ir(pagina){
+  if(pagina!=="ficha"&&!puede(pagina)){toast("No tienes acceso a esta sección","err");return;}
   if(pagina!=="ficha")limpiarBorradores();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.page===pagina));
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
@@ -751,7 +819,7 @@ function ir(pagina){
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();fechasPorDefecto();}
-  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();}
+  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();renderUsuarios();if(!editandoUsuario)pintarPermisos(null);}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
 
@@ -1126,6 +1194,34 @@ document.getElementById("guardarListas").addEventListener("click",()=>{
   poblarListas();renderHorarios();toast("Listas guardadas");const o=document.getElementById("ajustesOK");o.textContent="";setTimeout(()=>o.textContent="",1500);
 });
 
+// ---- Usuarios: eventos ----
+document.getElementById("u_guardar").addEventListener("click",async()=>{
+  const nombre=document.getElementById("u_nombre").value.trim();
+  const usuario=document.getElementById("u_usuario").value.trim().toLowerCase();
+  const pass=document.getElementById("u_pass").value;
+  if(!nombre){toast("Pon el nombre de la persona","err");return;}
+  if(!/^[a-z0-9._-]{3,}$/.test(usuario)){toast("El usuario debe tener 3+ letras/números, sin espacios","err");return;}
+  if(usuario==="admin"){toast('"admin" está reservado para la contraseña maestra',"err");return;}
+  const U=usuarios().slice();
+  const repe=U.find(u=>u.usuario===usuario&&u.id!==editandoUsuario);
+  if(repe){toast("Ya existe un usuario con ese nombre de acceso","err");return;}
+  const permisos={};document.querySelectorAll("#u_permisos input[data-perm]").forEach(i=>permisos[i.dataset.perm]=i.checked);
+  if(!Object.values(permisos).some(Boolean)){toast("Marca al menos una sección","err");return;}
+  if(editandoUsuario){
+    const i=U.findIndex(u=>u.id===editandoUsuario);if(i<0)return;
+    U[i]=Object.assign({},U[i],{nombre,usuario,permisos});
+    if(pass){if(pass.length<4){toast("La contraseña debe tener al menos 4 caracteres","err");return;}U[i].hash=await hashPass(usuario,pass);}
+    else if(U[i].usuario!==usuario){toast("Has cambiado el usuario: escribe también la contraseña","err");return;}
+    setCfg({usuarios:U});toast("Usuario actualizado");
+  }else{
+    if(pass.length<4){toast("La contraseña debe tener al menos 4 caracteres","err");return;}
+    U.push({id:uid("usr"),nombre,usuario,hash:await hashPass(usuario,pass),permisos,activo:true,rol:"personal",creado:Date.now()});
+    setCfg({usuarios:U});toast("Usuario creado: ya puede entrar con su clave");
+  }
+  resetFormUsuario();renderUsuarios();
+});
+document.getElementById("u_cancelar").addEventListener("click",resetFormUsuario);
+document.getElementById("btnSalir").addEventListener("click",()=>{if(confirm("¿Cerrar sesión?"))cerrarSesion();});
 // ---- Horarios + recordatorios: eventos ----
 ["c_doctor","c_fecha","c_hora"].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener("change",pintarSlots);});
 document.getElementById("h_doctor").addEventListener("change",renderHorarios);
@@ -1147,6 +1243,61 @@ document.getElementById("r_guardar").addEventListener("click",()=>{
 });
 document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatoriosWA();});
 document.getElementById("rec_refrescar").addEventListener("click",renderRecordatoriosWA);
+// ==================== Usuarios ====================
+async function hashPass(usuario,password){
+  const dato=new TextEncoder().encode(String(usuario).toLowerCase().trim()+":"+password);
+  const buf=await crypto.subtle.digest("SHA-256",dato);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+let editandoUsuario=null;
+function usuarios(){return (cfg().usuarios||[]);}
+function pintarPermisos(perm){
+  document.getElementById("u_permisos").innerHTML=SECCIONES.map(s=>{
+    const on=perm?perm[s.k]!==false:true;
+    return `<label class="permchk${on?" on":""}"><input type="checkbox" data-perm="${s.k}" ${on?"checked":""}/> ${s.n}</label>`;
+  }).join("");
+  document.querySelectorAll("#u_permisos input[data-perm]").forEach(i=>i.addEventListener("change",()=>i.closest(".permchk").classList.toggle("on",i.checked)));
+}
+function renderUsuarios(){
+  const L=document.getElementById("u_lista");if(!L)return;
+  const U=usuarios();
+  L.innerHTML=U.length?U.map(u=>`<div class="userow${u.activo===false?" off":""}">
+      <div><div style="font-weight:700">${esc(u.nombre||u.usuario)} ${u.activo===false?'<span class="pill g">desactivado</span>':""}</div>
+      <div class="hint">👤 ${esc(u.usuario)} · Accede a: ${SECCIONES.filter(s=>(u.permisos||{})[s.k]!==false).map(s=>esc(s.n)).join(", ")||"—"}</div></div>
+      <div style="display:flex;gap:8px">
+        <button class="ghost" data-editu="${u.id}">✏️ Editar</button>
+        <button class="ghost" data-toggleu="${u.id}">${u.activo===false?"Activar":"Desactivar"}</button>
+        <button class="ghost" data-delu="${u.id}" style="color:var(--danger)">🗑️</button>
+      </div></div>`).join(""):'<div class="hint">Aún no has creado usuarios. Ahora mismo solo se entra con la contraseña maestra de la clínica.</div>';
+  L.querySelectorAll("[data-editu]").forEach(b=>b.addEventListener("click",()=>{
+    const u=usuarios().find(x=>x.id===b.dataset.editu);if(!u)return;
+    editandoUsuario=u.id;
+    document.getElementById("u_nombre").value=u.nombre||"";document.getElementById("u_usuario").value=u.usuario||"";
+    document.getElementById("u_pass").value="";document.getElementById("u_pass").placeholder="Dejar vacío para no cambiarla";
+    document.getElementById("u_formTitulo").textContent="✏️ Editando a "+(u.nombre||u.usuario);
+    document.getElementById("u_guardar").textContent="Guardar cambios";
+    document.getElementById("u_cancelar").style.display="";
+    pintarPermisos(u.permisos);document.getElementById("u_nombre").scrollIntoView({block:"center"});
+  }));
+  L.querySelectorAll("[data-toggleu]").forEach(b=>b.addEventListener("click",()=>{
+    const U2=usuarios().map(u=>u.id===b.dataset.toggleu?Object.assign({},u,{activo:u.activo===false}):u);
+    setCfg({usuarios:U2});renderUsuarios();toast("Usuario actualizado");
+  }));
+  L.querySelectorAll("[data-delu]").forEach(b=>b.addEventListener("click",()=>{
+    const u=usuarios().find(x=>x.id===b.dataset.delu);
+    if(!confirm(`¿Borrar el usuario "${u?u.nombre||u.usuario:""}"? Ya no podrá entrar.`))return;
+    setCfg({usuarios:usuarios().filter(x=>x.id!==b.dataset.delu)});renderUsuarios();toast("Usuario borrado");
+  }));
+}
+function resetFormUsuario(){
+  editandoUsuario=null;
+  ["u_nombre","u_usuario","u_pass"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("u_pass").placeholder="Mínimo 4 caracteres";
+  document.getElementById("u_formTitulo").textContent="➕ Nuevo usuario";
+  document.getElementById("u_guardar").textContent="Crear usuario";
+  document.getElementById("u_cancelar").style.display="none";
+  pintarPermisos(null);
+}
 function cargarRecCfg(){
   const C=cfg();
   document.getElementById("r_dias").value=String(C.recDias||2);
@@ -1302,7 +1453,7 @@ function fechasPorDefecto(){
 // Avisar si se sale con cambios sin guardar en la ficha
 window.addEventListener("beforeunload",()=>{limpiarBorradores();});
 
-poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();limpiarBorradores();fechasPorDefecto();initSync();
+poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();limpiarBorradores();fechasPorDefecto();aplicarPermisos();initSync();
 </script>
 </body>
 </html>
