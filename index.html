@@ -1318,7 +1318,9 @@ function jvDinero(){
   const PR=DB.presupuestos(),PG=DB.pagos();
   const fact=PR.filter(x=>/acept/i.test(x.estado||"")).reduce((s,x)=>s+(parseFloat(String(x.importe_venta||x.importe_presupuestado||0).replace(",","."))||0),0);
   const cob=PG.reduce((s,x)=>s+(parseFloat(x.importe)||0),0);
-  return `💶 <b>Resumen económico</b>`+jvLista([`Facturado (presupuestos aceptados): <b>${Math.round(fact)}€</b>`,`Cobrado: <b>${Math.round(cob)}€</b>`,`Pendiente de cobro: <b>${Math.round(fact-cob)}€</b>`]);
+  const pend=fact-cob;
+  return `💶 <b>Resumen económico</b>`+jvLista([`Facturado (presupuestos aceptados): <b>${Math.round(fact)}€</b>`,`Cobrado: <b>${Math.round(cob)}€</b>`,
+    pend>=0?`Pendiente de cobro: <b>${Math.round(pend)}€</b>`:`Pendiente de cobro: <b>0€</b> · hay <b>${Math.round(-pend)}€</b> cobrados por adelantado`]);
 }
 function jvResumen(){
   const hoy=hoyISO(),C=DB.citas().filter(c=>c.fecha===hoy);
