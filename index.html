@@ -824,6 +824,28 @@
       <div id="cbResumen"></div>
     </div>
     <div class="card">
+      <h2>🧮 Tu pago trimestral de IRPF (modelo 130)</h2>
+      <div class="sub"><b>Cálculo orientativo</b> para que sepas cuánto apartar. La cifra oficial la calcula tu gestoría.</div>
+      <div id="cb130"></div>
+    </div>
+
+    <div class="card">
+      <h2>🏗️ Bienes de inversión y amortizaciones</h2>
+      <div class="sub">Sillón, radiografía, mobiliario, ordenadores… Se deducen poco a poco cada año. <b>Es una deducción que se suele olvidar.</b></div>
+      <div class="grid3">
+        <div class="field"><label>Descripción</label><input id="bi_desc" placeholder="Sillón dental Adec"/></div>
+        <div class="field"><label>Fecha de compra</label><input id="bi_fecha" type="date"/></div>
+        <div class="field"><label>Importe sin IVA (€)</label><input id="bi_importe" type="number" min="0" step="0.01" placeholder="12000"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Tipo de bien</label><select id="bi_tipo"></select></div>
+        <div class="field"><label>% anual</label><input id="bi_pct" type="number" min="1" max="100" step="0.5"/></div>
+        <div class="field"><label>&nbsp;</label><button class="main" id="bi_add" style="width:100%">➕ Añadir bien</button></div>
+      </div>
+      <div id="biLista"></div>
+    </div>
+
+    <div class="card">
       <h2>📅 Comparativa por trimestres</h2>
       <div class="sub">Cómo va el año.</div>
       <div id="cbTrimestres"></div>
@@ -1948,6 +1970,18 @@ document.getElementById("gs_add").addEventListener("click",()=>{
   };
   ["gs_base","gs_importe","gs_iva"].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener("input",calc);if(e)e.addEventListener("change",calc);});
 })();
+document.getElementById("bi_add").addEventListener("click",()=>{
+  const g=id=>document.getElementById(id);
+  const desc=g("bi_desc").value.trim(),imp=Number(g("bi_importe").value),pct=Number(g("bi_pct").value);
+  if(!desc){toast("Escribe qué bien es","err");return;}
+  if(!imp||imp<=0){toast("Pon el importe sin IVA","err");return;}
+  if(!pct||pct<=0){toast("Pon el porcentaje anual","err");return;}
+  setCfg({bienes:bienes().concat([{id:uid("bi"),desc,fecha:g("bi_fecha").value||hoyISO(),importe:imp,pct,
+    tipo:TIPOS_BIEN[Number(g("bi_tipo").value)||0].n}])});
+  logAcc("Bien de inversión añadido",desc+" · "+imp+"€");
+  ["bi_desc","bi_importe"].forEach(x=>g(x).value="");
+  renderBienes();renderContabilidad();toast("Bien registrado");
+});
 document.getElementById("cb_ver").addEventListener("click",renderContabilidad);
 document.getElementById("cb_anio").addEventListener("change",renderContabilidad);
 document.getElementById("cb_trim").addEventListener("change",renderContabilidad);
@@ -2062,7 +2096,89 @@ function datosContables(anio,trim){
   return {ingresos,gastos:G,
     totIngresos:sum(ingresos,"total"),baseIngresos:sum(ingresos,"base"),ivaRepercutido:sum(ingresos,"iva"),
     totGastos:sum(G,"total"),baseGastos:sum(gDed,"base"),ivaSoportado:sum(gDed,"iva"),
+    amortizacion:0,
     resultado:sum(ingresos,"base")-sum(gDed,"base")};
+}
+// ---- Bienes de inversión y amortizaciones (autónomo) ----
+// Porcentajes máximos orientativos de las tablas oficiales de amortización simplificada
+const TIPOS_BIEN=[
+  {n:"Equipos médicos e instalaciones",pct:12},
+  {n:"Mobiliario y enseres",pct:10},
+  {n:"Equipos informáticos",pct:26},
+  {n:"Software",pct:33},
+  {n:"Obra e instalaciones del local",pct:5},
+  {n:"Vehículos",pct:16},
+  {n:"Otro inmovilizado",pct:10}
+];
+function bienes(){return (cfg().bienes||[]);}
+function amortizacionAnual(b,anio){
+  const compra=Number((b.fecha||"").slice(0,4));
+  if(!compra||Number(anio)<compra)return 0;
+  const anual=num(b.importe)*num(b.pct)/100;
+  const anysPasados=Number(anio)-compra;
+  const acumulado=anual*anysPasados;
+  if(acumulado>=num(b.importe))return 0;                 // ya está amortizado del todo
+  const resto=num(b.importe)-acumulado;
+  let cuota=Math.min(anual,resto);
+  if(anysPasados===0){                                    // el primer año, solo la parte proporcional
+    const mes=Number((b.fecha||"").slice(5,7))||1;
+    cuota=cuota*(13-mes)/12;
+  }
+  return Math.round(cuota*100)/100;
+}
+function renderBienes(){
+  const cont=document.getElementById("biLista");if(!cont)return;
+  const sel=document.getElementById("bi_tipo");
+  if(sel&&!sel.options.length){
+    sel.innerHTML=TIPOS_BIEN.map((t,i)=>`<option value="${i}">${esc(t.n)} (${t.pct}%)</option>`).join("");
+    document.getElementById("bi_pct").value=TIPOS_BIEN[0].pct;
+    sel.addEventListener("change",()=>{document.getElementById("bi_pct").value=TIPOS_BIEN[Number(sel.value)].pct;});
+  }
+  const f=document.getElementById("bi_fecha");if(f&&!f.value)f.value=hoyISO();
+  const anio=(document.getElementById("cb_anio")||{}).value||new Date().getFullYear();
+  const B=bienes();
+  if(!B.length){cont.innerHTML='<div class="hint">Sin bienes registrados. Añade el equipamiento caro: cada año te deduces una parte.</div>';return;}
+  const tot=B.reduce((s,b)=>s+amortizacionAnual(b,anio),0);
+  cont.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Bien</th><th>Compra</th><th>Importe</th><th>%</th><th>Amortización ${esc(anio)}</th><th></th></tr></thead><tbody>`+
+    B.map(b=>{const a=amortizacionAnual(b,anio);
+      return `<tr><td>${esc(b.desc)}</td><td>${esc(fmtFecha(b.fecha))}</td><td>${num(b.importe).toFixed(2)}€</td>
+      <td>${b.pct}%</td><td><b style="color:${a?"var(--primary-d)":"var(--muted)"}">${a.toFixed(2)}€</b>${a?"":" <span class='hint'>(amortizado)</span>"}</td>
+      <td><button class="ghost" data-delbi="${b.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`;}).join("")+
+    `<tr style="background:var(--gris)"><td colspan="4"><b>Total a deducir en ${esc(anio)}</b></td><td colspan="2"><b style="color:var(--primary-d)">${tot.toFixed(2)}€</b></td></tr>`+
+    `</tbody></table></div>`;
+  cont.querySelectorAll("[data-delbi]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("¿Borrar este bien?"))return;
+    setCfg({bienes:bienes().filter(x=>x.id!==b.dataset.delbi)});renderBienes();renderContabilidad();
+  }));
+}
+// ---- Estimación del modelo 130 (IRPF trimestral del autónomo) ----
+function render130(){
+  const cont=document.getElementById("cb130");if(!cont)return;
+  const anio=document.getElementById("cb_anio").value;
+  const hoyT=Math.ceil((new Date().getMonth()+1)/3);
+  const filas=[1,2,3,4].map(t=>{
+    // el 130 es acumulado desde enero hasta el final del trimestre
+    let ing=0,gas=0;
+    for(let k=1;k<=t;k++){const d=datosContables(anio,k);ing+=d.baseIngresos;gas+=d.baseGastos;}
+    const amort=bienes().reduce((s,b)=>s+amortizacionAnual(b,anio),0)*t/4;   // repartida por trimestres
+    const rendimiento=ing-gas-amort;
+    const cuota=Math.max(0,rendimiento*0.20);
+    return {t,ing,gas:gas+amort,rendimiento,cuota};
+  });
+  let previo=0;
+  const conPago=filas.map(f=>{const pagar=Math.max(0,f.cuota-previo);previo=Math.max(previo,f.cuota);return {...f,pagar};});
+  cont.innerHTML=`<div class="tablewrap"><table><thead><tr>
+    <th>Trimestre</th><th>Ingresos acum.</th><th>Gastos acum.</th><th>Rendimiento</th><th>20%</th><th>A pagar</th></tr></thead><tbody>`+
+    conPago.map(f=>`<tr${f.t===hoyT?' style="background:var(--primary-soft)"':""}>
+      <td><b>${f.t}º</b>${f.t===hoyT?' <span class="pill v">actual</span>':""}</td>
+      <td>${f.ing.toFixed(2)}€</td><td>${f.gas.toFixed(2)}€</td>
+      <td style="color:${f.rendimiento>=0?"var(--ok)":"var(--danger)"}">${f.rendimiento.toFixed(2)}€</td>
+      <td>${f.cuota.toFixed(2)}€</td>
+      <td><b style="color:var(--primary-d)">${f.pagar.toFixed(2)}€</b></td></tr>`).join("")+
+    `</tbody></table></div>
+    <div class="hint" style="margin-top:12px;padding:12px;background:var(--warnbg);border:1px solid var(--warn);border-radius:10px;color:var(--warn)">
+      ⚠️ <b>Cálculo orientativo</b> para que sepas cuánto ir apartando. El modelo 130 real puede variar por retenciones soportadas,
+      rendimientos de años anteriores, reducciones aplicables o si estás en otro régimen. <b>Lo presenta tu gestoría.</b></div>`;
 }
 function renderContabilidad(){
   const selA=document.getElementById("cb_anio");if(!selA)return;
@@ -2095,6 +2211,7 @@ function renderContabilidad(){
       ⚖️ <b>Recuerda:</b> esto es tu registro ordenado, no una declaración de impuestos. Los servicios sanitarios dentales suelen estar
       <b>exentos de IVA</b> (art. 20 Ley 37/1992), por lo que tus ingresos pueden ir sin IVA y el soportado no siempre es deducible.
       <b>Confírmalo siempre con tu gestoría.</b></div>`;
+  render130();renderBienes();
   // comparativa por trimestres
   const comp=[1,2,3,4].map(t=>{const x=datosContables(anio,t);return {t,i:x.totIngresos,g:x.totGastos,r:x.resultado};});
   document.getElementById("cbTrimestres").innerHTML=`<div class="tablewrap"><table><thead><tr>
