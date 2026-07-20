@@ -868,6 +868,17 @@
     </div>
 
     <div class="card">
+      <h2>🗂️ Carpetas de pacientes</h2>
+      <div class="sub">El historial económico de cada paciente: lo presupuestado, lo facturado, lo cobrado y lo que debe.</div>
+      <div class="toolbar">
+        <input id="pc_buscar" placeholder="Buscar paciente…" style="min-width:220px"/>
+        <select id="pc_filtro" style="width:auto">
+          <option value="">Todos</option><option value="debe">Solo los que deben</option><option value="alcorriente">Al corriente</option></select>
+      </div>
+      <div id="pcLista"></div>
+    </div>
+
+    <div class="card">
       <h2>🧮 Tu pago trimestral de IRPF (modelo 130)</h2>
       <div class="sub"><b>Cálculo orientativo</b> para que sepas cuánto apartar. La cifra oficial la calcula tu gestoría.</div>
       <div id="cb130"></div>
@@ -2076,6 +2087,8 @@ document.querySelectorAll("[data-libro]").forEach(b=>b.addEventListener("click",
   [r,document.getElementById("gs_importe"),document.getElementById("gs_base")].forEach(x=>{if(x){x.addEventListener("change",calcRet);x.addEventListener("input",calcRet);}});
 })();
 document.getElementById("fx_leer").addEventListener("click",leerFacturaProveedor);
+document.getElementById("pc_buscar").addEventListener("input",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
+document.getElementById("pc_filtro").addEventListener("change",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
 document.getElementById("pv_exportar").addEventListener("click",()=>{
   const anio=document.getElementById("cb_anio").value;
   const P=proveedoresResumen(anio);
@@ -2354,6 +2367,81 @@ function proveedoresResumen(anio){
     const c=g.categoria||"Otros";m.categorias[c]=(m.categorias[c]||0)+num(g.importe);
   });
   return Object.values(map).sort((a,b)=>b.total-a.total);
+}
+// ==================== Carpetas económicas de pacientes ====================
+let pacienteCarpeta=null;
+function balancePaciente(id){
+  const PR=DB.presupuestos().filter(x=>x.pacienteId===id);
+  const PG=DB.pagos().filter(x=>x.pacienteId===id);
+  const F=facturas().filter(x=>x.pacienteId===id);
+  const presupuestado=PR.reduce((s,x)=>s+num(x.importe_venta||x.importe_presupuestado),0);
+  const aceptado=PR.filter(x=>/acept/i.test(x.estado||"")&&!/no acept/i.test(x.estado||"")).reduce((s,x)=>s+num(x.importe_venta||x.importe_presupuestado),0);
+  const cobrado=PG.reduce((s,x)=>s+num(x.importe),0);
+  const facturado=F.reduce((s,x)=>s+num(x.total),0);
+  return {PR,PG,F,presupuestado,aceptado,cobrado,facturado,debe:Math.max(0,aceptado-cobrado)};
+}
+function renderCarpetasPacientes(){
+  const cont=document.getElementById("pcLista");if(!cont)return;
+  // ---- CARPETA ABIERTA ----
+  if(pacienteCarpeta){
+    const p=DB.pacientes().find(x=>x.id===pacienteCarpeta);
+    if(!p){pacienteCarpeta=null;return renderCarpetasPacientes();}
+    const b=balancePaciente(p.id);
+    const mov=[
+      ...b.PR.map(x=>({fecha:x.fecha||"",tipo:"presupuesto",concepto:"Presupuesto"+(x.doctor?" · "+x.doctor:""),estado:x.estado||"",importe:num(x.importe_venta||x.importe_presupuestado)})),
+      ...b.F.map(x=>({fecha:x.fecha||"",tipo:"factura",concepto:"Factura "+x.numero,estado:"",importe:num(x.total)})),
+      ...b.PG.map(x=>({fecha:x.fecha||"",hora:x.hora||"",tipo:"cobro",concepto:x.concepto||"Cobro",forma:x.forma||"",estado:"",importe:num(x.importe)}))
+    ].sort((a,b2)=>(b2.fecha+" "+(b2.hora||"")).localeCompare(a.fecha+" "+(a.hora||"")));
+    const plan=p.planPago?`<div class="hint" style="margin:10px 0"><b>Plan de pago:</b> ${p.planPago.cuotas.filter(c=>c.pagada).length}/${p.planPago.cuotas.length} cuotas pagadas · pendiente ${fmtEur(p.planPago.cuotas.filter(c=>!c.pagada).reduce((s,c)=>s+num(c.importe),0))}</div>`:"";
+    cont.innerHTML=`<button class="ghost" id="pc_volver" style="margin-bottom:14px">← Volver a todos los pacientes</button>
+      <div class="cbtit">🗂️ ${esc(p.nombre)}<span class="n">${p.dni?"DNI "+esc(p.dni)+" · ":""}${esc(p.telefono||"")}</span></div>
+      <div class="kpi" style="margin-bottom:12px">
+        <div class="b"><div class="n">${fmtEur(b.presupuestado)}</div><div class="t">Presupuestado</div></div>
+        <div class="b"><div class="n">${fmtEur(b.aceptado)}</div><div class="t">Aceptado</div></div>
+        <div class="b"><div class="n">${fmtEur(b.cobrado)}</div><div class="t">Cobrado</div></div>
+        <div class="b"><div class="n" style="color:${b.debe>0?"var(--danger)":"var(--ok)"}">${fmtEur(b.debe)}</div><div class="t">Debe</div></div></div>
+      ${plan}
+      ${b.debe>0?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${(p.telefono||"").replace(/\D/g,"").length===9?"34"+(p.telefono||"").replace(/\D/g,""):(p.telefono||"").replace(/\D/g,"")}?text=${encodeURIComponent("Hola "+(p.nombre||"").split(" ")[0]+", te recordamos que tienes pendiente el pago de "+fmtEur(b.debe)+" de tu tratamiento. ¡Gracias!")}" style="display:inline-block;margin-bottom:14px">📲 Reclamar ${fmtEur(b.debe)}</a>`:""}
+      <div class="tablewrap"><table class="conta"><thead><tr>
+        <th>Fecha</th><th>Movimiento</th><th>Detalle</th><th class="num">Importe</th></tr></thead><tbody>`+
+      (mov.length?mov.map(m=>`<tr>
+        <td>${esc(fmtFecha(m.fecha))}${m.hora?' <span class="hint">'+esc(m.hora)+'</span>':""}</td>
+        <td>${m.tipo==="cobro"?'<span class="pill v">cobro</span>':m.tipo==="factura"?'<span class="pill a">factura</span>':'<span class="pill g">presupuesto</span>'}</td>
+        <td>${esc(m.concepto)}${m.estado?' <span class="hint">('+esc(m.estado)+')</span>':""}${m.forma?' · '+esc(m.forma):""}</td>
+        <td class="num" style="${m.tipo==="cobro"?"color:var(--ok);font-weight:700":""}">${m.tipo==="cobro"?"+":""}${fmtEur(m.importe)}</td></tr>`).join("")
+        :'<tr><td colspan="4"><div class="hint">Sin movimientos económicos.</div></td></tr>')+
+      `</tbody></table></div>
+      <button class="ghost" id="pc_ficha" style="margin-top:12px">👤 Abrir ficha completa del paciente</button>`;
+    cont.querySelector("#pc_volver").addEventListener("click",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
+    cont.querySelector("#pc_ficha").addEventListener("click",()=>abrirFicha(p.id));
+    return;
+  }
+  // ---- VISTA GENERAL ----
+  const q=norm((document.getElementById("pc_buscar")||{}).value||"");
+  const filtro=(document.getElementById("pc_filtro")||{}).value||"";
+  let lista=DB.pacientes().map(p=>({p,b:balancePaciente(p.id)}))
+    .filter(x=>x.b.presupuestado||x.b.cobrado||x.b.facturado);   // solo con actividad económica
+  if(q)lista=lista.filter(x=>norm(x.p.nombre).includes(q)||norm(x.p.dni||"").includes(q));
+  if(filtro==="debe")lista=lista.filter(x=>x.b.debe>0.5);
+  if(filtro==="alcorriente")lista=lista.filter(x=>x.b.debe<=0.5);
+  lista.sort((a,b)=>b.b.debe-a.b.debe||b.b.cobrado-a.b.cobrado);
+  if(!lista.length){cont.innerHTML='<div class="hint">Ningún paciente con movimientos económicos'+(q||filtro?" para ese filtro":"")+".</div>";return;}
+  const totDebe=lista.reduce((s,x)=>s+x.b.debe,0),totCob=lista.reduce((s,x)=>s+x.b.cobrado,0);
+  cont.innerHTML=`<div class="hint" style="margin-bottom:12px"><b>${lista.length}</b> pacientes · cobrado <b>${fmtEur(totCob)}</b> · pendiente de cobro <b style="color:${totDebe>0?"var(--danger)":"var(--ok)"}">${fmtEur(totDebe)}</b></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">`+
+    lista.map(x=>`<div class="folder" data-pcpac="${x.p.id}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <span style="font-size:26px">${x.b.debe>0.5?"🗂️":"✅"}</span>
+        <div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.p.nombre||"(sin nombre)")}</div>
+        <div class="hint">${esc(x.p.telefono||x.p.dni||"")}</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="hint">cobrado ${fmtEur(x.b.cobrado)}</span>
+        ${x.b.debe>0.5?`<span style="font-weight:800;color:var(--danger)">debe ${fmtEur(x.b.debe)}</span>`:'<span class="pill v">al día</span>'}</div>
+    </div>`).join("")+`</div>`;
+  cont.querySelectorAll("[data-pcpac]").forEach(el=>el.addEventListener("click",()=>{
+    pacienteCarpeta=el.dataset.pcpac;renderCarpetasPacientes();
+    document.getElementById("pcLista").scrollIntoView({block:"start",behavior:"smooth"});
+  }));
 }
 let proveedorAbierto=null;
 async function verJustificante(fid,pdf){
@@ -2686,7 +2774,7 @@ function renderContabilidad(){
       ⚖️ <b>Recuerda:</b> esto es tu registro ordenado, no una declaración de impuestos. Los servicios sanitarios dentales suelen estar
       <b>exentos de IVA</b> (art. 20 Ley 37/1992), por lo que tus ingresos pueden ir sin IVA y el soportado no siempre es deducible.
       <b>Confírmalo siempre con tu gestoría.</b></div>`;
-  renderObligaciones(anio,trim);render130();renderBienes();renderProveedores();
+  renderObligaciones(anio,trim);render130();renderBienes();renderProveedores();renderCarpetasPacientes();
   // comparativa por trimestres
   const comp=[1,2,3,4].map(t=>{const x=datosContables(anio,t);return {t,i:x.totIngresos,g:x.totGastos,r:x.resultado};});
   document.getElementById("cbTrimestres").innerHTML=`<div class="tablewrap"><table class="conta"><thead><tr>
