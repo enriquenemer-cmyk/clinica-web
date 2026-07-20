@@ -1001,7 +1001,14 @@ async function pushStore(){
   if(!servidorOK)return;
   const serv=await getStore();
   if(serv==="AUTH"){pedirLogin();return;}
-  if(serv&&serv.pacientes){const loc=DB.pacientes(),ids=new Set(loc.map(p=>p.id));let c=false;serv.pacientes.forEach(p=>{if(!ids.has(p.id)){loc.push(p);c=true;}});if(c)localStorage.setItem(KEY.pac,JSON.stringify(loc));}
+  // Traemos del servidor los pacientes que no tenemos (p. ej. registros del QR),
+  // pero NUNCA los que hemos borrado a propósito (marcas de borrado).
+  if(serv&&serv.pacientes){
+    const loc=DB.pacientes(),ids=new Set(loc.map(p=>p.id)),tumbas=new Set(borrados().map(b=>b.id));
+    let c=false;
+    serv.pacientes.forEach(p=>{if(!ids.has(p.id)&&!tumbas.has(p.id)){loc.push(p);c=true;}});
+    if(c)localStorage.setItem(KEY.pac,JSON.stringify(loc));
+  }
   syncEstado("save");
   try{await fetch("/api/data",{method:"PUT",headers:{"content-type":"application/json",...authHeaders()},body:JSON.stringify(storeLocal())});syncEstado("on");}
   catch{syncEstado("off");toast("No se pudo guardar en el servidor. Los cambios están en este equipo.","err");}
@@ -1261,7 +1268,7 @@ function limpiarBorradores(){
   const A=DB.pacientes();const cit=DB.citas(),pre=DB.presupuestos(),pag=DB.pagos();
   const B=A.filter(p=>!(p.borrador&&!(p.nombre||"").trim()&&!(p.telefono||"").trim()&&!(p.dni||"").trim()
     &&!cit.some(c=>c.pacienteId===p.id)&&!pre.some(x=>x.pacienteId===p.id)&&!pag.some(x=>x.pacienteId===p.id)));
-  if(B.length!==A.length)DB.setPacientes(B);
+  if(B.length!==A.length){A.filter(p=>!B.includes(p)).forEach(p=>marcarBorrado(p.id));DB.setPacientes(B);}
 }
 function ir(pagina){
   if((pagina==="jarvis"||pagina==="usuarios")&&!esAdmin()){toast("Esta sección es solo para la administradora","err");return;}
@@ -1456,7 +1463,7 @@ document.getElementById("f_guardar").addEventListener("click",()=>{
 });
 document.getElementById("f_borrar").addEventListener("click",()=>{
   if(!confirm("¿Borrar este paciente? Sus citas y presupuestos quedarán sin asociar."))return;
-  logAcc("Paciente BORRADO",(DB.pacientes().find(x=>x.id===fichaId)||{}).nombre||"");aPapelera("paciente",DB.pacientes().find(x=>x.id===fichaId));
+  logAcc("Paciente BORRADO",(DB.pacientes().find(x=>x.id===fichaId)||{}).nombre||"");aPapelera("paciente",DB.pacientes().find(x=>x.id===fichaId));marcarBorrado(fichaId);
   DB.setPacientes(DB.pacientes().filter(x=>x.id!==fichaId));ir("pacientes");
 });
 document.getElementById("f_nuevaCita").addEventListener("click",()=>{
@@ -2218,6 +2225,16 @@ function imprimirArqueo(){
   <script>window.onload=function(){window.print()}<\/script></body></html>`);
   w.document.close();
 }
+// ==================== Marcas de borrado (para que lo borrado no vuelva) ====================
+function borrados(){return (cfg().borrados||[]);}
+function marcarBorrado(id){
+  if(!id)return;
+  const limite=Date.now()-90*24*3600*1000;          // caducan a los 90 días
+  const B=borrados().filter(b=>b.t>limite&&b.id!==id);
+  B.push({id,t:Date.now()});
+  setCfg({borrados:B.slice(-500)});
+}
+function olvidarBorrado(id){setCfg({borrados:borrados().filter(b=>b.id!==id)});}
 // ==================== Papelera (deshacer borrados) ====================
 function papelera(){return (cfg().papelera||[]);}
 function aPapelera(tipo,dato){
@@ -2237,7 +2254,7 @@ function renderPapelera(){
     <button class="ghost" data-restaurar="${x.id}">↩️ Restaurar</button></div>`).join("");
   cont.querySelectorAll("[data-restaurar]").forEach(b=>b.addEventListener("click",()=>{
     const it=papelera().find(x=>x.id===b.dataset.restaurar);if(!it)return;
-    if(it.tipo==="paciente")DB.setPacientes(DB.pacientes().concat([it.dato]));
+    if(it.tipo==="paciente"){olvidarBorrado(it.dato&&it.dato.id);DB.setPacientes(DB.pacientes().concat([it.dato]));}
     else if(it.tipo==="cita")DB.setCitas(DB.citas().concat([it.dato]));
     else if(it.tipo==="pago")DB.setPagos(DB.pagos().concat([it.dato]));
     else if(it.tipo==="gasto")setCfg({gastos:gastos().concat([it.dato])});
