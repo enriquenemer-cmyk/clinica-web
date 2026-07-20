@@ -426,6 +426,12 @@
     </div>
 
     <div class="card">
+      <h2>🗑️ Papelera</h2>
+      <div class="sub">Lo que borres se guarda aquí por si fue un error. Puedes restaurarlo.</div>
+      <div id="papLista"></div>
+    </div>
+
+    <div class="card">
       <h2>📋 Registro de actividad</h2>
       <div class="sub">Quién ha hecho qué y cuándo. Útil para saber si algo se ha borrado o modificado.</div>
       <div class="toolbar">
@@ -685,6 +691,11 @@
       <div class="sub">Últimos 12 meses, según los pagos registrados.</div>
       <div id="inf_ingresos"></div>
     </div>
+    <div class="card">
+      <h2>📈 Beneficio real (ingresos − gastos)</h2>
+      <div class="sub">Lo que de verdad queda. En verde los meses con beneficio, en rojo los que no.</div>
+      <div id="inf_beneficio"></div>
+    </div>
     <div class="grid2">
       <div class="card">
         <h2>🧾 Presupuestos</h2>
@@ -738,6 +749,30 @@
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Importe</th><th>Forma</th><th>Concepto</th><th></th></tr></thead><tbody id="pg_body"></tbody></table></div>
       <div class="vacio" id="pg_vacio"><span class="ico">💳</span><b>Todavía no hay cobros</b><span>Registra el primer pago con el formulario de arriba.</span></div>
     </div>
+    <div class="card">
+      <h2>🧮 Cierre de caja</h2>
+      <div class="sub">Cuadra la caja al final del día: qué has cobrado, en qué forma de pago, y qué has gastado.</div>
+      <div class="toolbar">
+        <input id="cj_fecha" type="date"/>
+        <button class="ghost" id="cj_ver">Ver día</button>
+        <button class="ghost" id="cj_imprimir">🖨️ Imprimir arqueo</button>
+      </div>
+      <div id="cjResumen"></div>
+    </div>
+
+    <div class="card">
+      <h2>💸 Gastos</h2>
+      <div class="sub">Material, laboratorio, alquiler, nóminas… Sin esto solo ves ingresos, no el beneficio real.</div>
+      <div class="toolbar">
+        <input id="gs_fecha" type="date"/>
+        <select id="gs_cat" style="width:auto"></select>
+        <input id="gs_concepto" placeholder="Concepto (ej. Laboratorio Pérez)" style="min-width:210px"/>
+        <input id="gs_importe" type="number" min="0" step="0.01" placeholder="Importe €" style="width:130px"/>
+        <button class="main" id="gs_add">➕ Añadir gasto</button>
+      </div>
+      <div id="gsLista"></div>
+    </div>
+
     <div class="card">
       <h2>📄 Facturas emitidas</h2>
       <div class="sub">Numeración correlativa. Pulsa 📄 en un pago para emitir su factura.</div>
@@ -1163,11 +1198,11 @@ function ir(pagina){
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
   if(pagina==="recordatorios"){renderRecordatoriosWA();renderRevision();renderEspera();}
   if(pagina==="jarvis")jvIniciar();
-  if(pagina==="usuarios"){renderUsuarios();renderLog();if(!editandoUsuario)pintarPermisos(null);}
+  if(pagina==="usuarios"){renderUsuarios();renderPapelera();renderLog();if(!editandoUsuario)pintarPermisos(null);}
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="informes")renderInformes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
-  if(pagina==="pagos"){poblarPagosSelects();renderPagos();renderFacturas();fechasPorDefecto();}
+  if(pagina==="pagos"){poblarPagosSelects();renderPagos();renderFacturas();renderGastos();renderCaja();fechasPorDefecto();}
   if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();renderDuraciones();renderBloqueos();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
@@ -1344,7 +1379,7 @@ document.getElementById("f_guardar").addEventListener("click",()=>{
 });
 document.getElementById("f_borrar").addEventListener("click",()=>{
   if(!confirm("¿Borrar este paciente? Sus citas y presupuestos quedarán sin asociar."))return;
-  logAcc("Paciente BORRADO",(DB.pacientes().find(x=>x.id===fichaId)||{}).nombre||"");
+  logAcc("Paciente BORRADO",(DB.pacientes().find(x=>x.id===fichaId)||{}).nombre||"");aPapelera("paciente",DB.pacientes().find(x=>x.id===fichaId));
   DB.setPacientes(DB.pacientes().filter(x=>x.id!==fichaId));ir("pacientes");
 });
 document.getElementById("f_nuevaCita").addEventListener("click",()=>{
@@ -1597,6 +1632,20 @@ document.getElementById("ad_guardar").addEventListener("click",async()=>{
   document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
   toast("Contraseña cambiada. Úsala la próxima vez que entres.");
 });
+document.getElementById("gs_add").addEventListener("click",()=>{
+  const imp=Number(document.getElementById("gs_importe").value);
+  const con=document.getElementById("gs_concepto").value.trim();
+  if(!imp||imp<=0){toast("Pon el importe del gasto","err");return;}
+  if(!con){toast("Escribe el concepto","err");return;}
+  setCfg({gastos:gastos().concat([{id:uid("gs"),fecha:document.getElementById("gs_fecha").value||hoyISO(),
+    categoria:document.getElementById("gs_cat").value,concepto:con,importe:imp}])});
+  logAcc("Gasto registrado",con+" · "+imp+"€");
+  document.getElementById("gs_concepto").value="";document.getElementById("gs_importe").value="";
+  renderGastos();renderCaja();toast("Gasto registrado");
+});
+document.getElementById("cj_ver").addEventListener("click",renderCaja);
+document.getElementById("cj_fecha").addEventListener("change",renderCaja);
+document.getElementById("cj_imprimir").addEventListener("click",imprimirArqueo);
 document.getElementById("pl_add").addEventListener("click",anadirPaso);
 document.getElementById("du_add").addEventListener("click",()=>{
   const n=document.getElementById("du_nombre").value.trim();
@@ -1675,6 +1724,109 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Gastos y cierre de caja ====================
+const CAT_GASTO=["Material","Laboratorio","Alquiler","Nóminas","Suministros","Marketing","Impuestos","Otros"];
+function gastos(){return (cfg().gastos||[]);}
+function renderGastos(){
+  const cont=document.getElementById("gsLista");if(!cont)return;
+  const sel=document.getElementById("gs_cat");
+  if(sel&&!sel.options.length)sel.innerHTML=CAT_GASTO.map(c=>`<option>${esc(c)}</option>`).join("");
+  const f=document.getElementById("gs_fecha");if(f&&!f.value)f.value=hoyISO();
+  const G=gastos().slice().sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+  if(!G.length){cont.innerHTML='<div class="hint">Sin gastos registrados. Apunta aquí lo que pagas para saber tu beneficio real.</div>';return;}
+  const mes=hoyISO().slice(0,7);
+  const totMes=G.filter(g=>(g.fecha||"").slice(0,7)===mes).reduce((s,g)=>s+num(g.importe),0);
+  cont.innerHTML=`<div class="hint" style="margin-bottom:10px">Gastos de este mes: <b>${Math.round(totMes)}€</b> · ${G.length} apuntes en total</div>
+    <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Concepto</th><th>Importe</th><th></th></tr></thead><tbody>`+
+    G.slice(0,60).map(g=>`<tr><td>${esc(fmtFecha(g.fecha))}</td><td><span class="pill g">${esc(g.categoria||"Otros")}</span></td>
+      <td style="white-space:normal">${esc(g.concepto||"—")}</td><td><b>${num(g.importe).toFixed(2)}€</b></td>
+      <td><button class="ghost" data-delgs="${g.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`).join("")+
+    `</tbody></table></div>`;
+  cont.querySelectorAll("[data-delgs]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("¿Borrar este gasto?"))return;
+    aPapelera("gasto",gastos().find(g=>g.id===b.dataset.delgs));
+    setCfg({gastos:gastos().filter(g=>g.id!==b.dataset.delgs)});renderGastos();renderCaja();toast("Gasto borrado");
+  }));
+}
+function datosCaja(f){
+  const PG=DB.pagos().filter(p=>p.fecha===f);
+  const G=gastos().filter(g=>g.fecha===f);
+  const formas={};PG.forEach(p=>{const k=p.forma||"Sin especificar";formas[k]=(formas[k]||0)+num(p.importe);});
+  const cobrado=PG.reduce((s,p)=>s+num(p.importe),0);
+  const gastado=G.reduce((s,g)=>s+num(g.importe),0);
+  return {f,PG,G,formas,cobrado,gastado,neto:cobrado-gastado};
+}
+function renderCaja(){
+  const cont=document.getElementById("cjResumen");if(!cont)return;
+  const inp=document.getElementById("cj_fecha");if(inp&&!inp.value)inp.value=hoyISO();
+  const d=datosCaja(inp?inp.value||hoyISO():hoyISO());
+  const efectivo=d.formas["Efectivo"]||0;
+  cont.innerHTML=`<div class="kpi">
+      <div class="b"><div class="n">${d.cobrado.toFixed(2)}€</div><div class="t">Cobrado</div></div>
+      <div class="b"><div class="n">${d.gastado.toFixed(2)}€</div><div class="t">Gastos del día</div></div>
+      <div class="b"><div class="n" style="color:${d.neto>=0?"var(--ok)":"var(--danger)"}">${d.neto.toFixed(2)}€</div><div class="t">Neto del día</div></div>
+      <div class="b"><div class="n">${efectivo.toFixed(2)}€</div><div class="t">Efectivo en caja</div></div>
+    </div>
+    <div class="grid2" style="margin-top:6px">
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:7px">Cobros por forma de pago</div>
+        ${Object.keys(d.formas).length?Object.keys(d.formas).map(k=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borde);font-size:13px"><span>${esc(k)}</span><b>${d.formas[k].toFixed(2)}€</b></div>`).join(""):'<div class="hint">Sin cobros ese día.</div>'}</div>
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:7px">Gastos del día</div>
+        ${d.G.length?d.G.map(g=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--borde);font-size:13px"><span>${esc(g.concepto||g.categoria)}</span><b>−${num(g.importe).toFixed(2)}€</b></div>`).join(""):'<div class="hint">Sin gastos ese día.</div>'}</div>
+    </div>`;
+}
+function imprimirArqueo(){
+  const f=(document.getElementById("cj_fecha")||{}).value||hoyISO();
+  const d=datosCaja(f);const F=datosFiscales();
+  const w=window.open("","_blank","width=760,height=900");if(!w)return toast("Permite las ventanas emergentes","err");
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Arqueo ${esc(fmtFecha(f))}</title>
+  <style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;padding:40px;max-width:680px;margin:auto;color:#0f172a;font-size:14px}
+  .marca{font-size:22px;font-weight:800;color:#1f5c4d;letter-spacing:2px}h1{font-size:18px;margin:18px 0 4px}
+  .mut{color:#64748b;font-size:12.5px}table{width:100%;border-collapse:collapse;margin:18px 0}
+  td,th{padding:9px;border-bottom:1px solid #e8edf3;text-align:left}th{background:#f1f5f9;font-size:11px;text-transform:uppercase}
+  .fin{font-size:17px;font-weight:800;color:#0f766e;border-top:2px solid #0d9488;padding-top:10px;display:flex;justify-content:space-between}
+  @media print{body{padding:12px}}</style></head><body>
+  <div class="marca">DKV</div><div class="mut" style="letter-spacing:1.5px;font-size:10px">ESPACIO DE SALUD</div>
+  ${F.nombre?`<div style="margin-top:6px;font-weight:700">${esc(F.nombre)}</div>`:""}
+  <h1>Arqueo de caja</h1><div class="mut">${esc(fechaBonita(f))}</div>
+  <table><thead><tr><th>Forma de pago</th><th style="text-align:right">Importe</th></tr></thead><tbody>
+  ${Object.keys(d.formas).map(k=>`<tr><td>${esc(k)}</td><td style="text-align:right">${d.formas[k].toFixed(2)} €</td></tr>`).join("")||'<tr><td colspan="2">Sin cobros</td></tr>'}
+  </tbody></table>
+  <table><thead><tr><th>Gastos</th><th style="text-align:right">Importe</th></tr></thead><tbody>
+  ${d.G.map(g=>`<tr><td>${esc(g.concepto||g.categoria)}</td><td style="text-align:right">−${num(g.importe).toFixed(2)} €</td></tr>`).join("")||'<tr><td colspan="2">Sin gastos</td></tr>'}
+  </tbody></table>
+  <div class="fin"><span>NETO DEL DÍA</span><span>${d.neto.toFixed(2)} €</span></div>
+  <div class="mut" style="margin-top:34px">Firma responsable: ____________________________</div>
+  <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
+}
+// ==================== Papelera (deshacer borrados) ====================
+function papelera(){return (cfg().papelera||[]);}
+function aPapelera(tipo,dato){
+  if(!dato)return;
+  const P=papelera().slice(-99);
+  P.push({id:uid("pap"),tipo,dato,cuando:Date.now(),quien:((sesion()||{}).nombre)||"Administrador"});
+  setCfg({papelera:P});
+}
+function renderPapelera(){
+  const cont=document.getElementById("papLista");if(!cont)return;
+  const P=papelera().slice().reverse();
+  if(!P.length){cont.innerHTML='<div class="hint">La papelera está vacía. Aquí aparece lo que borres, por si te arrepientes.</div>';return;}
+  const nom=x=>x.dato&&(x.dato.nombre||x.dato.concepto||x.dato.motivo||x.dato.trat||"(sin nombre)");
+  cont.innerHTML=P.map(x=>`<div class="recrow">
+    <div><div style="font-weight:700">${esc(nom(x))} <span class="pill g">${esc(x.tipo)}</span></div>
+      <div class="hint">Borrado por ${esc(x.quien)} el ${esc(new Date(x.cuando).toLocaleString("es-ES"))}</div></div>
+    <button class="ghost" data-restaurar="${x.id}">↩️ Restaurar</button></div>`).join("");
+  cont.querySelectorAll("[data-restaurar]").forEach(b=>b.addEventListener("click",()=>{
+    const it=papelera().find(x=>x.id===b.dataset.restaurar);if(!it)return;
+    if(it.tipo==="paciente")DB.setPacientes(DB.pacientes().concat([it.dato]));
+    else if(it.tipo==="cita")DB.setCitas(DB.citas().concat([it.dato]));
+    else if(it.tipo==="pago")DB.setPagos(DB.pagos().concat([it.dato]));
+    else if(it.tipo==="gasto")setCfg({gastos:gastos().concat([it.dato])});
+    else return toast("No sé restaurar ese tipo","err");
+    setCfg({papelera:papelera().filter(x=>x.id!==b.dataset.restaurar)});
+    logAcc("Restaurado de la papelera",it.tipo);renderPapelera();refrescarActual();toast("Restaurado ✓");
+  }));
+}
 // ==================== Check-in / sala de espera ====================
 function marcarLlegada(id){
   const A=DB.citas();const i=A.findIndex(c=>c.id===id);if(i<0)return;
@@ -2231,6 +2383,22 @@ function renderInformes(){
     const v=PG.filter(p=>(p.fecha||"").slice(0,7)===m).reduce((s,x)=>s+num(x.importe),0);
     return {etiqueta:mesNombre(m),valor:Math.round(v),texto:Math.round(v)+"€"};
   }),{alto:200});
+  // beneficio real por mes (ingresos - gastos)
+  const G=gastos();
+  const ben=meses.map(m=>{
+    const i=PG.filter(p=>(p.fecha||"").slice(0,7)===m).reduce((s,x)=>s+num(x.importe),0);
+    const g=G.filter(x=>(x.fecha||"").slice(0,7)===m).reduce((s,x)=>s+num(x.importe),0);
+    const b=i-g;
+    return {etiqueta:mesNombre(m),valor:Math.abs(Math.round(b)),texto:Math.round(b)+"€",color:b>=0?"var(--ok)":"var(--danger)"};
+  });
+  const totI=PG.reduce((s,x)=>s+num(x.importe),0),totG=G.reduce((s,x)=>s+num(x.importe),0);
+  document.getElementById("inf_beneficio").innerHTML=
+    `<div class="kpi" style="margin-bottom:14px">
+      <div class="b"><div class="n">${Math.round(totI)}€</div><div class="t">Ingresos totales</div></div>
+      <div class="b"><div class="n">${Math.round(totG)}€</div><div class="t">Gastos totales</div></div>
+      <div class="b"><div class="n" style="color:${totI-totG>=0?"var(--ok)":"var(--danger)"}">${Math.round(totI-totG)}€</div><div class="t">Beneficio</div></div>
+      <div class="b"><div class="n">${totI?Math.round((totI-totG)/totI*100):0}%</div><div class="t">Margen</div></div>
+    </div>`+(G.length?graficaBarras(ben,{alto:190}):'<div class="hint">Registra gastos en la sección Pagos para ver aquí tu beneficio real.</div>');
   // presupuestos por estado
   const pend=PR.filter(x=>/pendiente/i.test(x.estado||"")).length;
   const no=PR.filter(x=>/no acept/i.test(x.estado||"")).length;
@@ -2889,7 +3057,7 @@ function renderPagos(){
   document.querySelectorAll("[data-llego]").forEach(b=>b.addEventListener("click",()=>marcarLlegada(b.dataset.llego)));
   document.querySelectorAll("[data-factura]").forEach(b=>b.addEventListener("click",()=>emitirFactura(b.dataset.factura)));
   document.querySelectorAll("[data-delpago]").forEach(b=>b.addEventListener("click",()=>{
-    if(!confirm("¿Borrar este pago?"))return;logAcc("Pago BORRADO","");DB.setPagos(DB.pagos().filter(x=>x.id!==b.dataset.delpago));renderPagos();}));
+    if(!confirm("¿Borrar este pago?"))return;logAcc("Pago BORRADO","");aPapelera("pago",DB.pagos().find(x=>x.id===b.dataset.delpago));DB.setPagos(DB.pagos().filter(x=>x.id!==b.dataset.delpago));renderPagos();}));
 }
 
 // ==================== Recordatorios ====================
