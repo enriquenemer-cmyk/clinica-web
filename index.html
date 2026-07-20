@@ -1387,7 +1387,7 @@ function jvPago(t){
   return `✅ Pago registrado: <b>${imp}€</b> de <b>${esc(p.nombre)}</b> (hoy). Puedes cambiar la forma de pago en la sección Pagos.`;
 }
 function jvBuscar(t){
-  let q=(t.match(/(?:busca(?:r)?|ficha de|inf(?:o|ormaci[oó]n) de|datos de)\s+([a-záéíóúñ\s]{2,40})/i)||[])[1]||"";
+  let q=(t.match(/(?:busca(?:r|me)?|ficha de|inf(?:o|ormaci[oó]n) de|datos de|qui[eé]n es)\s+(?:a\s+|al\s+|la\s+|el\s+)?([a-záéíóúñ\s]{2,40})/i)||[])[1]||"";
   const p=jvPaciente(q);
   if(!p)return `No encuentro a <b>${esc(q.trim()||"ese paciente")}</b>.`;
   const cit=DB.citas().filter(c=>c.pacienteId===p.id);
