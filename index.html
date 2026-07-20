@@ -235,6 +235,28 @@
     #peLista th span{display:inline-block;padding:6px 3px}
     td[data-citadia],td[data-librecel]{min-height:44px}
   }
+  /* ---- Contabilidad ---- */
+  .cbtabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--borde);margin:4px 0 18px;padding-bottom:0}
+  .cbtabs button{background:none;border:0;border-bottom:3px solid transparent;padding:11px 15px;font-size:13.5px;
+    font-weight:700;color:var(--muted);cursor:pointer;transition:.15s;margin-bottom:-2px;border-radius:8px 8px 0 0}
+  .cbtabs button:hover{color:var(--txt);background:var(--gris)}
+  .cbtabs button.on{color:var(--primary-d);border-bottom-color:var(--primary);background:var(--primary-soft)}
+  .cbtit{font-weight:800;font-size:13px;margin:20px 0 8px;display:flex;align-items:center;gap:8px;
+    padding-bottom:7px;border-bottom:2px solid var(--borde);letter-spacing:.01em}
+  .cbtit .n{margin-left:auto;font-weight:600;font-size:12px;color:var(--muted)}
+  table.conta td,table.conta th{font-variant-numeric:tabular-nums}
+  table.conta td.num,table.conta th.num{text-align:right;white-space:nowrap}
+  table.conta tbody tr:nth-child(even){background:rgba(127,140,160,.045)}
+  table.conta tr.tot{background:var(--gris)!important;font-weight:800;border-top:2px solid var(--primary)}
+  table.conta tr.tot td{padding-top:12px;padding-bottom:12px}
+  .oblig{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+  .oblig .o{border:1.5px solid var(--borde);border-radius:14px;padding:16px;background:var(--card)}
+  .oblig .o b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+  .oblig .o .imp{font-size:25px;font-weight:800;color:var(--primary-d);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .oblig .o small{display:block;color:var(--muted);font-size:11.5px;margin-top:5px;line-height:1.45}
+  .oblig .o.cero .imp{color:var(--muted)}
+  .avisolegal{margin-top:16px;padding:13px 15px;background:var(--warnbg);border:1px solid var(--warn);
+    border-radius:11px;color:var(--warn);font-size:12px;line-height:1.55}
   /* ---- Alertas médicas ---- */
   .alertabox{border:1.5px solid var(--warn);background:var(--warnbg);border-radius:14px;padding:15px 17px;margin-bottom:18px}
   .alertabox.grave{border-color:var(--danger);background:var(--dangerbg);box-shadow:0 4px 18px rgba(225,29,72,.16)}
@@ -821,8 +843,10 @@
         <button class="ghost" id="cb_imprimir">🖨️ Imprimir resumen</button>
       </div>
       <div class="kpi" id="cbKpi"></div>
-      <div class="jvsug" style="margin:6px 0 14px">
-        <button data-libro="resumen">📊 Resumen</button>
+      <div class="cbtit">📌 QUÉ TOCA PRESENTAR ESTE PERIODO</div>
+      <div class="oblig" id="cbOblig"></div>
+      <div class="cbtabs">
+        <button data-libro="resumen" class="on">📊 Resumen</button>
         <button data-libro="ingresos">💶 Libro de ingresos</button>
         <button data-libro="gastos">💸 Libro de gastos</button>
         <button data-libro="iva">🧾 Desglose de IVA</button>
@@ -1997,7 +2021,7 @@ document.getElementById("bi_add").addEventListener("click",()=>{
 });
 document.querySelectorAll("[data-libro]").forEach(b=>b.addEventListener("click",()=>{
   window.__cbLibro=b.dataset.libro;
-  document.querySelectorAll("[data-libro]").forEach(x=>x.style.borderColor=x===b?"var(--primary)":"");
+  document.querySelectorAll("[data-libro]").forEach(x=>x.classList.toggle("on",x===b));
   renderContabilidad();
 }));
 (()=>{const r=document.getElementById("gs_ret"),fp=document.getElementById("gs_forma");
@@ -2109,6 +2133,50 @@ function enPeriodo(fecha,anio,trim){
   const[d,h]=TRIMESTRES[Number(trim)-1];
   return m>=d&&m<=h;
 }
+// Importes en formato español: 1.234,56 €
+function fmtEur(n){return new Intl.NumberFormat("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2}).format(num(n))+" €";}
+function pct(n){return num(n).toString().replace(".",",")+"%";}
+// Qué hay que presentar en el periodo elegido
+function obligaciones(anio,trim){
+  const det=datosContablesDetalle(anio,trim);
+  const sum=(a,k)=>a.reduce((s,x)=>s+num(x[k]),0);
+  const ded=det.gastos.filter(g=>g.deducible);
+  // IVA (modelo 303)
+  const ivaRep=sum(det.ingresos,"iva"),ivaSop=sum(ded,"iva");
+  // Retenciones practicadas (115 alquiler / 111 profesionales y personal)
+  const ret115=sum(det.gastos.filter(g=>/alquiler|local|arrendamiento/i.test(g.tipo+" "+g.concepto)),"retencion");
+  const ret111=sum(det.gastos,"retencion")-ret115;
+  // IRPF (modelo 130): acumulado del año hasta ese trimestre
+  let ing=0,gas=0;
+  const hasta=Number(trim)||4;
+  for(let k=1;k<=hasta;k++){const d=datosContables(anio,k);ing+=d.baseIngresos;gas+=d.baseGastos;}
+  const amort=bienes().reduce((s,b)=>s+amortizacionAnual(b,anio),0)*hasta/4;
+  const rend=ing-gas-amort;
+  const cuota130=Math.max(0,rend*0.20);
+  let previo=0;
+  for(let k=1;k<hasta;k++){
+    let i2=0,g2=0;for(let j=1;j<=k;j++){const d=datosContables(anio,j);i2+=d.baseIngresos;g2+=d.baseGastos;}
+    previo=Math.max(previo,Math.max(0,(i2-g2-amort*k/hasta)*0.20));
+  }
+  return {iva:ivaRep-ivaSop,ivaRep,ivaSop,ret115,ret111,pago130:Math.max(0,cuota130-previo),rend};
+}
+function renderObligaciones(anio,trim){
+  const cont=document.getElementById("cbOblig");if(!cont)return;
+  const o=obligaciones(anio,trim);
+  const t=Number(trim)||0;
+  const caja=(modelo,titulo,importe,nota)=>`<div class="o${importe<=0?" cero":""}">
+    <b>${modelo}</b><div style="font-weight:700;font-size:13px;margin-bottom:6px">${titulo}</div>
+    <div class="imp">${fmtEur(importe)}</div><small>${nota}</small></div>`;
+  cont.innerHTML=
+    caja("Modelo 130","IRPF · pago fraccionado",o.pago130,
+      t?`20% de tu rendimiento acumulado, menos lo ya pagado en trimestres anteriores.`:"Selecciona un trimestre para verlo por periodos.")+
+    caja("Modelo 303","IVA",Math.max(0,o.iva),
+      o.iva<0?`Sale a tu favor ${fmtEur(-o.iva)}: podrías compensarlo o pedir devolución.`:`IVA repercutido ${fmtEur(o.ivaRep)} − soportado ${fmtEur(o.ivaSop)}.`)+
+    caja("Modelo 115","Retenciones de alquiler",o.ret115,
+      o.ret115>0?"Retenido al arrendador. Se lo ingresas tú a Hacienda.":"Sin alquileres con retención en este periodo.")+
+    caja("Modelo 111","Retenciones de profesionales",o.ret111,
+      o.ret111>0?"Retenido a profesionales o personal.":"Sin retenciones de profesionales en este periodo.");
+}
 // Devuelve cada apunte con TODA su trazabilidad: de dónde sale, quién, qué documento
 function datosContablesDetalle(anio,trim){
   const P=DB.pacientes(),C=DB.citas();
@@ -2198,12 +2266,12 @@ function renderBienes(){
   const B=bienes();
   if(!B.length){cont.innerHTML='<div class="hint">Sin bienes registrados. Añade el equipamiento caro: cada año te deduces una parte.</div>';return;}
   const tot=B.reduce((s,b)=>s+amortizacionAnual(b,anio),0);
-  cont.innerHTML=`<div class="tablewrap"><table><thead><tr><th>Bien</th><th>Compra</th><th>Importe</th><th>%</th><th>Amortización ${esc(anio)}</th><th></th></tr></thead><tbody>`+
+  cont.innerHTML=`<div class="tablewrap"><table class="conta"><thead><tr><th>Bien</th><th>Compra</th><th>Importe</th><th>%</th><th>Amortización ${esc(anio)}</th><th></th></tr></thead><tbody>`+
     B.map(b=>{const a=amortizacionAnual(b,anio);
-      return `<tr><td>${esc(b.desc)}</td><td>${esc(fmtFecha(b.fecha))}</td><td>${num(b.importe).toFixed(2)}€</td>
-      <td>${b.pct}%</td><td><b style="color:${a?"var(--primary-d)":"var(--muted)"}">${a.toFixed(2)}€</b>${a?"":" <span class='hint'>(amortizado)</span>"}</td>
+      return `<tr><td>${esc(b.desc)}</td><td>${esc(fmtFecha(b.fecha))}</td><td class="num">${fmtEur(b.importe)}</td>
+      <td>${b.pct}%</td><td><b style="color:${a?"var(--primary-d)":"var(--muted)"}">${fmtEur(a)}</b>${a?"":" <span class='hint'>(amortizado)</span>"}</td>
       <td><button class="ghost" data-delbi="${b.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`;}).join("")+
-    `<tr style="background:var(--gris)"><td colspan="4"><b>Total a deducir en ${esc(anio)}</b></td><td colspan="2"><b style="color:var(--primary-d)">${tot.toFixed(2)}€</b></td></tr>`+
+    `<tr style="background:var(--gris)"><td colspan="4"><b>Total a deducir en ${esc(anio)}</b></td><td colspan="2"><b style="color:var(--primary-d)">${fmtEur(tot)}</b></td></tr>`+
     `</tbody></table></div>`;
   cont.querySelectorAll("[data-delbi]").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("¿Borrar este bien?"))return;
@@ -2226,14 +2294,14 @@ function render130(){
   });
   let previo=0;
   const conPago=filas.map(f=>{const pagar=Math.max(0,f.cuota-previo);previo=Math.max(previo,f.cuota);return {...f,pagar};});
-  cont.innerHTML=`<div class="tablewrap"><table><thead><tr>
+  cont.innerHTML=`<div class="tablewrap"><table class="conta"><thead><tr>
     <th>Trimestre</th><th>Ingresos acum.</th><th>Gastos acum.</th><th>Rendimiento</th><th>20%</th><th>A pagar</th></tr></thead><tbody>`+
     conPago.map(f=>`<tr${f.t===hoyT?' style="background:var(--primary-soft)"':""}>
       <td><b>${f.t}º</b>${f.t===hoyT?' <span class="pill v">actual</span>':""}</td>
-      <td>${f.ing.toFixed(2)}€</td><td>${f.gas.toFixed(2)}€</td>
-      <td style="color:${f.rendimiento>=0?"var(--ok)":"var(--danger)"}">${f.rendimiento.toFixed(2)}€</td>
-      <td>${f.cuota.toFixed(2)}€</td>
-      <td><b style="color:var(--primary-d)">${f.pagar.toFixed(2)}€</b></td></tr>`).join("")+
+      <td class="num">${fmtEur(f.ing)}</td><td class="num">${fmtEur(f.gas)}</td>
+      <td style="color:${f.rendimiento>=0?"var(--ok)":"var(--danger)"}">${fmtEur(f.rendimiento)}</td>
+      <td class="num">${fmtEur(f.cuota)}</td>
+      <td><b style="color:var(--primary-d)">${fmtEur(f.pagar)}</b></td></tr>`).join("")+
     `</tbody></table></div>
     <div class="hint" style="margin-top:12px;padding:12px;background:var(--warnbg);border:1px solid var(--warn);border-radius:10px;color:var(--warn)">
       ⚠️ <b>Cálculo orientativo</b> para que sepas cuánto ir apartando. El modelo 130 real puede variar por retenciones soportadas,
@@ -2249,27 +2317,27 @@ function renderContabilidad(){
   const d=datosContables(anio,trim);
   const ivaDif=d.ivaRepercutido-d.ivaSoportado;
   document.getElementById("cbKpi").innerHTML=`
-    <div class="b"><div class="n">${d.totIngresos.toFixed(2)}€</div><div class="t">Ingresos</div></div>
-    <div class="b"><div class="n">${d.totGastos.toFixed(2)}€</div><div class="t">Gastos</div></div>
-    <div class="b"><div class="n" style="color:${d.resultado>=0?"var(--ok)":"var(--danger)"}">${d.resultado.toFixed(2)}€</div><div class="t">Resultado (bases)</div></div>
-    <div class="b"><div class="n">${d.ivaRepercutido.toFixed(2)}€</div><div class="t">IVA repercutido</div></div>
-    <div class="b"><div class="n">${d.ivaSoportado.toFixed(2)}€</div><div class="t">IVA soportado</div></div>
-    <div class="b"><div class="n" style="color:${ivaDif>0?"var(--warn)":"var(--ok)"}">${ivaDif.toFixed(2)}€</div><div class="t">Diferencia de IVA</div></div>`;
+    <div class="b"><div class="n">${fmtEur(d.totIngresos)}</div><div class="t">Ingresos</div></div>
+    <div class="b"><div class="n">${fmtEur(d.totGastos)}</div><div class="t">Gastos</div></div>
+    <div class="b"><div class="n" style="color:${d.resultado>=0?"var(--ok)":"var(--danger)"}">${fmtEur(d.resultado)}</div><div class="t">Resultado (bases)</div></div>
+    <div class="b"><div class="n">${fmtEur(d.ivaRepercutido)}</div><div class="t">IVA repercutido</div></div>
+    <div class="b"><div class="n">${fmtEur(d.ivaSoportado)}</div><div class="t">IVA soportado</div></div>
+    <div class="b"><div class="n" style="color:${ivaDif>0?"var(--warn)":"var(--ok)"}">${fmtEur(ivaDif)}</div><div class="t">Diferencia de IVA</div></div>`;
   const tabla=(titulo,filas,cols)=>`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">${titulo} <span class="hint">(${filas.length})</span></div>`+
-    (filas.length?`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>`+
+    (filas.length?`<div class="tablewrap"><table class="conta"><thead><tr>${cols.map(c=>`<th class="${c[3]?"num":""}">${c[1]}</th>`).join("")}</tr></thead><tbody>`+
       filas.map(f=>`<tr>${cols.map(c=>`<td>${c[2]?c[2](f):esc(f[c[0]]||"—")}</td>`).join("")}</tr>`).join("")+
       `</tbody></table></div>`:'<div class="hint">Sin movimientos en este periodo.</div>');
-  const eur=k=>f=>num(f[k]).toFixed(2)+"€";
+  const eur=k=>f=>fmtEur(f[k]);
   const det=datosContablesDetalle(anio,trim);
   const suma=(a,k)=>a.reduce((s,x)=>s+num(x[k]),0);
-  const pie=(cols,filas)=>`<tr style="background:var(--gris);font-weight:800"><td colspan="${cols.findIndex(c=>c[3])}">TOTALES (${filas.length})</td>`+
-    cols.filter(c=>c[3]).map(c=>`<td>${suma(filas,c[0]).toFixed(2)}€</td>`).join("")+`<td></td></tr>`;
-  const tablaT=(titulo,filas,cols,nota)=>`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">${titulo} <span class="hint">(${filas.length} apuntes)</span></div>`+
+  const pie=(cols,filas)=>`<tr class="tot"><td colspan="${cols.findIndex(c=>c[3])}">TOTALES · ${filas.length} apuntes</td>`+
+    cols.filter(c=>c[3]).map(c=>`<td class="num">${fmtEur(suma(filas,c[0]))}</td>`).join("")+`<td></td></tr>`;
+  const tablaT=(titulo,filas,cols,nota)=>`<div class="cbtit">${titulo}<span class="n">${filas.length} apuntes</span></div>`+
     (nota?`<div class="hint" style="margin-bottom:8px">${nota}</div>`:"")+
     (filas.length?`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>`+
-      filas.map(f=>`<tr>${cols.map(c=>`<td>${c[2]?c[2](f):esc(f[c[0]]!=null&&f[c[0]]!==""?f[c[0]]:"—")}</td>`).join("")}</tr>`).join("")+
+      filas.map(f=>`<tr>${cols.map(c=>`<td class="${c[3]?"num":""}">${c[2]?c[2](f):esc(f[c[0]]!=null&&f[c[0]]!==""?f[c[0]]:"—")}</td>`).join("")}</tr>`).join("")+
       pie(cols,filas)+`</tbody></table></div>`:'<div class="hint">Sin movimientos en este periodo.</div>');
-  const e=k=>f=>num(f[k]).toFixed(2)+"€";
+  const e=k=>f=>fmtEur(f[k]);
   const COLS_ING=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Nº documento"],["tipo","Tipo"],
     ["quien","Paciente"],["nif","NIF/DNI"],["concepto","Concepto"],["forma","Cobrado en"],
     ["base","Base",e("base"),1],["ivaPct","%IVA",f=>f.ivaPct+"%"],["iva","Cuota IVA",e("iva"),1],["total","TOTAL",e("total"),1],
@@ -2284,14 +2352,12 @@ function renderContabilidad(){
   const tiposIva=[...new Set([...det.ingresos.map(x=>x.ivaPct),...det.gastos.map(x=>x.ivaPct)])].sort((a,b)=>a-b);
   const tablaIva=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">🧾 DESGLOSE DE IVA POR TIPO</div>
     <div class="hint" style="margin-bottom:8px">Así es como lo pide el modelo 303. Recuerda que los tratamientos sanitarios suelen ir exentos (0%).</div>
-    <div class="tablewrap"><table><thead><tr><th>Tipo</th><th>Base repercutido</th><th>Cuota repercutida</th><th>Base soportado</th><th>Cuota soportada</th></tr></thead><tbody>`+
+    <div class="tablewrap"><table class="conta"><thead><tr><th>Tipo</th><th class="num">Base repercutido</th><th>Cuota repercutida</th><th>Base soportado</th><th>Cuota soportada</th></tr></thead><tbody>`+
     tiposIva.map(t=>{
       const ri=det.ingresos.filter(x=>x.ivaPct===t),rg=det.gastos.filter(x=>x.ivaPct===t&&x.deducible);
-      return `<tr><td><b>${t}%</b></td><td>${suma(ri,"base").toFixed(2)}€</td><td>${suma(ri,"iva").toFixed(2)}€</td>
-        <td>${suma(rg,"base").toFixed(2)}€</td><td>${suma(rg,"iva").toFixed(2)}€</td></tr>`;}).join("")+
+      return `<tr><td><b>${t}%</b></td><td class="num">${fmtEur(suma(ri,"base"))}</td><td class="num">${fmtEur(suma(ri,"iva"))}</td><td class="num">${fmtEur(suma(rg,"base"))}</td><td class="num">${fmtEur(suma(rg,"iva"))}</td></tr>`;}).join("")+
     `<tr style="background:var(--gris);font-weight:800"><td>TOTAL</td>
-      <td>${suma(det.ingresos,"base").toFixed(2)}€</td><td>${suma(det.ingresos,"iva").toFixed(2)}€</td>
-      <td>${suma(det.gastos.filter(g=>g.deducible),"base").toFixed(2)}€</td><td>${suma(det.gastos.filter(g=>g.deducible),"iva").toFixed(2)}€</td></tr>
+      <td class="num">${fmtEur(suma(det.ingresos,"base"))}</td><td class="num">${fmtEur(suma(det.ingresos,"iva"))}</td><td class="num">${fmtEur(suma(det.gastos.filter(g=>g.deducible),"base"))}</td><td class="num">${fmtEur(suma(det.gastos.filter(g=>g.deducible),"iva"))}</td></tr>
     </tbody></table></div>`;
   // gasto por categoría
   const cats=[...new Set(det.gastos.map(g=>g.tipo))];
@@ -2299,7 +2365,7 @@ function renderContabilidad(){
   const tablaCat=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">📂 EN QUÉ SE VA EL DINERO</div>`+
     (cats.length?cats.map(c=>{const f=det.gastos.filter(g=>g.tipo===c);const t=suma(f,"total");
       return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-        <b>${esc(c)}</b><span>${t.toFixed(2)}€ · ${Math.round(t/totG*100)}%</span></div>
+        <b>${esc(c)}</b><span>${fmtEur(t)} · ${Math.round(t/totG*100)}%</span></div>
         <div style="height:9px;background:var(--gris);border-radius:5px;overflow:hidden;border:1px solid var(--borde)">
         <div style="height:100%;width:${Math.round(t/totG*100)}%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div></div>`;}).join("")
       :'<div class="hint">Sin gastos en este periodo.</div>');
@@ -2316,17 +2382,17 @@ function renderContabilidad(){
       ⚖️ <b>Recuerda:</b> esto es tu registro ordenado, no una declaración de impuestos. Los servicios sanitarios dentales suelen estar
       <b>exentos de IVA</b> (art. 20 Ley 37/1992), por lo que tus ingresos pueden ir sin IVA y el soportado no siempre es deducible.
       <b>Confírmalo siempre con tu gestoría.</b></div>`;
-  render130();renderBienes();
+  renderObligaciones(anio,trim);render130();renderBienes();
   // comparativa por trimestres
   const comp=[1,2,3,4].map(t=>{const x=datosContables(anio,t);return {t,i:x.totIngresos,g:x.totGastos,r:x.resultado};});
-  document.getElementById("cbTrimestres").innerHTML=`<div class="tablewrap"><table><thead><tr>
+  document.getElementById("cbTrimestres").innerHTML=`<div class="tablewrap"><table class="conta"><thead><tr>
     <th>Trimestre</th><th>Ingresos</th><th>Gastos</th><th>Resultado</th></tr></thead><tbody>`+
-    comp.map(c=>`<tr><td><b>${c.t}º trimestre</b></td><td>${c.i.toFixed(2)}€</td><td>${c.g.toFixed(2)}€</td>
-      <td style="color:${c.r>=0?"var(--ok)":"var(--danger)"};font-weight:700">${c.r.toFixed(2)}€</td></tr>`).join("")+
+    comp.map(c=>`<tr><td><b>${c.t}º trimestre</b></td><td class="num">${fmtEur(c.i)}</td><td class="num">${fmtEur(c.g)}</td>
+      <td style="color:${c.r>=0?"var(--ok)":"var(--danger)"};font-weight:700">${fmtEur(c.r)}</td></tr>`).join("")+
     `<tr style="background:var(--gris)"><td><b>TOTAL AÑO</b></td>
-      <td><b>${comp.reduce((s,c)=>s+c.i,0).toFixed(2)}€</b></td>
-      <td><b>${comp.reduce((s,c)=>s+c.g,0).toFixed(2)}€</b></td>
-      <td><b style="color:${comp.reduce((s,c)=>s+c.r,0)>=0?"var(--ok)":"var(--danger)"}">${comp.reduce((s,c)=>s+c.r,0).toFixed(2)}€</b></td></tr>`+
+      <td><b>${fmtEur(comp.reduce((s,c)=>s+c.i,0))}</b></td>
+      <td><b>${fmtEur(comp.reduce((s,c)=>s+c.g,0))}</b></td>
+      <td><b style="color:${comp.reduce((s,c)=>s+c.r,0)>=0?"var(--ok)":"var(--danger)"}">${fmtEur(comp.reduce((s,c)=>s+c.r,0))}</b></td></tr>`+
     `</tbody></table></div>`;
 }
 function exportarContabilidad(){
