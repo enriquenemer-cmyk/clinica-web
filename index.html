@@ -1864,12 +1864,20 @@ function parseFormulario(t){
     if(limpio.length>=4)d.nombre=limpio.toUpperCase().slice(0,60);
   }
   // casillas marcadas: buscamos la palabra clave y una X cerca de "si"
-  d.avisos={};
+  d.avisos={};d.dudosos={};
+  const marcada=c=>/[x✓v✗×]/i.test(String(c||""));
   Object.keys(PISTAS_AVISO).forEach(k=>{
     for(const p of PISTAS_AVISO[k]){
       const i=N.indexOf(p);if(i<0)continue;
-      const ventana=N.slice(i,i+70);
-      if(/s[ií]\s*[\[\(|]?\s*[x✓v]/i.test(ventana)){d.avisos[k]=true;break;}
+      // ventana corta y cortada antes de la siguiente pregunta
+      let v=N.slice(i+p.length,i+p.length+55);
+      const sig=Object.values(PISTAS_AVISO).flat().map(q=>v.indexOf(q)).filter(x=>x>4);
+      if(sig.length)v=v.slice(0,Math.min(...sig));
+      // patrón exacto:  si [ ]   no [x]
+      const m=v.match(/s[ií]\s*[\[\(|]([^\]\)|]{0,3})[\]\)|]\s*no\s*[\[\(|]([^\]\)|]{0,3})[\]\)|]/i);
+      if(m){ if(marcada(m[1])&&!marcada(m[2]))d.avisos[k]=true; break; }
+      // si no reconozco la estructura, no adivino: lo marco como dudoso
+      if(/s[ií]|no/i.test(v)){d.dudosos[k]=true;break;}
     }
   });
   return d;
@@ -1886,8 +1894,9 @@ function renderRevisionEscaner(d){
     return `<label class="permchk${on?" on":""}" style="font-size:12.5px"><input type="checkbox" data-av="${k}" ${on?"checked":""}/> ${esc(todos[k])}</label>`;
   }).join("");
   document.querySelectorAll("#esc_avisos input[data-av]").forEach(i=>i.addEventListener("change",()=>i.closest(".permchk").classList.toggle("on",i.checked)));
-  const n=Object.keys(d.avisos||{}).length;
-  document.getElementById("esc_texto").innerHTML=`Detectados <b>${n}</b> avisos marcados con «Sí»`;
+  const n=Object.keys(d.avisos||{}).length,du=Object.keys(d.dudosos||{}).length;
+  document.getElementById("esc_texto").innerHTML=`Detectados <b>${n}</b> avisos con «Sí»`+
+    (du?` · <span style="color:var(--warn)"><b>${du}</b> preguntas no las he podido leer bien: compruébalas en la foto</span>`:"");
   document.getElementById("escPaso1").style.display="none";
   document.getElementById("escPaso2").style.display="block";
 }
