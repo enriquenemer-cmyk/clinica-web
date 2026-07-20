@@ -296,6 +296,7 @@
       </div>
     </div>
     <div class="grid2">
+      <div class="card" id="salaCard" style="display:none"><h2>🪑 Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
       <div class="card"><h2>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
       <div class="card"><h2>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
     </div>
@@ -562,6 +563,23 @@
     </div>
 
     <div class="card">
+      <h2>📝 Plan de tratamiento</h2>
+      <div class="sub">Los pasos previstos, por fases. Marca cada uno según se va haciendo.</div>
+      <div class="kpi" id="plKpi"></div>
+      <div class="grid3">
+        <div class="field"><label>Tratamiento</label><input id="pl_trat" placeholder="Ej. Corona de circonio"/></div>
+        <div class="field"><label>Pieza</label><input id="pl_pieza" placeholder="Ej. 47"/></div>
+        <div class="field"><label>Importe (€)</label><input id="pl_importe" type="number" min="0" placeholder="0"/></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Doctor</label><select id="pl_doctor"></select></div>
+        <div class="field"><label>Fase</label><select id="pl_fase"><option>Fase 1</option><option>Fase 2</option><option>Fase 3</option><option>Fase 4</option></select></div>
+      </div>
+      <button class="main" id="pl_add">➕ Añadir paso al plan</button>
+      <div id="plLista" style="margin-top:16px"></div>
+    </div>
+
+    <div class="card">
       <h2>🩺 Evolución clínica</h2>
       <div class="sub">Qué se ha hecho en cada sesión. Queda con su fecha y doctor: es la historia clínica del paciente.</div>
       <div class="grid3">
@@ -741,6 +759,33 @@
         <div class="field"><label>Formas de pago</label><textarea id="l_forma_pago" rows="4"></textarea></div>
       </div>
       <button class="main" id="guardarListas">Guardar listas</button><span id="ajustesOK" class="hint" style="color:var(--verde)"></span>
+    </div>
+
+    <div class="card">
+      <h2>⏱️ Duración de los tratamientos</h2>
+      <div class="sub">Cada tratamiento ocupa lo que necesita. Al elegir el motivo de la cita, la agenda reserva ese tiempo.</div>
+      <div class="toolbar">
+        <input id="du_nombre" placeholder="Tratamiento (ej. Endodoncia)" style="min-width:220px"/>
+        <select id="du_min" style="width:auto"></select>
+        <button class="main" id="du_add">➕ Añadir</button>
+      </div>
+      <div id="duLista"></div>
+      <div class="hint" style="margin-top:10px">Si un tratamiento no está en la lista, se usa la duración por defecto del horario.</div>
+    </div>
+
+    <div class="card">
+      <h2>🚫 Bloqueos de agenda</h2>
+      <div class="sub">Vacaciones, festivos, reuniones… Esas horas dejarán de ofrecerse como libres.</div>
+      <div class="toolbar">
+        <select id="bl_doctor" style="min-width:190px"></select>
+        <input id="bl_desde" type="date"/>
+        <input id="bl_hasta" type="date" title="Hasta (opcional, para varios días)"/>
+        <input id="bl_h1" type="time" title="Desde la hora"/>
+        <input id="bl_h2" type="time" title="Hasta la hora"/>
+        <input id="bl_motivo" placeholder="Motivo (vacaciones, reunión…)" style="min-width:190px"/>
+        <button class="main" id="bl_add">➕ Bloquear</button>
+      </div>
+      <div id="blLista"></div>
     </div>
 
     <div class="card">
@@ -986,28 +1031,40 @@ function minutos(hhmm){if(!hhmm)return null;const[a,b]=hhmm.split(":").map(Numbe
 function hhmm(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}
 function diaDeFecha(iso){if(!iso)return null;const[y,m,d]=iso.split("-").map(Number);return new Date(y,m-1,d).getDay();}
 // Devuelve los huecos del doctor ese día: [{hora, ocupada}]
-function slotsDia(doctor,fechaISO){
+function slotsDia(doctor,fechaISO,motivo){
   const C=cfg();const h=(C.horarios||{})[doctor];if(!h||!fechaISO)return null;
   const dia=diaDeFecha(fechaISO);const r=h[dia];if(!r)return [];
-  const dur=Number(C.duracion)||30;const out=[];
+  const paso=Number(C.duracion)||30;                 // rejilla base
+  const dur=duracionDe(motivo)||paso;                // lo que ocupa ESTA cita
+  const out=[];
   [[r.m1,r.m2],[r.t1,r.t2]].forEach(([ini,fin])=>{
     const a=minutos(ini),b=minutos(fin);if(a==null||b==null||b<=a)return;
-    for(let m=a;m+dur<=b;m+=dur)out.push(hhmm(m));
+    for(let m=a;m+dur<=b;m+=paso)out.push(m);
   });
-  const ocupadas=DB.citas().filter(c=>c.doctor===doctor&&c.fecha===fechaISO&&c.id!==editingCitaId).map(c=>c.hora);
-  return out.map(x=>({hora:x,ocupada:ocupadas.includes(x)}));
+  // citas existentes con su duración real (para detectar solapes)
+  const otras=DB.citas().filter(c=>c.doctor===doctor&&c.fecha===fechaISO&&c.id!==editingCitaId&&c.estado!=="Cancelada")
+    .map(c=>{const x=minutos(c.hora);return x==null?null:{a:x,b:x+duracionDe(c.motivo)};}).filter(Boolean);
+  return out.map(m=>({
+    hora:hhmm(m),
+    ocupada:otras.some(o=>m<o.b&&m+dur>o.a),
+    bloqueada:estaBloqueado(doctor,fechaISO,m,m+dur)
+  })).filter(x=>!x.bloqueada||true);
 }
 function pintarSlots(){
   const cont=document.getElementById("c_slots");if(!cont)return;
   const doc=document.getElementById("c_doctor").value,fec=document.getElementById("c_fecha").value;
   if(!doc||!fec){cont.innerHTML='<div class="hint">Elige doctor y fecha para ver sus horas libres.</div>';return;}
-  const s=slotsDia(doc,fec);
+  const motivo=(document.getElementById("c_motivo")||{}).value||"";
+  const s=slotsDia(doc,fec,motivo);
   if(s===null){cont.innerHTML='<div class="hint">Este doctor aún no tiene horario configurado. Ponlo en <b>Ajustes › Horario de los doctores</b> y aquí te saldrán sus horas libres.</div>';return;}
   if(!s.length){cont.innerHTML='<div class="hint" style="color:var(--warn)">⚠️ '+esc(doc)+' no pasa consulta ese día.</div>';return;}
-  const libres=s.filter(x=>!x.ocupada).length;
+  const libres=s.filter(x=>!x.ocupada&&!x.bloqueada).length;
+  const dur=duracionDe(motivo);
   const actual=document.getElementById("c_hora").value;
-  cont.innerHTML='<div class="hint">'+libres+' hora'+(libres===1?"":"s")+' libre'+(libres===1?"":"s")+' · pulsa una para elegirla</div><div class="slots">'+
-    s.map(x=>`<button type="button" class="slotchip${x.ocupada?" taken":""}${x.hora===actual?" on":""}" data-h="${x.hora}"${x.ocupada?" disabled":""}>${x.hora}</button>`).join("")+"</div>";
+  cont.innerHTML='<div class="hint">'+libres+' hora'+(libres===1?"":"s")+' libre'+(libres===1?"":"s")+
+    (motivo?` para <b>${esc(motivo)}</b> (${dur} min)`:` (${dur} min)`)+' · pulsa una para elegirla</div><div class="slots">'+
+    s.map(x=>{const no=x.ocupada||x.bloqueada;
+      return `<button type="button" class="slotchip${no?" taken":""}${x.hora===actual?" on":""}" data-h="${x.hora}"${no?" disabled":""} title="${x.bloqueada?"Bloqueado en la agenda":x.ocupada?"Ya ocupada":"Libre"}">${x.hora}${x.bloqueada?" 🚫":""}</button>`;}).join("")+"</div>";
   cont.querySelectorAll(".slotchip:not(.taken)").forEach(b=>b.addEventListener("click",()=>{
     document.getElementById("c_hora").value=b.dataset.h;pintarSlots();
   }));
@@ -1102,7 +1159,7 @@ function ir(pagina){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
   document.getElementById("page-"+pagina).classList.add("on");
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
-  if(pagina==="inicio")renderInicio();
+  if(pagina==="inicio"){renderInicio();renderSalaEspera();}
   if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();fechasPorDefecto();pintarSlots();}
   if(pagina==="recordatorios"){renderRecordatoriosWA();renderRevision();renderEspera();}
   if(pagina==="jarvis")jvIniciar();
@@ -1111,7 +1168,7 @@ function ir(pagina){
   if(pagina==="informes")renderInformes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();renderFacturas();fechasPorDefecto();}
-  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();}
+  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();cargarFiscal();renderDuraciones();renderBloqueos();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
 
@@ -1221,7 +1278,7 @@ function abrirFicha(id){
   const pgs=DB.pagos().filter(x=>x.pacienteId===id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
   document.getElementById("f_pagosVacio").style.display=pgs.length?"none":"block";
   document.getElementById("f_pagos").innerHTML=pgs.length?`<div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Concepto</th></tr></thead><tbody>${pgs.map(p=>`<tr><td>${esc(fmtFecha(p.fecha))}</td><td>${esc(p.importe)}€</td><td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td></tr>`).join("")}</tbody></table></div>`:"";
-  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
+  renderOdontograma(p);renderCuestionario(p);renderAlertasMedicas(p);renderPlan(p);renderEvolucion(p);renderConsentimientos(p);renderFotos(p);
 }
 function renderCuestionario(p){
   const c=p.cuestionario,card=document.getElementById("f_cuestCard");
@@ -1301,7 +1358,7 @@ function citaHTML(c,compacto){
   return `<div class="cita"><div class="h">${esc(c.hora||"--:--")}</div>
     <div style="flex:1"><div><b>${esc(compacto?(c.doctor||""):(nombrePaciente(c.pacienteId)||c.pacienteNombre||"(paciente)"))}</b>${_al} ${c.motivo?"· "+esc(c.motivo):""}</div>
     <div class="m">${compacto?"":"👤 "+esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"—")+" · "}👨‍⚕️ ${esc(c.doctor||"—")}${c.notas?" · "+esc(c.notas):""}</div></div>
-    <div><span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px">🗑️</button></div></div>`;
+    <div>${(c.fecha===hoyISO()&&!c.llegada&&c.estado!=="Cancelada")?`<button class="ghost" data-llego="${c.id}" title="Marcar que ha llegado" style="padding:4px 9px">✅ Llegó</button> `:""}<span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px">🗑️</button></div></div>`;
 }
 let editingCitaId=null;
 document.getElementById("c_guardar").addEventListener("click",()=>{
@@ -1540,6 +1597,25 @@ document.getElementById("ad_guardar").addEventListener("click",async()=>{
   document.getElementById("ad_pass1").value="";document.getElementById("ad_pass2").value="";
   toast("Contraseña cambiada. Úsala la próxima vez que entres.");
 });
+document.getElementById("pl_add").addEventListener("click",anadirPaso);
+document.getElementById("du_add").addEventListener("click",()=>{
+  const n=document.getElementById("du_nombre").value.trim();
+  if(!n){toast("Escribe el nombre del tratamiento","err");return;}
+  if(duraciones().some(d=>norm(d.nombre)===norm(n))){toast("Ese tratamiento ya está","err");return;}
+  setCfg({duraciones:duraciones().concat([{id:uid("du"),nombre:n,min:Number(document.getElementById("du_min").value)||30}])});
+  document.getElementById("du_nombre").value="";renderDuraciones();toast("Tratamiento añadido");
+});
+document.getElementById("bl_add").addEventListener("click",()=>{
+  const d1=document.getElementById("bl_desde").value;
+  if(!d1){toast("Pon al menos la fecha de inicio","err");return;}
+  setCfg({bloqueos:bloqueos().concat([{id:uid("bl"),doctor:document.getElementById("bl_doctor").value,
+    desde:d1,hasta:document.getElementById("bl_hasta").value||d1,
+    h1:document.getElementById("bl_h1").value,h2:document.getElementById("bl_h2").value,
+    motivo:document.getElementById("bl_motivo").value.trim()||"Bloqueado"}])});
+  ["bl_desde","bl_hasta","bl_h1","bl_h2","bl_motivo"].forEach(id=>document.getElementById(id).value="");
+  renderBloqueos();pintarSlots();toast("Bloqueo creado");
+});
+document.getElementById("c_motivo").addEventListener("input",()=>{clearTimeout(window.__tm);window.__tm=setTimeout(pintarSlots,350);});
 document.getElementById("ev_add").addEventListener("click",anadirEvolucion);
 document.getElementById("cs_nuevo").addEventListener("click",abrirFirma);
 document.getElementById("fm_cerrar").addEventListener("click",()=>document.getElementById("firmaModal").style.display="none");
@@ -1599,6 +1675,138 @@ document.getElementById("le_add").addEventListener("click",()=>{
   document.getElementById("le_nota").value="";document.getElementById("le_paciente").value="";
   renderEspera();toast("Añadido a la lista de espera");
 });
+// ==================== Check-in / sala de espera ====================
+function marcarLlegada(id){
+  const A=DB.citas();const i=A.findIndex(c=>c.id===id);if(i<0)return;
+  A[i].llegada=Date.now();A[i].enConsulta=false;
+  DB.setCitas(A);logAcc("Paciente llegó",nombrePaciente(A[i].pacienteId)||"");
+  renderSalaEspera();refrescarActual();toast("Marcado como llegado");
+}
+function pasarConsulta(id){
+  const A=DB.citas();const i=A.findIndex(c=>c.id===id);if(i<0)return;
+  A[i].enConsulta=true;A[i].estado="Realizada";
+  DB.setCitas(A);logAcc("Pasa a consulta",nombrePaciente(A[i].pacienteId)||"");
+  renderSalaEspera();refrescarActual();
+}
+function renderSalaEspera(){
+  const cont=document.getElementById("salaEspera"),card=document.getElementById("salaCard");
+  if(!cont||!card)return;
+  const S=DB.citas().filter(c=>c.fecha===hoyISO()&&c.llegada&&!c.enConsulta).sort((a,b)=>a.llegada-b.llegada);
+  if(!S.length){card.style.display="none";return;}
+  card.style.display="";
+  cont.innerHTML=S.map(c=>{
+    const min=Math.max(0,Math.round((Date.now()-c.llegada)/60000));
+    const col=min>20?"var(--danger)":min>10?"var(--warn)":"var(--ok)";
+    return `<div class="recrow">
+      <div><div style="font-weight:700">${esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"—")}
+        ${tieneAlertaGrave(c.pacienteId)?'<span class="avisocita">⚠️</span>':""}</div>
+        <div class="hint">Cita ${esc(c.hora||"")} · ${esc(c.doctor||"—")} · esperando <b style="color:${col}">${min} min</b></div></div>
+      <button class="main" data-pasa="${c.id}" style="padding:8px 15px">Pasa ▶</button></div>`;}).join("");
+  cont.querySelectorAll("[data-pasa]").forEach(b=>b.addEventListener("click",()=>pasarConsulta(b.dataset.pasa)));
+}
+setInterval(()=>{const c=document.getElementById("salaCard");if(c&&c.style.display!=="none")renderSalaEspera();},60000);
+// ==================== Plan de tratamiento por fases ====================
+function renderPlan(p){
+  const cont=document.getElementById("plLista");if(!cont)return;
+  const sel=document.getElementById("pl_doctor");
+  if(sel&&!sel.options.length){const L=DB.get(KEY.lis,LISTAS_DEF);sel.innerHTML='<option value="">— Doctor —</option>'+(L.doctores||[]).map(d=>`<option>${esc(d)}</option>`).join("");}
+  const P=((p&&p.plan)||[]);
+  const kpi=document.getElementById("plKpi");
+  const tot=P.reduce((s,x)=>s+num(x.importe),0);
+  const hecho=P.filter(x=>x.hecho).reduce((s,x)=>s+num(x.importe),0);
+  if(kpi)kpi.innerHTML=P.length?`<div class="b"><div class="n">${Math.round(tot)}€</div><div class="t">Plan completo</div></div>
+      <div class="b"><div class="n">${Math.round(hecho)}€</div><div class="t">Ya realizado</div></div>
+      <div class="b"><div class="n">${Math.round(tot-hecho)}€</div><div class="t">Pendiente de hacer</div></div>
+      <div class="b"><div class="n">${P.filter(x=>x.hecho).length}/${P.length}</div><div class="t">Pasos hechos</div></div>`:"";
+  if(!P.length){cont.innerHTML='<div class="hint">Sin plan de tratamiento. Añade los pasos previstos para este paciente.</div>';return;}
+  const fases=[...new Set(P.map(x=>x.fase||"Fase 1"))].sort();
+  cont.innerHTML=fases.map(f=>{
+    const items=P.filter(x=>(x.fase||"Fase 1")===f);
+    return `<div style="margin-bottom:16px"><div style="font-weight:700;font-size:13px;margin-bottom:7px;color:var(--primary-d)">${esc(f)}</div>`+
+      items.map(x=>`<div class="recrow" style="padding:10px 13px;${x.hecho?"opacity:.62":""}">
+        <div style="display:flex;align-items:center;gap:11px">
+          <input type="checkbox" data-plchk="${x.id}" ${x.hecho?"checked":""} style="width:auto;accent-color:var(--primary)"/>
+          <div><div style="font-weight:600${x.hecho?";text-decoration:line-through":""}">${esc(x.trat)}${x.pieza?` · <span class="pill v">${esc(x.pieza)}</span>`:""}</div>
+          <div class="hint">${esc(x.doctor||"—")}${x.importe?" · "+num(x.importe)+"€":""}${x.hecho&&x.fecha?" · hecho el "+esc(fechaBonita(x.fecha)):""}</div></div>
+        </div>
+        <button class="ghost" data-delpl="${x.id}" style="color:var(--danger);padding:3px 9px">🗑️</button></div>`).join("")+`</div>`;
+  }).join("");
+  cont.querySelectorAll("[data-plchk]").forEach(ch=>ch.addEventListener("change",()=>{
+    const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
+    const it=(A[i].plan||[]).find(x=>x.id===ch.dataset.plchk);if(!it)return;
+    it.hecho=ch.checked;it.fecha=ch.checked?hoyISO():"";
+    DB.setPacientes(A);logAcc(ch.checked?"Paso del plan realizado":"Paso del plan reabierto",it.trat);
+    renderPlan(A[i]);
+    if(ch.checked)toast("Marcado como realizado. ¿Lo anotas también en la evolución?","info");
+  }));
+  cont.querySelectorAll("[data-delpl]").forEach(b=>b.addEventListener("click",()=>{
+    const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
+    A[i].plan=(A[i].plan||[]).filter(x=>x.id!==b.dataset.delpl);
+    DB.setPacientes(A);renderPlan(A[i]);
+  }));
+}
+function anadirPaso(){
+  if(!fichaId)return;
+  const t=document.getElementById("pl_trat").value.trim();
+  if(!t){toast("Escribe el tratamiento","err");return;}
+  const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);if(i<0)return;
+  A[i].plan=(A[i].plan||[]).concat([{id:uid("pl"),trat:t,pieza:document.getElementById("pl_pieza").value.trim(),
+    importe:document.getElementById("pl_importe").value,doctor:document.getElementById("pl_doctor").value,
+    fase:document.getElementById("pl_fase").value||"Fase 1",hecho:false}]);
+  DB.setPacientes(A);logAcc("Paso añadido al plan",(A[i].nombre||"")+" · "+t);
+  ["pl_trat","pl_pieza","pl_importe"].forEach(id=>document.getElementById(id).value="");
+  renderPlan(A[i]);toast("Paso añadido al plan");
+}
+// ==================== Duración por tratamiento ====================
+function duraciones(){return (cfg().duraciones||[]);}
+function duracionDe(motivo){
+  const base=Number(cfg().duracion)||30;
+  const m=norm(motivo||"");if(!m)return base;
+  const hit=duraciones().find(d=>norm(d.nombre)===m)||duraciones().find(d=>m.includes(norm(d.nombre)));
+  return hit?Number(hit.min)||base:base;
+}
+function renderDuraciones(){
+  const cont=document.getElementById("duLista");if(!cont)return;
+  const sel=document.getElementById("du_min");
+  if(sel&&!sel.options.length)sel.innerHTML=[10,15,20,30,45,60,75,90,120].map(m=>`<option value="${m}"${m===30?" selected":""}>${m} min</option>`).join("");
+  const D=duraciones();
+  if(!D.length){cont.innerHTML='<div class="hint">Sin tratamientos configurados. Añade los más habituales (revisión, limpieza, endodoncia…).</div>';return;}
+  cont.innerHTML=D.map(d=>`<div class="recrow" style="padding:9px 13px">
+    <div><b>${esc(d.nombre)}</b> <span class="pill v">${d.min} min</span></div>
+    <button class="ghost" data-deldu="${d.id}" style="color:var(--danger);padding:3px 9px">🗑️</button></div>`).join("");
+  cont.querySelectorAll("[data-deldu]").forEach(b=>b.addEventListener("click",()=>{
+    setCfg({duraciones:duraciones().filter(x=>x.id!==b.dataset.deldu)});renderDuraciones();toast("Tratamiento quitado");
+  }));
+}
+// ==================== Bloqueos de agenda ====================
+function bloqueos(){return (cfg().bloqueos||[]);}
+function estaBloqueado(doctor,fechaISO,minIni,minFin){
+  return bloqueos().some(b=>{
+    if(b.doctor&&b.doctor!==doctor)return false;
+    const desde=b.desde,hasta=b.hasta||b.desde;
+    if(fechaISO<desde||fechaISO>hasta)return false;
+    if(!b.h1&&!b.h2)return true;                 // día completo
+    const a=minutos(b.h1||"00:00"),z=minutos(b.h2||"23:59");
+    return minIni<z&&minFin>a;                   // se solapan
+  });
+}
+function renderBloqueos(){
+  const cont=document.getElementById("blLista");if(!cont)return;
+  const sel=document.getElementById("bl_doctor");
+  if(sel&&!sel.options.length){const L=DB.get(KEY.lis,LISTAS_DEF);
+    sel.innerHTML='<option value="">Todos los doctores</option>'+(L.doctores||[]).map(d=>`<option>${esc(d)}</option>`).join("");}
+  const B=bloqueos().slice().sort((a,b)=>(a.desde||"").localeCompare(b.desde||""));
+  if(!B.length){cont.innerHTML='<div class="hint">No hay bloqueos. La agenda ofrece todo el horario de cada doctor.</div>';return;}
+  cont.innerHTML=B.map(b=>`<div class="recrow" style="padding:10px 13px">
+    <div><b>${esc(b.motivo||"Bloqueado")}</b>
+      <div class="hint">${esc(fechaBonita(b.desde))}${b.hasta&&b.hasta!==b.desde?" → "+esc(fechaBonita(b.hasta)):""}
+        · ${b.h1||b.h2?esc((b.h1||"00:00")+" a "+(b.h2||"23:59")):"todo el día"}
+        · ${b.doctor?esc(b.doctor):"todos los doctores"}</div></div>
+    <button class="ghost" data-delbl="${b.id}" style="color:var(--danger);padding:3px 9px">🗑️</button></div>`).join("");
+  cont.querySelectorAll("[data-delbl]").forEach(x=>x.addEventListener("click",()=>{
+    setCfg({bloqueos:bloqueos().filter(y=>y.id!==x.dataset.delbl)});renderBloqueos();pintarSlots();toast("Bloqueo quitado");
+  }));
+}
 // ==================== Evolución clínica ====================
 function renderEvolucion(p){
   const cont=document.getElementById("evLista");if(!cont)return;
@@ -2678,6 +2886,7 @@ function renderPagos(){
     <td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td>
     <td><button class="ghost" data-factura="${p.id}" title="Emitir factura numerada" style="padding:4px 8px">📄</button> <button class="ghost" data-recibo="${p.id}" title="Imprimir recibo" style="padding:4px 8px">🧾</button> <button class="ghost" data-delpago="${p.id}" style="padding:4px 8px">🗑️</button></td></tr>`).join("");
   document.querySelectorAll("[data-recibo]").forEach(b=>b.addEventListener("click",()=>imprimirRecibo(b.dataset.recibo)));
+  document.querySelectorAll("[data-llego]").forEach(b=>b.addEventListener("click",()=>marcarLlegada(b.dataset.llego)));
   document.querySelectorAll("[data-factura]").forEach(b=>b.addEventListener("click",()=>emitirFactura(b.dataset.factura)));
   document.querySelectorAll("[data-delpago]").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("¿Borrar este pago?"))return;logAcc("Pago BORRADO","");DB.setPagos(DB.pagos().filter(x=>x.id!==b.dataset.delpago));renderPagos();}));
