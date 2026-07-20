@@ -29,6 +29,23 @@
   .sidebar nav button:hover{background:rgba(255,255,255,.07);color:#fff}
   .sidebar nav button.on{background:var(--primary);color:#fff;font-weight:600}
   .sidebar nav button svg{width:18px;height:18px;flex:0 0 18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .navbadge{margin-left:auto;background:#e11d48;color:#fff;border-radius:11px;font-size:11px;font-weight:700;padding:2px 7px;min-width:20px;text-align:center;display:none}
+  .navbadge.on{display:inline-block}
+  .slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .slotchip{border:1.5px solid var(--borde);background:var(--card);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--txt);transition:.13s}
+  .slotchip:hover{border-color:var(--primary);color:var(--primary-d)}
+  .slotchip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .slotchip.taken{opacity:.42;text-decoration:line-through;cursor:not-allowed}
+  .hrow{display:grid;grid-template-columns:92px 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--borde)}
+  .hrow:last-child{border-bottom:0}
+  .hrow .dia{font-weight:700;font-size:13px}
+  .hrow .times{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .hrow input[type=time]{width:auto;min-width:110px;padding:7px 9px}
+  .hrow .lbl{font-size:12px;color:var(--muted);font-weight:600}
+  .recrow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--borde);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--card);flex-wrap:wrap}
+  .recrow.sent{opacity:.6;background:var(--gris)}
+  .btn-wa{background:#25d366;color:#fff;border:0;border-radius:10px;padding:9px 15px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block;transition:.13s}
+  .btn-wa:hover{background:#1eb857}
   .appmain{margin-left:232px;min-width:0;min-height:100vh;display:flex;flex-direction:column}
   .topbar{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--borde);padding:14px 26px;display:flex;align-items:center;gap:16px}
   .topbar .pagetitle{font-size:19px;font-weight:600;flex:1}
@@ -121,6 +138,7 @@
     <nav>
       <button data-page="inicio" class="on"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg><span>Inicio</span></button>
       <button data-page="agenda"><svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg><span>Agenda</span></button>
+      <button data-page="recordatorios"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7z"/><path d="M10.5 19.5a1.8 1.8 0 0 0 3 0"/></svg><span>Recordatorios</span><span id="recBadge" class="navbadge"></span></button>
       <button data-page="pacientes"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.6M20.5 20a5 5 0 0 0-3.6-4.8"/></svg><span>Pacientes</span></button>
       <button data-page="leer"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg><span>Leer presupuesto</span></button>
       <button data-page="presupuestos"><svg viewBox="0 0 24 24" stroke="currentColor"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg><span>Presupuestos</span></button>
@@ -178,7 +196,7 @@
       </div>
       <div class="grid3">
         <div class="field"><label>Fecha</label><input id="c_fecha" type="date"/></div>
-        <div class="field"><label>Hora</label><input id="c_hora" type="time"/></div>
+        <div class="field"><label>Hora</label><input id="c_hora" type="time"/><div id="c_slots"></div></div>
         <div class="field"><label>Estado</label><select id="c_estado"><option>Programada</option><option>Confirmada</option><option>Realizada</option><option>Cancelada</option></select></div>
       </div>
       <div class="field"><label>Notas</label><input id="c_notas"/></div>
@@ -204,6 +222,20 @@
   </div>
 
   <!-- ===================== PACIENTES ===================== -->
+  <div class="page" id="page-recordatorios">
+    <div class="card">
+      <h2>🔔 Recordatorios de cita por WhatsApp</h2>
+      <p class="sub">Pacientes con cita próxima. Pulsa <b>Enviar</b> y se abre WhatsApp con el mensaje ya escrito: solo das a enviar.</p>
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted);font-weight:600">Avisar con</label>
+        <select id="rec_dias" style="width:auto;min-width:90px"></select>
+        <label style="font-size:13px;color:var(--muted);font-weight:600">de antelación</label>
+        <button class="ghost" id="rec_refrescar">🔄 Actualizar</button>
+      </div>
+      <div id="recLista"></div>
+    </div>
+  </div>
+
   <div class="page" id="page-pacientes">
     <div class="card">
       <div class="toolbar">
@@ -388,6 +420,36 @@
       </div>
       <button class="main" id="guardarListas">Guardar listas</button><span id="ajustesOK" class="hint" style="color:var(--verde)"></span>
     </div>
+
+    <div class="card">
+      <h2>🕐 Horario de los doctores</h2>
+      <div class="sub">Define qué días y a qué horas pasa consulta cada doctor. Al agendar una cita, la plataforma te ofrecerá solo las horas libres de ese doctor.</div>
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted);font-weight:600">Doctor</label>
+        <select id="h_doctor" style="min-width:220px"></select>
+        <button class="ghost" id="h_copiar">📋 Copiar L-V del lunes</button>
+      </div>
+      <div id="h_tabla"></div>
+      <div class="toolbar" style="margin-top:14px;margin-bottom:0">
+        <label style="font-size:13px;color:var(--muted);font-weight:600">Duración de cita</label>
+        <select id="h_duracion" style="width:auto"><option value="15">15 min</option><option value="20">20 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">60 min</option></select>
+        <button class="main" id="h_guardar">Guardar horario</button><span id="h_ok" class="hint" style="color:var(--verde)"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔔 Recordatorios por WhatsApp</h2>
+      <div class="sub">Mensaje que se enviará a los pacientes para recordarles su cita. Usa las etiquetas y se sustituyen solas.</div>
+      <div class="grid2">
+        <div class="field"><label>Días de antelación</label><select id="r_dias"><option value="1">1 día antes</option><option value="2" selected>2 días antes</option><option value="3">3 días antes</option><option value="7">7 días antes</option></select></div>
+        <div class="field"><label>Nombre de la clínica (para el mensaje)</label><input id="r_clinica" placeholder="Clínica dental DKV"/></div>
+      </div>
+      <div class="field"><label>Mensaje</label><textarea id="r_plantilla" rows="5"></textarea>
+        <div class="hint">Etiquetas: <b>{nombre}</b> · <b>{fecha}</b> · <b>{hora}</b> · <b>{doctor}</b> · <b>{clinica}</b></div>
+      </div>
+      <button class="main" id="r_guardar">Guardar recordatorios</button><span id="r_ok" class="hint" style="color:var(--verde)"></span>
+    </div>
+
     <div class="card">
       <h2>Copia de seguridad</h2>
       <div class="sub">Guarda todos los datos (pacientes, citas, presupuestos) en un archivo, o recupéralos en otro ordenador.</div>
@@ -500,18 +562,130 @@ function poblarPacientesSelect(){
 }
 
 // ==================== Navegación ====================
-const TITULOS={inicio:"Inicio",agenda:"Agenda",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
+const TITULOS={inicio:"Inicio",agenda:"Agenda",recordatorios:"Recordatorios",pacientes:"Pacientes",leer:"Leer presupuesto",presupuestos:"Presupuestos",pagos:"Pagos",ajustes:"Ajustes"};
+
+// ==================== Horarios de doctores ====================
+const DIAS=[{k:1,n:"Lunes"},{k:2,n:"Martes"},{k:3,n:"Miércoles"},{k:4,n:"Jueves"},{k:5,n:"Viernes"},{k:6,n:"Sábado"},{k:0,n:"Domingo"}];
+const PLANTILLA_DEF="Hola {nombre} 👋\n\nTe recordamos tu cita en {clinica}:\n📅 {fecha}\n🕐 {hora}\n👨‍⚕️ {doctor}\n\nSi no puedes venir, avísanos y la cambiamos. ¡Te esperamos!";
+function cfg(){const L=DB.get(KEY.lis,{})||{};return Object.assign({horarios:{},duracion:30,recDias:2,plantilla:PLANTILLA_DEF,clinica:"Clínica dental"},L.cfg||{});}
+function setCfg(o){const L=Object.assign({},DB.get(KEY.lis,LISTAS_DEF)||{});L.cfg=Object.assign(cfg(),o);DB.setListas(L);}
+function minutos(hhmm){if(!hhmm)return null;const[a,b]=hhmm.split(":").map(Number);return a*60+b;}
+function hhmm(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}
+function diaDeFecha(iso){if(!iso)return null;const[y,m,d]=iso.split("-").map(Number);return new Date(y,m-1,d).getDay();}
+// Devuelve los huecos del doctor ese día: [{hora, ocupada}]
+function slotsDia(doctor,fechaISO){
+  const C=cfg();const h=(C.horarios||{})[doctor];if(!h||!fechaISO)return null;
+  const dia=diaDeFecha(fechaISO);const r=h[dia];if(!r)return [];
+  const dur=Number(C.duracion)||30;const out=[];
+  [[r.m1,r.m2],[r.t1,r.t2]].forEach(([ini,fin])=>{
+    const a=minutos(ini),b=minutos(fin);if(a==null||b==null||b<=a)return;
+    for(let m=a;m+dur<=b;m+=dur)out.push(hhmm(m));
+  });
+  const ocupadas=DB.citas().filter(c=>c.doctor===doctor&&c.fecha===fechaISO&&c.id!==editingCitaId).map(c=>c.hora);
+  return out.map(x=>({hora:x,ocupada:ocupadas.includes(x)}));
+}
+function pintarSlots(){
+  const cont=document.getElementById("c_slots");if(!cont)return;
+  const doc=document.getElementById("c_doctor").value,fec=document.getElementById("c_fecha").value;
+  if(!doc||!fec){cont.innerHTML='<div class="hint">Elige doctor y fecha para ver sus horas libres.</div>';return;}
+  const s=slotsDia(doc,fec);
+  if(s===null){cont.innerHTML='<div class="hint">Este doctor aún no tiene horario configurado. Ponlo en <b>Ajustes › Horario de los doctores</b> y aquí te saldrán sus horas libres.</div>';return;}
+  if(!s.length){cont.innerHTML='<div class="hint" style="color:var(--warn)">⚠️ '+esc(doc)+' no pasa consulta ese día.</div>';return;}
+  const libres=s.filter(x=>!x.ocupada).length;
+  const actual=document.getElementById("c_hora").value;
+  cont.innerHTML='<div class="hint">'+libres+' hora'+(libres===1?"":"s")+' libre'+(libres===1?"":"s")+' · pulsa una para elegirla</div><div class="slots">'+
+    s.map(x=>`<button type="button" class="slotchip${x.ocupada?" taken":""}${x.hora===actual?" on":""}" data-h="${x.hora}"${x.ocupada?" disabled":""}>${x.hora}</button>`).join("")+"</div>";
+  cont.querySelectorAll(".slotchip:not(.taken)").forEach(b=>b.addEventListener("click",()=>{
+    document.getElementById("c_hora").value=b.dataset.h;pintarSlots();
+  }));
+}
+function renderHorarios(){
+  const C=cfg();const sel=document.getElementById("h_doctor");if(!sel)return;
+  const L=DB.get(KEY.lis,LISTAS_DEF);const cur=sel.value;
+  sel.innerHTML=(L.doctores||[]).map(d=>`<option>${esc(d)}</option>`).join("");
+  if(cur&&(L.doctores||[]).includes(cur))sel.value=cur;
+  const doc=sel.value;const h=(C.horarios||{})[doc]||{};
+  document.getElementById("h_duracion").value=String(C.duracion||30);
+  document.getElementById("h_tabla").innerHTML=DIAS.map(d=>{
+    const r=h[d.k]||{};
+    return `<div class="hrow"><div class="dia">${d.n}</div><div class="times">
+      <span class="lbl">Mañana</span><input type="time" data-d="${d.k}" data-f="m1" value="${r.m1||""}"/><span class="lbl">a</span><input type="time" data-d="${d.k}" data-f="m2" value="${r.m2||""}"/>
+      <span class="lbl" style="margin-left:8px">Tarde</span><input type="time" data-d="${d.k}" data-f="t1" value="${r.t1||""}"/><span class="lbl">a</span><input type="time" data-d="${d.k}" data-f="t2" value="${r.t2||""}"/>
+    </div></div>`;
+  }).join("");
+}
+function guardarHorario(){
+  const C=cfg();const doc=document.getElementById("h_doctor").value;if(!doc)return;
+  const h={};
+  document.querySelectorAll("#h_tabla input[type=time]").forEach(i=>{
+    const d=i.dataset.d;if(!h[d])h[d]={};if(i.value)h[d][i.dataset.f]=i.value;
+  });
+  Object.keys(h).forEach(k=>{if(!Object.keys(h[k]).length)delete h[k];});
+  const H=Object.assign({},C.horarios);H[doc]=h;
+  setCfg({horarios:H,duracion:Number(document.getElementById("h_duracion").value)||30});
+  const ok=document.getElementById("h_ok");ok.textContent="✓ Horario guardado";setTimeout(()=>ok.textContent="",2200);
+}
+// ==================== Recordatorios ====================
+function fechaBonita(iso){if(!iso)return"";const[y,m,d]=iso.split("-");const dn=DIAS.find(x=>x.k===diaDeFecha(iso));return `${dn?dn.n:""} ${d}/${m}/${y}`;}
+function citasEnDias(n){
+  const d=new Date();d.setDate(d.getDate()+Number(n));
+  const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  return DB.citas().filter(c=>c.fecha===iso).sort((a,b)=>(a.hora||"").localeCompare(b.hora||""));
+}
+function mensajeRecordatorio(c){
+  const C=cfg();const p=DB.pacientes().find(x=>x.id===c.pacienteId);
+  const nombre=(p&&p.nombre)?p.nombre.split(" ")[0]:(c.pacienteNombre||"").split(" ")[0]||"";
+  return (C.plantilla||PLANTILLA_DEF).replace(/{nombre}/g,nombre).replace(/{fecha}/g,fechaBonita(c.fecha))
+    .replace(/{hora}/g,c.hora||"").replace(/{doctor}/g,c.doctor||"").replace(/{clinica}/g,C.clinica||"la clínica");
+}
+function telPaciente(c){const p=DB.pacientes().find(x=>x.id===c.pacienteId);let t=(p&&p.telefono)||"";t=String(t).replace(/\D/g,"");if(!t)return"";if(t.length===9)t="34"+t;return t;}
+function renderRecordatorios(){
+  const C=cfg();const selD=document.getElementById("rec_dias");
+  if(selD&&!selD.options.length){selD.innerHTML=[1,2,3,7].map(n=>`<option value="${n}">${n} día${n===1?"":"s"}</option>`).join("");selD.value=String(C.recDias||2);}
+  const n=Number(selD?selD.value:C.recDias)||2;
+  const lista=citasEnDias(n);const cont=document.getElementById("recLista");if(!cont)return;
+  if(!lista.length){cont.innerHTML=`<div class="hint">No hay citas dentro de ${n} día${n===1?"":"s"}. 🎉</div>`;actualizaBadge();return;}
+  cont.innerHTML=lista.map(c=>{
+    const p=DB.pacientes().find(x=>x.id===c.pacienteId);
+    const nom=(p&&p.nombre)||c.pacienteNombre||"(sin paciente)";
+    const tel=telPaciente(c);
+    const msg=encodeURIComponent(mensajeRecordatorio(c));
+    return `<div class="recrow${c.recordado?" sent":""}">
+      <div><div style="font-weight:700">${esc(nom)} ${c.recordado?'<span class="pill v">enviado ✓</span>':''}</div>
+        <div class="hint">🕐 ${esc(c.hora||"—")} · 👨‍⚕️ ${esc(c.doctor||"—")} · ${esc(c.motivo||"")} ${tel?"· 📞 "+esc(tel):'· <span style="color:var(--danger)">sin teléfono</span>'}</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${tel?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${tel}?text=${msg}" data-id="${c.id}">📲 Enviar</a>`:""}
+        <button class="ghost" data-marca="${c.id}">${c.recordado?"Desmarcar":"Marcar enviado"}</button>
+      </div></div>`;
+  }).join("");
+  cont.querySelectorAll("[data-marca]").forEach(b=>b.addEventListener("click",()=>{
+    const A=DB.citas();const i=A.findIndex(x=>x.id===b.dataset.marca);
+    if(i>=0){A[i].recordado=!A[i].recordado;DB.setCitas(A);renderRecordatorios();}
+  }));
+  cont.querySelectorAll(".btn-wa").forEach(a=>a.addEventListener("click",()=>{
+    const A=DB.citas();const i=A.findIndex(x=>x.id===a.dataset.id);
+    if(i>=0&&!A[i].recordado){A[i].recordado=true;DB.setCitas(A);setTimeout(renderRecordatorios,400);}
+  }));
+  actualizaBadge();
+}
+function actualizaBadge(){
+  const b=document.getElementById("recBadge");if(!b)return;
+  const n=Number(cfg().recDias)||2;
+  const pend=citasEnDias(n).filter(c=>!c.recordado).length;
+  b.textContent=pend;b.classList.toggle("on",pend>0);
+}
 function ir(pagina){
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.page===pagina));
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
   document.getElementById("page-"+pagina).classList.add("on");
   document.getElementById("pageTitle").textContent=TITULOS[pagina]||"";
   if(pagina==="inicio")renderInicio();
-  if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();}
+  if(pagina==="agenda"){poblarPacientesSelect();poblarListas();renderAgenda();pintarSlots();}
+  if(pagina==="recordatorios")renderRecordatorios();
   if(pagina==="pacientes")renderPacientes();
   if(pagina==="presupuestos"){poblarFiltroEstado();renderPresupuestos();}
   if(pagina==="pagos"){poblarPagosSelects();renderPagos();}
-  if(pagina==="ajustes")cargarAjustes();
+  if(pagina==="ajustes"){cargarAjustes();renderHorarios();cargarRecCfg();}
 }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.page)));
 
@@ -875,9 +1049,37 @@ document.getElementById("genQR").addEventListener("click",()=>{
 });
 document.getElementById("guardarListas").addEventListener("click",()=>{
   const ln=id=>document.getElementById(id).value.split("\n").map(s=>s.trim()).filter(Boolean);
-  DB.setListas({doctores:ln("l_doctores"),auxiliares:ln("l_auxiliares"),estado:ln("l_estado"),forma_pago:ln("l_forma_pago")});
-  poblarListas();const o=document.getElementById("ajustesOK");o.textContent=" ✓ Guardado";setTimeout(()=>o.textContent="",1500);
+  DB.setListas(Object.assign({},DB.get(KEY.lis,{})||{},{doctores:ln("l_doctores"),auxiliares:ln("l_auxiliares"),estado:ln("l_estado"),forma_pago:ln("l_forma_pago")}));
+  poblarListas();renderHorarios();const o=document.getElementById("ajustesOK");o.textContent=" ✓ Guardado";setTimeout(()=>o.textContent="",1500);
 });
+
+// ---- Horarios + recordatorios: eventos ----
+["c_doctor","c_fecha","c_hora"].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener("change",pintarSlots);});
+document.getElementById("h_doctor").addEventListener("change",renderHorarios);
+document.getElementById("h_guardar").addEventListener("click",guardarHorario);
+document.getElementById("h_copiar").addEventListener("click",()=>{
+  const get=(d,f)=>{const i=document.querySelector(`#h_tabla input[data-d="${d}"][data-f="${f}"]`);return i?i.value:"";};
+  const v={m1:get(1,"m1"),m2:get(1,"m2"),t1:get(1,"t1"),t2:get(1,"t2")};
+  [2,3,4,5].forEach(d=>["m1","m2","t1","t2"].forEach(f=>{
+    const i=document.querySelector(`#h_tabla input[data-d="${d}"][data-f="${f}"]`);if(i)i.value=v[f];
+  }));
+  const ok=document.getElementById("h_ok");ok.textContent="Copiado a M-V (recuerda guardar)";setTimeout(()=>ok.textContent="",2600);
+});
+document.getElementById("r_guardar").addEventListener("click",()=>{
+  setCfg({recDias:Number(document.getElementById("r_dias").value)||2,
+    plantilla:document.getElementById("r_plantilla").value||PLANTILLA_DEF,
+    clinica:document.getElementById("r_clinica").value.trim()||"la clínica"});
+  const ok=document.getElementById("r_ok");ok.textContent="✓ Guardado";setTimeout(()=>ok.textContent="",2200);
+  actualizaBadge();
+});
+document.getElementById("rec_dias").addEventListener("change",()=>{setCfg({recDias:Number(document.getElementById("rec_dias").value)||2});renderRecordatorios();});
+document.getElementById("rec_refrescar").addEventListener("click",renderRecordatorios);
+function cargarRecCfg(){
+  const C=cfg();
+  document.getElementById("r_dias").value=String(C.recDias||2);
+  document.getElementById("r_clinica").value=C.clinica||"";
+  document.getElementById("r_plantilla").value=C.plantilla||PLANTILLA_DEF;
+}
 
 // ==================== Calendario mensual ====================
 let calRef=null;
@@ -1011,7 +1213,7 @@ document.getElementById("g_buscar").addEventListener("input",e=>{
 });
 
 // ==================== Init ====================
-poblarListas();poblarPacientesSelect();renderInicio();initSync();
+poblarListas();poblarPacientesSelect();renderInicio();actualizaBadge();initSync();
 </script>
 </body>
 </html>
