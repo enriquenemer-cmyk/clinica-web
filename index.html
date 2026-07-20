@@ -851,6 +851,7 @@
         <button data-libro="gastos">💸 Libro de gastos</button>
         <button data-libro="iva">🧾 Desglose de IVA</button>
         <button data-libro="categorias">📂 Gasto por categoría</button>
+        <button data-libro="diario">🕐 Diario detallado</button>
       </div>
       <div id="cbResumen"></div>
     </div>
@@ -945,6 +946,7 @@
         <div class="field"><label>Paciente</label><select id="pg_paciente"></select></div>
         <div class="field"><label>Importe (€)</label><input id="pg_importe" inputmode="decimal"/></div>
         <div class="field"><label>Fecha</label><input id="pg_fecha" type="date"/></div>
+        <div class="field"><label>Hora</label><input id="pg_hora" type="time"/></div>
       </div>
       <div class="grid2">
         <div class="field"><label>Forma de pago</label><select id="pg_forma"></select></div>
@@ -974,6 +976,7 @@
       <div class="sub">Material, laboratorio, alquiler, nóminas… Sin esto solo ves ingresos, no el beneficio real.</div>
       <div class="grid3">
         <div class="field"><label>Fecha</label><input id="gs_fecha" type="date"/></div>
+        <div class="field"><label>Hora</label><input id="gs_hora" type="time"/></div>
         <div class="field"><label>Categoría</label><select id="gs_cat"></select></div>
         <div class="field"><label>Proveedor</label><input id="gs_proveedor" placeholder="Laboratorio Pérez S.L."/></div>
       </div>
@@ -1984,7 +1987,7 @@ document.getElementById("gs_add").addEventListener("click",()=>{
   if(!total||total<=0){toast("Pon el importe total del gasto","err");return;}
   if(!con){toast("Escribe el concepto","err");return;}
   const b=base>0?base:(total/(1+pct/100));
-  setCfg({gastos:gastos().concat([{id:uid("gs"),fecha:g("gs_fecha").value||hoyISO(),
+  setCfg({gastos:gastos().concat([{id:uid("gs"),fecha:g("gs_fecha").value||hoyISO(),hora:g("gs_hora").value||horaAhora(),
     categoria:g("gs_cat").value,concepto:con,importe:total,
     base:Math.round(b*100)/100,ivaPct:pct,cuotaIva:Math.round((total-b)*100)/100,
     proveedor:g("gs_proveedor").value.trim(),nif:g("gs_nif").value.trim().toUpperCase(),
@@ -2177,6 +2180,57 @@ function renderObligaciones(anio,trim){
     caja("Modelo 111","Retenciones de profesionales",o.ret111,
       o.ret111>0?"Retenido a profesionales o personal.":"Sin retenciones de profesionales en este periodo.");
 }
+// ---- Diario detallado: todos los movimientos por día y hora, con saldo acumulado ----
+function movimientosDiarios(anio,trim){
+  const P=DB.pacientes();
+  const nom=id=>(P.find(x=>x.id===id)||{}).nombre||"";
+  const movs=[
+    ...DB.pagos().filter(p=>enPeriodo(p.fecha,anio,trim)).map(p=>({
+      fecha:p.fecha,hora:p.hora||"",tipo:"cobro",concepto:p.concepto||"Cobro",
+      quien:nom(p.pacienteId),forma:p.forma||"—",importe:num(p.importe),
+      origen:"Pagos"})),
+    ...gastos().filter(g=>enPeriodo(g.fecha,anio,trim)).map(g=>({
+      fecha:g.fecha,hora:g.hora||"",tipo:"gasto",concepto:g.concepto||g.categoria,
+      quien:g.proveedor||"—",forma:g.forma||"—",importe:-num(g.importe),
+      origen:"Gastos · "+(g.categoria||"")}))
+  ].sort((a,b)=>(a.fecha+" "+(a.hora||"99:99")).localeCompare(b.fecha+" "+(b.hora||"99:99")));
+  return movs;
+}
+function tablaDiario(anio,trim){
+  const M=movimientosDiarios(anio,trim);
+  if(!M.length)return '<div class="cbtit">🕐 DIARIO DETALLADO</div><div class="hint">Sin movimientos en este periodo.</div>';
+  const dias=[...new Set(M.map(m=>m.fecha))];
+  let saldoTotal=0;
+  const bloques=dias.map(f=>{
+    const delDia=M.filter(m=>m.fecha===f);
+    let saldoDia=0;
+    const filas=delDia.map(m=>{
+      saldoDia+=m.importe;saldoTotal+=m.importe;
+      return `<tr>
+        <td style="font-variant-numeric:tabular-nums;font-weight:700">${esc(m.hora||"—")}</td>
+        <td>${m.tipo==="cobro"?'<span class="pill v">cobro</span>':'<span class="pill r">gasto</span>'}</td>
+        <td>${esc(m.concepto)}</td><td>${esc(m.quien)}</td><td>${esc(m.forma)}</td>
+        <td class="num" style="color:${m.importe>=0?"var(--ok)":"var(--danger)"};font-weight:700">${m.importe>=0?"+":""}${fmtEur(m.importe)}</td>
+        <td class="num">${fmtEur(saldoDia)}</td>
+        <td><span class="hint">${esc(m.origen)}</span></td></tr>`;
+    }).join("");
+    const cobros=delDia.filter(m=>m.tipo==="cobro").reduce((s,m)=>s+m.importe,0);
+    const gast=delDia.filter(m=>m.tipo==="gasto").reduce((s,m)=>s+m.importe,0);
+    const efectivo=delDia.filter(m=>m.tipo==="cobro"&&/efectivo/i.test(m.forma)).reduce((s,m)=>s+m.importe,0);
+    return `<div style="margin-bottom:22px">
+      <div class="cbtit" style="border-bottom-color:var(--primary)">📅 ${esc(fechaBonita(f))}
+        <span class="n">${delDia.length} movimiento${delDia.length>1?"s":""} · cierre ${fmtEur(saldoDia)}</span></div>
+      <div class="tablewrap"><table class="conta"><thead><tr>
+        <th>Hora</th><th>Tipo</th><th>Concepto</th><th>Quién</th><th>Forma</th>
+        <th class="num">Importe</th><th class="num">Acumulado del día</th><th>Origen</th></tr></thead>
+        <tbody>${filas}
+        <tr class="tot"><td colspan="5">RESUMEN DEL DÍA · cobros ${fmtEur(cobros)} · gastos ${fmtEur(Math.abs(gast))} · <b>efectivo en caja ${fmtEur(efectivo)}</b></td>
+          <td class="num">${fmtEur(saldoDia)}</td><td colspan="2"></td></tr>
+        </tbody></table></div></div>`;
+  }).join("");
+  return `<div class="cbtit">🕐 DIARIO DETALLADO<span class="n">${dias.length} días · ${M.length} movimientos · saldo del periodo ${fmtEur(saldoTotal)}</span></div>
+    <div class="hint" style="margin-bottom:14px">Cada movimiento con su hora y el acumulado del día. Los que no tengan hora aparecen al final del día.</div>`+bloques;
+}
 // Devuelve cada apunte con TODA su trazabilidad: de dónde sale, quién, qué documento
 function datosContablesDetalle(anio,trim){
   const P=DB.pacientes(),C=DB.citas();
@@ -2187,17 +2241,17 @@ function datosContablesDetalle(anio,trim){
   const facturados=new Set(F.map(f=>f.pagoId));
   const ingresos=[
     ...F.map(f=>{const pg=DB.pagos().find(x=>x.id===f.pagoId)||{};
-      return {fecha:f.fecha,doc:f.numero,tipo:"Factura",quien:nombreDe(f.pacienteId),nif:nifDe(f.pacienteId),
+      return {fecha:f.fecha,hora:pg.hora||"",doc:f.numero,tipo:"Factura",quien:nombreDe(f.pacienteId),nif:nifDe(f.pacienteId),
         concepto:f.concepto||"",forma:pg.forma||"",base:num(f.base),ivaPct:num(f.iva),iva:num(f.cuota),
         total:num(f.total),origen:"Factura "+f.numero,pacienteId:f.pacienteId};}),
     // cobros que aún no tienen factura emitida
-    ...PG.filter(p=>!facturados.has(p.id)).map(p=>({fecha:p.fecha,doc:"—",tipo:"Cobro sin factura",
+    ...PG.filter(p=>!facturados.has(p.id)).map(p=>({fecha:p.fecha,hora:p.hora||"",doc:"—",tipo:"Cobro sin factura",
         quien:nombreDe(p.pacienteId),nif:nifDe(p.pacienteId),concepto:p.concepto||"",forma:p.forma||"",
         base:num(p.importe),ivaPct:0,iva:0,total:num(p.importe),origen:"Cobro registrado en Pagos",pacienteId:p.pacienteId}))
   ].sort((a,b)=>(a.fecha||"").localeCompare(b.fecha||""));
   const gs=gastos().filter(g=>enPeriodo(g.fecha,anio,trim)).map(g=>{
     const base=num(g.base||g.importe),ret=num(g.retPct||0);
-    return {fecha:g.fecha,doc:g.numfac||"—",tipo:g.categoria||"Otros",quien:g.proveedor||"",nif:g.nif||"",
+    return {fecha:g.fecha,hora:g.hora||"",doc:g.numfac||"—",tipo:g.categoria||"Otros",quien:g.proveedor||"",nif:g.nif||"",
       concepto:g.concepto||"",forma:g.forma||"",base,ivaPct:num(g.ivaPct||0),iva:num(g.cuotaIva||0),
       retPct:ret,retencion:Math.round(base*ret)/100,total:num(g.importe),
       liquido:Math.round((num(g.importe)-base*ret/100)*100)/100,
@@ -2338,11 +2392,11 @@ function renderContabilidad(){
       filas.map(f=>`<tr>${cols.map(c=>`<td class="${c[3]?"num":""}">${c[2]?c[2](f):esc(f[c[0]]!=null&&f[c[0]]!==""?f[c[0]]:"—")}</td>`).join("")}</tr>`).join("")+
       pie(cols,filas)+`</tbody></table></div>`:'<div class="hint">Sin movimientos en este periodo.</div>');
   const e=k=>f=>fmtEur(f[k]);
-  const COLS_ING=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Nº documento"],["tipo","Tipo"],
+  const COLS_ING=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["hora","Hora"],["doc","Nº documento"],["tipo","Tipo"],
     ["quien","Paciente"],["nif","NIF/DNI"],["concepto","Concepto"],["forma","Cobrado en"],
     ["base","Base",e("base"),1],["ivaPct","%IVA",f=>f.ivaPct+"%"],["iva","Cuota IVA",e("iva"),1],["total","TOTAL",e("total"),1],
     ["origen","De dónde sale",f=>`<span class="hint">${esc(f.origen)}</span>`]];
-  const COLS_GAS=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["doc","Nº factura"],["quien","Proveedor"],["nif","NIF"],
+  const COLS_GAS=[["fecha","Fecha",f=>esc(fmtFecha(f.fecha))],["hora","Hora"],["doc","Nº factura"],["quien","Proveedor"],["nif","NIF"],
     ["tipo","Categoría"],["concepto","Concepto"],["forma","Pagado con"],
     ["base","Base",e("base"),1],["ivaPct","%IVA",f=>f.ivaPct+"%"],["iva","Cuota IVA",e("iva"),1],
     ["retPct","%Ret.",f=>f.retPct?f.retPct+"%":"—"],["retencion","Retención",e("retencion"),1],
@@ -2372,7 +2426,7 @@ function renderContabilidad(){
   window.__cbVistas={
     ingresos:tablaT("💶 LIBRO DE INGRESOS",det.ingresos,COLS_ING,"Cada línea indica de dónde sale: de una factura emitida o de un cobro registrado."),
     gastos:tablaT("💸 LIBRO DE GASTOS",det.gastos,COLS_GAS,"Incluye retención de IRPF (alquiler, profesionales…) y el líquido que realmente pagaste."),
-    iva:tablaIva,categorias:tablaCat,
+    iva:tablaIva,categorias:tablaCat,diario:tablaDiario(anio,trim),
     resumen:tablaT("💶 INGRESOS",det.ingresos,COLS_ING.slice(0,8).concat([COLS_ING[10]]))+
             tablaT("💸 GASTOS",det.gastos,COLS_GAS.slice(0,8).concat([COLS_GAS[12],COLS_GAS[14]]))
   };
@@ -2400,18 +2454,18 @@ function exportarContabilidad(){
   const d=datosContables(anio,trim);
   const det=datosContablesDetalle(anio,trim);
   const filas=[
-    ...det.ingresos.map(x=>["INGRESO",x.fecha,x.doc,x.tipo,x.quien,x.nif,x.concepto,x.forma,
+    ...det.ingresos.map(x=>["INGRESO",x.fecha,x.hora||"",x.doc,x.tipo,x.quien,x.nif,x.concepto,x.forma,
       num(x.base).toFixed(2),x.ivaPct,num(x.iva).toFixed(2),"0","0.00",num(x.total).toFixed(2),num(x.total).toFixed(2),"SI",x.origen]),
-    ...det.gastos.map(x=>["GASTO",x.fecha,x.doc,x.tipo,x.quien,x.nif,x.concepto,x.forma,
+    ...det.gastos.map(x=>["GASTO",x.fecha,x.hora||"",x.doc,x.tipo,x.quien,x.nif,x.concepto,x.forma,
       num(x.base).toFixed(2),x.ivaPct,num(x.iva).toFixed(2),x.retPct,num(x.retencion).toFixed(2),
       num(x.total).toFixed(2),num(x.liquido).toFixed(2),x.deducible?"SI":"NO",x.origen])
   ].sort((a,b)=>(a[1]||"").localeCompare(b[1]||""));
   // los bienes de inversión van en su propio libro
   bienes().forEach(b=>{const am=amortizacionAnual(b,anio);
-    if(am>0)filas.push(["AMORTIZACION",anio+"-12-31",b.id,b.tipo||"Inmovilizado",b.desc,"","Amortización del ejercicio","",
+    if(am>0)filas.push(["AMORTIZACION",anio+"-12-31","",b.id,b.tipo||"Inmovilizado",b.desc,"","Amortización del ejercicio","",
       am.toFixed(2),0,"0.00","0","0.00",am.toFixed(2),am.toFixed(2),"SI","Bien comprado el "+fmtFecha(b.fecha)+" por "+num(b.importe).toFixed(2)+"€ al "+b.pct+"%"]);});
   csvDescarga(`libro-${anio}${Number(trim)?"-T"+trim:""}`,
-    ["Tipo","Fecha","Documento","Categoria","Contraparte","NIF","Concepto","FormaPago","Base","PctIVA","CuotaIVA","PctRetencion","Retencion","Total","Liquido","Deducible","Origen"],filas);
+    ["Tipo","Fecha","Hora","Documento","Categoria","Contraparte","NIF","Concepto","FormaPago","Base","PctIVA","CuotaIVA","PctRetencion","Retencion","Total","Liquido","Deducible","Origen"],filas);
   toast("Libro exportado. Envíaselo a tu gestoría");
 }
 function imprimirContabilidad(){
@@ -4497,7 +4551,7 @@ document.getElementById("pg_add").addEventListener("click",()=>{
   const pac=document.getElementById("pg_paciente").value,imp=parseFloat(document.getElementById("pg_importe").value);
   if(!pac){alert("Elige el paciente.");return;}
   if(!imp||imp<=0){alert("Pon un importe válido.");return;}
-  DB.setPagos([...DB.pagos(),{id:uid("pag"),pacienteId:pac,importe:imp,fecha:document.getElementById("pg_fecha").value||hoyISO(),forma:document.getElementById("pg_forma").value,concepto:document.getElementById("pg_concepto").value.trim()}]);
+  DB.setPagos([...DB.pagos(),{id:uid("pag"),pacienteId:pac,importe:imp,fecha:document.getElementById("pg_fecha").value||hoyISO(),hora:document.getElementById("pg_hora").value||horaAhora(),forma:document.getElementById("pg_forma").value,concepto:document.getElementById("pg_concepto").value.trim()}]);
   ["pg_importe","pg_concepto"].forEach(k=>document.getElementById(k).value="");renderPagos();
 });
 function renderPagos(){
@@ -4510,7 +4564,7 @@ function renderPagos(){
      <div class="b"><div class="n">${Math.max(0,facturado-cobrado)}€</div><div class="t">Pendiente</div></div>`;
   document.getElementById("pg_vacio").style.display=G.length?"none":"block";
   document.getElementById("pg_body").innerHTML=G.slice().sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).map(p=>`<tr>
-    <td>${esc(fmtFecha(p.fecha))}</td><td>${esc(nombrePaciente(p.pacienteId)||"—")}</td><td>${esc(p.importe)}€</td>
+    <td>${esc(fmtFecha(p.fecha))}${p.hora?' <span class="hint">'+esc(p.hora)+'</span>':""}</td><td>${esc(nombrePaciente(p.pacienteId)||"—")}</td><td>${esc(p.importe)}€</td>
     <td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td>
     <td><button class="ghost" data-factura="${p.id}" title="Emitir factura numerada" style="padding:4px 8px">📄</button> <button class="ghost" data-recibo="${p.id}" title="Imprimir recibo" style="padding:4px 8px">🧾</button> <button class="ghost" data-delpago="${p.id}" style="padding:4px 8px">🗑️</button></td></tr>`).join("");
   document.querySelectorAll("[data-recibo]").forEach(b=>b.addEventListener("click",()=>imprimirRecibo(b.dataset.recibo)));
@@ -4597,8 +4651,10 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&["pg_importe","pg_concepto"].includes(e.target.id)){const b=document.getElementById("pg_add");if(b)b.click();}
 });
 // Fechas por defecto = hoy (evita tener que escribirlas cada vez)
+function horaAhora(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function fechasPorDefecto(){
-  ["c_fecha","pg_fecha"].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=hoyISO();});
+  ["c_fecha","pg_fecha","gs_fecha"].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=hoyISO();});
+  ["pg_hora","gs_hora"].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=horaAhora();});
 }
 // Avisar si se sale con cambios sin guardar en la ficha
 window.addEventListener("beforeunload",()=>{limpiarBorradores();});
