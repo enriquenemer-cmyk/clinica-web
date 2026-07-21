@@ -564,7 +564,7 @@
  <div class="field"><label>Repítela</label><input id="ad_pass2" type="text" placeholder="Otra vez"/></div>
  </div>
  <button class="main" id="ad_guardar">Cambiar mi contraseña</button>
- <div class="hint" style="margin-top:8px">Entras con usuario <b>admin</b>y esta contraseña.</div>
+ <div class="hint" style="margin-top:8px">Entras con usuario <b>admin</b> y esta contraseña.</div>
  </div>
 
  <div class="card">
@@ -587,7 +587,7 @@
  <div class="page" id="page-recordatorios">
  <div class="card">
  <h2><span class="h2ico"><svg class="ic"><use href="#i-bell"/></svg></span>Recordatorios de cita por WhatsApp</h2>
- <p class="sub">Pacientes con cita próxima. Pulsa <b>Enviar</b>y se abre WhatsApp con el mensaje ya escrito: solo das a enviar.</p>
+ <p class="sub">Pacientes con cita próxima. Pulsa <b>Enviar</b> y se abre WhatsApp con el mensaje ya escrito: solo das a enviar.</p>
  <div class="toolbar">
  <label style="font-size:13px;color:var(--muted);font-weight:600">Avisar con</label>
  <select id="rec_dias" style="width:auto;min-width:90px"></select>
@@ -599,7 +599,7 @@
 
  <div class="card">
  <h2><span class="h2ico"><svg class="ic"><use href="#i-refresh"/></svg></span>Pacientes para revisión</h2>
- <div class="sub">Pacientes que <b>hace tiempo que no vienen</b>y no tienen ninguna cita futura. Llamarles o escribirles es la forma más rápida de llenar la agenda.</div>
+ <div class="sub">Pacientes que <b>hace tiempo que no vienen</b> y no tienen ninguna cita futura. Llamarles o escribirles es la forma más rápida de llenar la agenda.</div>
  <div class="toolbar">
  <label style="font-size:13px;color:var(--muted);font-weight:600">Sin venir desde hace más de</label>
  <select id="rv_meses" style="width:auto"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="9">9 meses</option><option value="12">1 año</option></select>
@@ -1041,7 +1041,7 @@
  <div class="toolbar"><h2 style="margin:0;flex:1">Presupuestos</h2>
  <select id="pf_estado" title="Filtrar por estado"><option value="">Todos los estados</option></select>
  <button class="main" id="exportar"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar a Excel</button><button class="ghost" id="vaciar"><span class="bico"><svg class="ic"><use href="#i-trash"/></svg></span>Vaciar</button></div>
- <div class="sub" style="margin-bottom:8px">Puedes cambiar el <b>Estado</b>, el <b>Auxiliar</b>y <b>¿Cita?</b>directamente en la tabla.</div>
+ <div class="sub" style="margin-bottom:8px">Puedes cambiar el <b>Estado</b>, el <b>Auxiliar</b> y <b>¿Cita?</b>directamente en la tabla.</div>
  <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Doctor</th><th>Presup.</th><th>Venta</th><th>Auxiliar</th><th>Estado</th><th>Cita</th><th></th></tr></thead>
  <tbody id="presuBody"></tbody></table></div>
  <div class="vacio" id="presuVacio"><span class="ico"><svg class="ic"><use href="#i-file"/></svg></span><b>Aún no hay presupuestos</b><span>Puedes crearlos con la cámara desde «Leer presupuesto».</span></div>
@@ -1509,7 +1509,7 @@ function pintarSlots(){
  if(!doc||!fec){cont.innerHTML='<div class="hint">Elige doctor y fecha para ver sus horas libres.</div>';return;}
  const motivo=(document.getElementById("c_motivo")||{}).value||"";
  const s=slotsDia(doc,fec,motivo);
- if(s===null){cont.innerHTML='<div class="hint">Este doctor aún no tiene horario configurado. Ponlo en <b>Ajustes › Horario de los doctores</b>y aquí te saldrán sus horas libres.</div>';return;}
+ if(s===null){cont.innerHTML='<div class="hint">Este doctor aún no tiene horario configurado. Ponlo en <b>Ajustes › Horario de los doctores</b> y aquí te saldrán sus horas libres.</div>';return;}
  if(!s.length){cont.innerHTML='<div class="hint" style="color:var(--warn)"><svg class="ic"><use href="#i-alert"/></svg>'+esc(doc)+' no pasa consulta ese día.</div>';return;}
  const libres=s.filter(x=>!x.ocupada&&!x.bloqueada).length;
  const dur=duracionDe(motivo);
@@ -2685,7 +2685,7 @@ function renderCarpetasPacientes(){
  lista.sort((a,b)=>b.b.debe-a.b.debe||b.b.cobrado-a.b.cobrado);
  if(!lista.length){cont.innerHTML='<div class="hint">Ningún paciente con movimientos económicos'+(q||filtro?" para ese filtro":"")+".</div>";return;}
  const totDebe=lista.reduce((s,x)=>s+x.b.debe,0),totCob=lista.reduce((s,x)=>s+x.b.cobrado,0);
- cont.innerHTML=`<div class="hint" style="margin-bottom:12px"><b>${lista.length}</b>pacientes · cobrado <b>${fmtEur(totCob)}</b> · pendiente de cobro <b style="color:${totDebe>0?"var(--danger)":"var(--ok)"}">${fmtEur(totDebe)}</b></div>
+ cont.innerHTML=`<div class="hint" style="margin-bottom:12px"><b>${lista.length}</b> pacientes · cobrado <b>${fmtEur(totCob)}</b> · pendiente de cobro <b style="color:${totDebe>0?"var(--danger)":"var(--ok)"}">${fmtEur(totDebe)}</b></div>
  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">`+
  lista.map(x=>`<div class="folder" data-pcpac="${x.p.id}">
  <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
@@ -2746,7 +2746,7 @@ function renderProveedores(){
  }
  // ---- VISTA GENERAL: todas las carpetas ----
  const tot=P.reduce((s,p)=>s+p.total,0);
- cont.innerHTML=`<div class="hint" style="margin-bottom:12px"><b>${P.length}</b>proveedores · <b>${fmtEur(tot)}</b>en total durante ${esc(anio)} · pulsa una carpeta para ver sus facturas</div>
+ cont.innerHTML=`<div class="hint" style="margin-bottom:12px"><b>${P.length}</b> proveedores · <b>${fmtEur(tot)}</b> en total durante ${esc(anio)} · pulsa una carpeta para ver sus facturas</div>
  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">`+
  P.map(p=>`<div class="folder" data-carpeta="${esc(p.nombre)}">
  <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
@@ -3360,7 +3360,7 @@ function renderSetup(){
  const P=pasosSetup(),faltan=P.filter(x=>!x.ok);
  if(!faltan.length){card.style.display="none";return;}
  card.style.display="";
- cont.innerHTML=`<div class="hint" style="margin-bottom:12px">Te faltan <b>${faltan.length}</b>de ${P.length}</div>`+
+ cont.innerHTML=`<div class="hint" style="margin-bottom:12px">Te faltan <b>${faltan.length}</b> de ${P.length}</div>`+
  P.map((x,i)=>`<div class="recrow" style="${x.ok?"opacity:.55":""}">
  <div style="display:flex;align-items:center;gap:12px">
  <div style="width:28px;height:28px;border-radius:50%;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;
@@ -3807,7 +3807,7 @@ function previewImportacion(){
  document.getElementById("imPreview").innerHTML=`<div class="tablewrap"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead>
  <tbody>${muestra.map(p=>`<tr>${cols.map(c=>`<td>${esc(p[c]||"—")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
  document.getElementById("im_info").innerHTML=
- `<b>${validos.length}</b>pacientes a importar${sinNombre?` · <span style="color:var(--warn)">${sinNombre} filas sin nombre se omitirán</span>`:""}${dup.length?` · <span style="color:var(--danger)">${dup.length} ya existen (se omitirán)</span>`:""}`;
+ `<b>${validos.length}</b> pacientes a importar${sinNombre?` · <span style="color:var(--warn)">${sinNombre} filas sin nombre se omitirán</span>`:""}${dup.length?` · <span style="color:var(--danger)">${dup.length} ya existen (se omitirán)</span>`:""}`;
  window.__impValidos=validos;
 }
 function importarPacientes(){
@@ -4424,7 +4424,7 @@ function renderFacturas(){
  const L=facturas().slice().sort((a,b)=>(b.numero||"").localeCompare(a.numero||""));
  if(!L.length){cont.innerHTML='<div class="hint">Aún no has emitido facturas. Pulsa en cualquier pago para emitir la primera.</div>';return;}
  const tot=L.reduce((s,f)=>s+num(f.total),0);
- cont.innerHTML=`<div class="hint" style="margin-bottom:10px"><b>${L.length}</b>facturas emitidas · <b>${Math.round(tot)}€</b></div>`+
+ cont.innerHTML=`<div class="hint" style="margin-bottom:10px"><b>${L.length}</b> facturas emitidas · <b>${Math.round(tot)}€</b></div>`+
  L.map(f=>{const p=DB.pacientes().find(x=>x.id===f.pacienteId)||{};
  return `<div class="recrow"><div><div style="font-weight:700">${esc(f.numero)} · ${esc(p.nombre||"—")}</div>
  <div class="hint">${esc(fmtFecha(f.fecha))} · ${esc(f.concepto)} · <b>${f.total.toFixed(2)}€</b></div></div>
@@ -4643,7 +4643,7 @@ function jvSaldos(){
  }).filter(x=>x.d>0.5).sort((a,b)=>b.d-a.d);
  if(!filas.length)return "Nadie tiene saldo pendiente. Todo cobrado ";
  const tot=filas.reduce((s,x)=>s+x.d,0);
- return `<b>${filas.length} paciente${filas.length>1?"s":""}</b>con pagos pendientes (total <b>${Math.round(tot)}€</b>):`+jvLista(filas.map(f=>` ${esc(f.n||"—")} · <b>${Math.round(f.d)}€</b>`));
+ return `<b>${filas.length} paciente${filas.length>1?"s":""}</b> con pagos pendientes (total <b>${Math.round(tot)}€</b>):`+jvLista(filas.map(f=>` ${esc(f.n||"—")} · <b>${Math.round(f.d)}€</b>`));
 }
 function jvDinero(){
  const PR=DB.presupuestos(),PG=DB.pagos();
@@ -4717,7 +4717,7 @@ function jvPago(t){
  const A=DB.pagos();
  A.push({id:uid("pag"),pacienteId:p.id,importe:imp,fecha:hoyISO(),forma:"Efectivo",concepto:"Registrado con Jarvis"});
  DB.setPagos(A);
- return ` Pago registrado: <b>${imp}€</b>de <b>${esc(p.nombre)}</b> (hoy). Puedes cambiar la forma de pago en la sección Pagos.`;
+ return ` Pago registrado: <b>${imp}€</b> de <b>${esc(p.nombre)}</b> (hoy). Puedes cambiar la forma de pago en la sección Pagos.`;
 }
 function jvBuscar(t){
  let q=(t.match(/(?:busca(?:r|me)?|ficha de|inf(?:o|ormaci[oó]n) de|datos de|qui[eé]n es)\s+(?:a\s+|al\s+|la\s+|el\s+)?([a-záéíóúñ\s]{2,40})/i)||[])[1]||"";
@@ -4743,7 +4743,7 @@ function jvBuscaCita(t,ignorarFecha){
  else C=C.filter(c=>c.fecha>=hoyISO());
  C.sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
  if(!C.length)return {err:`<b>${esc(p.nombre)}</b>no tiene citas próximas${f?` el ${fechaBonita(f)}`:""}.`};
- if(C.length>1&&!f)return {err:`<b>${esc(p.nombre)}</b>tiene <b>${C.length}</b>citas próximas. Dime cuál:`+jvLista(C.map(c=>`${fechaBonita(c.fecha)} · ${esc(c.hora||"")} · ${esc(c.doctor||"")}`))};
+ if(C.length>1&&!f)return {err:`<b>${esc(p.nombre)}</b>tiene <b>${C.length}</b> citas próximas. Dime cuál:`+jvLista(C.map(c=>`${fechaBonita(c.fecha)} · ${esc(c.hora||"")} · ${esc(c.doctor||"")}`))};
  return {p,c:C[0]};
 }
 function jvCancelar(t){
@@ -4788,7 +4788,7 @@ function jvSemana(){
  const C=DB.citas().filter(c=>c.fecha>=ini&&c.fecha<=isoDe(fin)&&c.estado!=="Cancelada").sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
  if(!C.length)return "No hay citas en los próximos 7 días.";
  const porDia={};C.forEach(c=>{(porDia[c.fecha]=porDia[c.fecha]||[]).push(c);});
- return ` <b>${C.length}</b>citas en los próximos 7 días:`+jvLista(Object.keys(porDia).sort().map(f=>`<b>${fechaBonita(f)}</b>: ${porDia[f].length} cita${porDia[f].length>1?"s":""} (${porDia[f].map(c=>esc(c.hora||"")).join(", ")})`));
+ return ` <b>${C.length}</b> citas en los próximos 7 días:`+jvLista(Object.keys(porDia).sort().map(f=>`<b>${fechaBonita(f)}</b>: ${porDia[f].length} cita${porDia[f].length>1?"s":""} (${porDia[f].map(c=>esc(c.hora||"")).join(", ")})`));
 }
 function jvNuevos(){
  const P=DB.pacientes().filter(p=>p.autoregistro);
@@ -4810,7 +4810,7 @@ function jvPresuPendientes(){
  const PR=DB.presupuestos().filter(x=>!/acept/i.test(x.estado||"")||/no acept/i.test(x.estado||""));
  if(!PR.length)return "No hay presupuestos pendientes de respuesta ";
  const tot=PR.reduce((s,x)=>s+(parseFloat(String(x.importe_venta||x.importe_presupuestado||0).replace(",","."))||0),0);
- return ` <b>${PR.length}</b>presupuesto${PR.length>1?"s":""} sin aceptar (<b>${Math.round(tot)}€</b>en juego):`+jvLista(PR.map(x=>{
+ return ` <b>${PR.length}</b>presupuesto${PR.length>1?"s":""} sin aceptar (<b>${Math.round(tot)}€</b> en juego):`+jvLista(PR.map(x=>{
  const p=DB.pacientes().find(y=>y.id===x.pacienteId);
  return `${esc((p&&p.nombre)||"—")} · ${esc(x.importe_venta||x.importe_presupuestado||"—")}€ · ${esc(x.estado||"Pendiente")}`;}));
 }
@@ -4819,7 +4819,7 @@ function jvCaja(t){
  const PG=DB.pagos().filter(p=>p.fecha===f);
  const tot=PG.reduce((s,x)=>s+(parseFloat(x.importe)||0),0);
  if(!PG.length)return `No hay cobros registrados el ${fechaBonita(f)}.`;
- return ` <b>Caja del ${fechaBonita(f)}</b>: <b>${Math.round(tot)}€</b>en ${PG.length} cobro${PG.length>1?"s":""}`+jvLista(PG.map(x=>{
+ return ` <b>Caja del ${fechaBonita(f)}</b>: <b>${Math.round(tot)}€</b> en ${PG.length} cobro${PG.length>1?"s":""}`+jvLista(PG.map(x=>{
  const p=DB.pacientes().find(y=>y.id===x.pacienteId);
  return `${esc((p&&p.nombre)||"—")} · <b>${x.importe}€</b> · ${esc(x.forma||"")}`;}));
 }
@@ -4911,7 +4911,7 @@ function jarvisResponder(txt){
  // agenda de un doctor concreto ("qué tiene Javier mañana", "agenda de Marta")
  if(/(qu[eé] tiene|agenda de|citas? de|tiene)/.test(t)&&jvDoctor(t)){const r=jvAgendaDoctor(t);if(r)return r;}
  if(/cita/.test(t)){const f=jvFecha(t)||hoyISO();return jvCitasDe(f);}
- if(/cu[aá]ntos pacientes|n[uú]mero de pacientes|total de pacientes/.test(t))return `Tienes <b>${DB.pacientes().length}</b>pacientes registrados.`;
+ if(/cu[aá]ntos pacientes|n[uú]mero de pacientes|total de pacientes/.test(t))return `Tienes <b>${DB.pacientes().length}</b> pacientes registrados.`;
  const f=jvFecha(t);if(f)return jvCitasDe(f);
  return `No he entendido eso \n\n${JV_AYUDA}`;
 }
@@ -4976,7 +4976,7 @@ function jvIniciar(){
  const bv=document.getElementById("jvBtnVoz");if(bv)bv.classList.toggle("on",jvVoz);
  if(!c.dataset.ini){c.dataset.ini="1";
  const s=sesion();const quien=s&&s.nombre&&s.rol!=="admin"?", "+s.nombre.split(" ")[0]:"";
- jvPinta(`${jvSaludo()}${quien}. Soy <b>JARVIS</b>, a tu servicio.\n\n${jvResumen()}\n\nPuedes escribirme o pulsar <b><svg class="ic"><use href="#i-mic"/></svg>Hablar</b>y decírmelo en voz alta. Escribe <b>ayuda</b>para verlo todo.`,"jv");
+ jvPinta(`${jvSaludo()}${quien}. Soy <b>JARVIS</b>, a tu servicio.\n\n${jvResumen()}\n\nPuedes escribirme o pulsar <b><svg class="ic"><use href="#i-mic"/></svg>Hablar</b> y decírmelo en voz alta. Escribe <b>ayuda</b>para verlo todo.`,"jv");
  }
  const sug=["Citas de hoy","Citas de esta semana","Citas sin confirmar","¿Quién me debe dinero?","Caja de hoy","Presupuestos sin aceptar","Pacientes nuevos","¿A quién hay que avisar?","Cómo va el día","Ayuda"];
  document.getElementById("jvSug").innerHTML=sug.map(s=>`<button data-sug="${esc(s)}">${esc(s)}</button>`).join("");
