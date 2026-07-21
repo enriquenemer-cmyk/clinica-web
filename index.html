@@ -258,6 +258,21 @@
   .oblig .o.cero .imp{color:var(--muted)}
   .avisolegal{margin-top:16px;padding:13px 15px;background:var(--warnbg);border:1px solid var(--warn);
     border-radius:11px;color:var(--warn);font-size:12px;line-height:1.55}
+  /* ---- Insignias de los títulos: unifican los iconos en toda la app ---- */
+  .h2ico{width:32px;height:32px;border-radius:10px;background:var(--primary-soft);display:inline-flex;
+    align-items:center;justify-content:center;font-size:16px;flex:0 0 32px;line-height:1;
+    box-shadow:inset 0 0 0 1px rgba(13,148,136,.12)}
+  .h2ico.peq{width:24px;height:24px;flex:0 0 24px;font-size:13px;border-radius:8px}
+  .card h2{display:flex;align-items:center;gap:11px}
+  .cbtit{display:flex;align-items:center;gap:9px}
+  /* ---- Botones: el icono nunca pegado al texto ---- */
+  button.main,button.ghost,.btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+  .toolbar button{flex:0 0 auto}
+  /* ---- Filas de acción: el botón no se cae de línea ---- */
+  .recrow{flex-wrap:nowrap;gap:14px}
+  .recrow>div:first-child{min-width:0}
+  .recrow>div:last-child,.recrow>button{flex:0 0 auto}
+  @media(max-width:640px){.recrow{flex-wrap:wrap}}
   .folder{border:1.5px solid var(--borde);border-radius:14px;padding:15px;background:var(--card);cursor:pointer;transition:.15s}
   .folder:hover{border-color:var(--primary);box-shadow:0 6px 18px rgba(13,148,136,.15);transform:translateY(-2px)}
   /* ---- Alertas médicas ---- */
@@ -340,19 +355,19 @@
       </div>
     </div>
     <div class="grid2">
-      <div class="card" id="setupCard" style="display:none"><h2>🚀 Pon en marcha tu clínica</h2><div class="sub">Cuatro pasos para dejarlo todo listo. Desaparecerá solo cuando los completes.</div><div id="setupLista"></div></div>
-      <div class="card" id="salaCard" style="display:none"><h2>🪑 Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
+      <div class="card" id="setupCard" style="display:none"><h2><span class="h2ico">🚀</span>Pon en marcha tu clínica</h2><div class="sub">Cuatro pasos para dejarlo todo listo. Desaparecerá solo cuando los completes.</div><div id="setupLista"></div></div>
+      <div class="card" id="salaCard" style="display:none"><h2><span class="h2ico">🪑</span>Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
       <div class="card"><h2>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
       <div class="card"><h2>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
     </div>
     <div class="card">
-      <h2>🔔 Recordatorios (hoy y mañana)</h2>
+      <h2><span class="h2ico">🔔</span>Recordatorios (hoy y mañana)</h2>
       <div class="sub">Citas por avisar. Pulsa 💬 para enviar el recordatorio por WhatsApp y ✓ para marcarlo como avisado.</div>
       <div id="recordatorios"></div><div class="hint" id="recordatoriosVacio">No hay citas pendientes de avisar.</div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>💰 Saldos pendientes</h2><div id="alertaSaldos"></div><div class="hint" id="alertaSaldosVacio">Nadie tiene saldo pendiente.</div></div>
-      <div class="card"><h2>⚠️ Citas sin confirmar</h2><div id="alertaCitas"></div><div class="hint" id="alertaCitasVacio">Todas las próximas citas están confirmadas.</div></div>
+      <div class="card"><h2><span class="h2ico">💰</span>Saldos pendientes</h2><div id="alertaSaldos"></div><div class="hint" id="alertaSaldosVacio">Nadie tiene saldo pendiente.</div></div>
+      <div class="card"><h2><span class="h2ico">⚠️</span>Citas sin confirmar</h2><div id="alertaCitas"></div><div class="hint" id="alertaCitasVacio">Todas las próximas citas están confirmadas.</div></div>
     </div>
     <div class="card">
       <h2>Estadísticas</h2>
@@ -443,7 +458,7 @@
 
   <div class="page" id="page-usuarios">
     <div class="card" id="cardUsuarios">
-        <h2>👥 Usuarios y permisos</h2>
+        <h2><span class="h2ico">👥</span>Usuarios y permisos</h2>
         <div class="sub">Crea una cuenta para cada persona del equipo y marca a qué secciones puede entrar. Cada uno entrará con <b>su usuario y su contraseña</b>.</div>
         <div id="u_lista"></div>
         <div style="border:1.5px dashed var(--borde);border-radius:14px;padding:18px;margin-top:14px">
@@ -470,7 +485,7 @@
         </div>
       </div>
     <div class="card">
-      <h2>🔑 Contraseña de administradora</h2>
+      <h2><span class="h2ico">🔑</span>Contraseña de administradora</h2>
       <div class="sub">La tuya, la que da acceso total. Cámbiala por una que recuerdes y no compartas con nadie.</div>
       <div class="grid2">
         <div class="field"><label>Nueva contraseña</label><input id="ad_pass1" type="text" placeholder="Mínimo 6 caracteres"/></div>
@@ -481,13 +496,13 @@
     </div>
 
     <div class="card">
-      <h2>🗑️ Papelera</h2>
+      <h2><span class="h2ico">🗑️</span>Papelera</h2>
       <div class="sub">Lo que borres se guarda aquí por si fue un error. Puedes restaurarlo.</div>
       <div id="papLista"></div>
     </div>
 
     <div class="card">
-      <h2>📋 Registro de actividad</h2>
+      <h2><span class="h2ico">📋</span>Registro de actividad</h2>
       <div class="sub">Quién ha hecho qué y cuándo. Útil para saber si algo se ha borrado o modificado.</div>
       <div class="toolbar">
         <button class="ghost" id="lg_actualizar">🔄 Actualizar</button>
@@ -499,7 +514,7 @@
 
   <div class="page" id="page-recordatorios">
     <div class="card">
-      <h2>🔔 Recordatorios de cita por WhatsApp</h2>
+      <h2><span class="h2ico">🔔</span>Recordatorios de cita por WhatsApp</h2>
       <p class="sub">Pacientes con cita próxima. Pulsa <b>Enviar</b> y se abre WhatsApp con el mensaje ya escrito: solo das a enviar.</p>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Avisar con</label>
@@ -511,7 +526,7 @@
     </div>
 
     <div class="card">
-      <h2>🔄 Pacientes para revisión</h2>
+      <h2><span class="h2ico">🔄</span>Pacientes para revisión</h2>
       <div class="sub">Pacientes que <b>hace tiempo que no vienen</b> y no tienen ninguna cita futura. Llamarles o escribirles es la forma más rápida de llenar la agenda.</div>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Sin venir desde hace más de</label>
@@ -581,7 +596,7 @@
       <button class="ghost" id="f_borrar" style="color:#a33">🗑️ Borrar</button>
     </div>
     <div class="card">
-      <h2>🦷 Odontograma</h2>
+      <h2><span class="h2ico">🦷</span>Odontograma</h2>
       <div class="sub">Elige un estado abajo y pulsa sobre los dientes para marcarlos.</div>
       <div id="odoLegend" class="odolegend"></div>
       <div class="odogram">
@@ -621,12 +636,12 @@
       <div class="hint" id="f_pagosVacio">Sin pagos registrados. Puedes registrarlos en la pestaña «Pagos».</div>
     </div>
     <div class="card" id="f_cuestCard" style="display:none">
-      <h2>📋 Cuestionario de salud <span class="pill v" style="vertical-align:middle">autorregistro</span></h2>
+      <h2><span class="h2ico">📋</span>Cuestionario de salud <span class="pill v" style="vertical-align:middle">autorregistro</span></h2>
       <div id="f_cuest"></div>
     </div>
 
     <div class="card">
-      <h2>📝 Plan de tratamiento</h2>
+      <h2><span class="h2ico">📝</span>Plan de tratamiento</h2>
       <div class="sub">Los pasos previstos, por fases. Marca cada uno según se va haciendo.</div>
       <div class="kpi" id="plKpi"></div>
       <div class="grid3">
@@ -643,7 +658,7 @@
     </div>
 
     <div class="card">
-      <h2>🩺 Evolución clínica</h2>
+      <h2><span class="h2ico">🩺</span>Evolución clínica</h2>
       <div class="sub">Qué se ha hecho en cada sesión. Queda con su fecha y doctor: es la historia clínica del paciente.</div>
       <div class="grid3">
         <div class="field"><label>Fecha</label><input id="ev_fecha" type="date"/></div>
@@ -656,7 +671,7 @@
     </div>
 
     <div class="card">
-      <h2>🦷 Periodontograma</h2>
+      <h2><span class="h2ico">🦷</span>Periodontograma</h2>
       <div class="sub">Sondaje de 6 puntos por diente. Los índices se calculan solos y puedes comparar con sondajes anteriores.</div>
       <div class="kpi" id="peKpi"></div>
       <div class="toolbar">
@@ -671,7 +686,7 @@
     </div>
 
     <div class="card">
-      <h2>💳 Plan de pago a plazos</h2>
+      <h2><span class="h2ico">💳</span>Plan de pago a plazos</h2>
       <div class="sub">Divide un tratamiento en cuotas y ve marcándolas según cobras. Te avisa de las vencidas.</div>
       <div class="kpi" id="ppKpi"></div>
       <div class="grid3">
@@ -684,7 +699,7 @@
     </div>
 
     <div class="card">
-      <h2>💊 Recetas</h2>
+      <h2><span class="h2ico">💊</span>Recetas</h2>
       <div class="sub">Elige un medicamento habitual o escribe otro. Se imprime con los datos de la clínica.</div>
       <div class="grid2">
         <div class="field"><label>Medicamento</label><select id="rc_med"></select></div>
@@ -699,7 +714,7 @@
     </div>
 
     <div class="card">
-      <h2>✍️ Consentimientos firmados</h2>
+      <h2><span class="h2ico">✍️</span>Consentimientos firmados</h2>
       <div class="sub">El paciente firma en la pantalla y queda guardado con su fecha. Puedes imprimirlo cuando quieras.</div>
       <div class="toolbar">
         <select id="cs_tipo" style="min-width:260px"></select>
@@ -709,7 +724,7 @@
     </div>
 
     <div class="card">
-      <h2>📷 Fotos y radiografías</h2>
+      <h2><span class="h2ico">📷</span>Fotos y radiografías</h2>
       <div class="sub">Imágenes del paciente (antes/después, radiografías). Se comprimen solas para no ocupar.</div>
       <div class="toolbar">
         <input type="file" id="ft_file" accept="image/*" style="max-width:260px"/>
@@ -722,7 +737,7 @@
 
   <div id="escanModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.72);backdrop-filter:blur(4px);z-index:9998;align-items:center;justify-content:center;padding:16px">
     <div style="background:var(--card);border-radius:16px;padding:24px;max-width:940px;width:100%;max-height:94vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.45)">
-      <h2 style="margin:0 0 5px;font-size:18px">📸 Escanear formulario de papel</h2>
+      <h2 style="margin:0 0 5px;font-size:18px"><span class="h2ico">📸</span>Escanear formulario de papel</h2>
       <div class="sub">Haz una foto del formulario relleno. Guardaré la hoja en su ficha y te ayudaré a pasar los datos.</div>
 
       <div id="escPaso1">
@@ -832,7 +847,7 @@
   <!-- ===================== PRESUPUESTOS ===================== -->
   <div class="page" id="page-contabilidad">
     <div class="card">
-      <h2>📗 Libro de ingresos y gastos</h2>
+      <h2><span class="h2ico">📗</span>Libro de ingresos y gastos</h2>
       <div class="sub">Todo lo que entra y sale, listo para entregar a tu gestoría. <b>Esto no sustituye a tu asesor</b>: es el registro ordenado que él necesita.</div>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Año</label>
@@ -847,7 +862,7 @@
         <button class="ghost" id="cb_imprimir">🖨️ Imprimir resumen</button>
       </div>
       <div class="kpi" id="cbKpi"></div>
-      <div class="cbtit">📌 QUÉ TOCA PRESENTAR ESTE PERIODO</div>
+      <div class="cbtit"><span class="h2ico peq">📌</span>QUÉ TOCA PRESENTAR ESTE PERIODO</div>
       <div class="oblig" id="cbOblig"></div>
       <div class="cbtabs">
         <button data-libro="resumen" class="on">📊 Resumen</button>
@@ -860,7 +875,7 @@
       <div id="cbResumen"></div>
     </div>
     <div class="card">
-      <h2>🏢 Proveedores</h2>
+      <h2><span class="h2ico">🏢</span>Proveedores</h2>
       <div class="sub">Se crean solos al registrar gastos. Aquí ves cuánto gastas con cada uno y sus datos fiscales.</div>
       <div class="toolbar">
         <button class="ghost" id="pv_exportar">⬇️ Exportar proveedores</button>
@@ -869,7 +884,7 @@
     </div>
 
     <div class="card">
-      <h2>🗂️ Carpetas de pacientes</h2>
+      <h2><span class="h2ico">🗂️</span>Carpetas de pacientes</h2>
       <div class="sub">El historial económico de cada paciente: lo presupuestado, lo facturado, lo cobrado y lo que debe.</div>
       <div class="toolbar">
         <input id="pc_buscar" placeholder="Buscar paciente…" style="min-width:220px"/>
@@ -880,13 +895,13 @@
     </div>
 
     <div class="card">
-      <h2>🧮 Tu pago trimestral de IRPF (modelo 130)</h2>
+      <h2><span class="h2ico">🧮</span>Tu pago trimestral de IRPF (modelo 130)</h2>
       <div class="sub"><b>Cálculo orientativo</b> para que sepas cuánto apartar. La cifra oficial la calcula tu gestoría.</div>
       <div id="cb130"></div>
     </div>
 
     <div class="card">
-      <h2>🏗️ Bienes de inversión y amortizaciones</h2>
+      <h2><span class="h2ico">🏗️</span>Bienes de inversión y amortizaciones</h2>
       <div class="sub">Sillón, radiografía, mobiliario, ordenadores… Se deducen poco a poco cada año. <b>Es una deducción que se suele olvidar.</b></div>
       <div class="grid3">
         <div class="field"><label>Descripción</label><input id="bi_desc" placeholder="Sillón dental Adec"/></div>
@@ -902,7 +917,7 @@
     </div>
 
     <div class="card">
-      <h2>📅 Comparativa por trimestres</h2>
+      <h2><span class="h2ico">📅</span>Comparativa por trimestres</h2>
       <div class="sub">Cómo va el año.</div>
       <div id="cbTrimestres"></div>
     </div>
@@ -910,40 +925,40 @@
 
   <div class="page" id="page-informes">
     <div class="card">
-      <h2>📊 Resumen del negocio</h2>
+      <h2><span class="h2ico">📊</span>Resumen del negocio</h2>
       <div class="sub">Cómo va la clínica de un vistazo. Los datos se calculan solos con lo que vas registrando.</div>
       <div class="kpi" id="inf_kpi"></div>
     </div>
     <div class="card">
-      <h2>💶 Ingresos cobrados por mes</h2>
+      <h2><span class="h2ico">💶</span>Ingresos cobrados por mes</h2>
       <div class="sub">Últimos 12 meses, según los pagos registrados.</div>
       <div id="inf_ingresos"></div>
     </div>
     <div class="card">
-      <h2>📈 Beneficio real (ingresos − gastos)</h2>
+      <h2><span class="h2ico">📈</span>Beneficio real (ingresos − gastos)</h2>
       <div class="sub">Lo que de verdad queda. En verde los meses con beneficio, en rojo los que no.</div>
       <div id="inf_beneficio"></div>
     </div>
     <div class="grid2">
       <div class="card">
-        <h2>🧾 Presupuestos</h2>
+        <h2><span class="h2ico">🧾</span>Presupuestos</h2>
         <div class="sub">Cuántos aceptas de los que presentas.</div>
         <div id="inf_presu"></div>
       </div>
       <div class="card">
-        <h2>📅 Citas por mes</h2>
+        <h2><span class="h2ico">📅</span>Citas por mes</h2>
         <div class="sub">Actividad de la agenda.</div>
         <div id="inf_citas"></div>
       </div>
     </div>
     <div class="card" id="cardComisiones" style="display:none">
-      <h2>💰 Comisiones a pagar</h2>
+      <h2><span class="h2ico">💰</span>Comisiones a pagar</h2>
       <div class="sub">Según el porcentaje de cada doctor sobre lo que ha cerrado.</div>
       <div id="inf_comisiones"></div>
     </div>
 
     <div class="card">
-      <h2>👨‍⚕️ Presupuestos aceptados por doctor</h2>
+      <h2><span class="h2ico">👨‍⚕️</span>Presupuestos aceptados por doctor</h2>
       <div class="sub">Quién cierra más presupuestos. Útil para formación y reparto de pacientes.</div>
       <div id="inf_doctores"></div>
     </div>
@@ -985,7 +1000,7 @@
       <div class="vacio" id="pg_vacio"><span class="ico">💳</span><b>Todavía no hay cobros</b><span>Registra el primer pago con el formulario de arriba.</span></div>
     </div>
     <div class="card">
-      <h2>🧮 Cierre de caja</h2>
+      <h2><span class="h2ico">🧮</span>Cierre de caja</h2>
       <div class="sub">Cuadra la caja al final del día: qué has cobrado, en qué forma de pago, y qué has gastado.</div>
       <div class="toolbar">
         <input id="cj_fecha" type="date"/>
@@ -996,7 +1011,7 @@
     </div>
 
     <div class="card">
-      <h2>💸 Gastos</h2>
+      <h2><span class="h2ico">💸</span>Gastos</h2>
       <div class="sub">Material, laboratorio, alquiler, nóminas… Sin esto solo ves ingresos, no el beneficio real.</div>
       <div style="border:1.5px dashed var(--primary);border-radius:12px;padding:14px;margin-bottom:16px;background:var(--primary-soft)">
         <div style="font-weight:700;font-size:13px;margin-bottom:8px">📄 ¿Tienes la factura en PDF o foto? Léela automáticamente</div>
@@ -1037,7 +1052,7 @@
     </div>
 
     <div class="card">
-      <h2>📄 Facturas emitidas</h2>
+      <h2><span class="h2ico">📄</span>Facturas emitidas</h2>
       <div class="sub">Numeración correlativa. Pulsa 📄 en un pago para emitir su factura.</div>
       <div id="fcLista"></div>
     </div>
@@ -1047,7 +1062,7 @@
 
   <div class="page" id="page-proveedores">
     <div class="card">
-      <h2>🏭 Proveedores y pedidos</h2>
+      <h2><span class="h2ico">🏭</span>Proveedores y pedidos</h2>
       <div class="sub">Guarda tus proveedores, qué te venden y a qué precio. Haz un pedido y envíalo por correo en un clic.</div>
       <div class="toolbar">
         <input id="pr_buscar" placeholder="Buscar proveedor…" style="min-width:220px"/>
@@ -1072,13 +1087,13 @@
     </div>
 
     <div class="card">
-      <h2>🖨️ Formulario de registro en papel</h2>
+      <h2><span class="h2ico">🖨️</span>Formulario de registro en papel</h2>
       <div class="sub">Imprime hojas en blanco para los pacientes que prefieran rellenarlo a mano. Luego puedes escanearlas desde Pacientes.</div>
       <button class="main" id="fb_imprimir">🖨️ Imprimir formulario en blanco</button>
     </div>
 
     <div class="card">
-      <h2>📥 Importar pacientes desde otro programa</h2>
+      <h2><span class="h2ico">📥</span>Importar pacientes desde otro programa</h2>
       <div class="sub">Exporta tus pacientes a Excel o CSV desde tu programa actual y tráelos aquí. Podrás revisar todo antes de guardar nada.</div>
       <div class="toolbar">
         <input type="file" id="im_file" accept=".csv,.txt,text/csv" style="max-width:250px"/>
@@ -1114,7 +1129,7 @@
     </div>
 
     <div class="card">
-      <h2>🚫 Bloqueos de agenda</h2>
+      <h2><span class="h2ico">🚫</span>Bloqueos de agenda</h2>
       <div class="sub">Vacaciones, festivos, reuniones… Esas horas dejarán de ofrecerse como libres.</div>
       <div class="toolbar">
         <select id="bl_doctor" style="min-width:190px"></select>
@@ -1129,14 +1144,14 @@
     </div>
 
     <div class="card">
-      <h2>📊 Comisiones por doctor</h2>
+      <h2><span class="h2ico">📊</span>Comisiones por doctor</h2>
       <div class="sub">Porcentaje que se lleva cada doctor de los presupuestos aceptados. Verás el cálculo en Informes.</div>
       <div id="coLista"></div>
       <button class="main" id="co_guardar" style="margin-top:12px">Guardar comisiones</button>
     </div>
 
     <div class="card">
-      <h2>🧾 Datos para las facturas</h2>
+      <h2><span class="h2ico">🧾</span>Datos para las facturas</h2>
       <div class="sub">Aparecerán en las facturas que emitas. Rellénalos una vez.</div>
       <div class="grid3">
         <div class="field"><label>Nombre o razón social</label><input id="fc_nombre" placeholder="K Dental Excellent S.L."/></div>
@@ -1156,13 +1171,13 @@
     </div>
 
     <div class="card" style="border-color:var(--danger)">
-      <h2 style="color:var(--danger)">⚠️ Empezar de cero</h2>
+      <h2 style="color:var(--danger)"><span class="h2ico">⚠️</span>Empezar de cero</h2>
       <div class="sub">Borra todos los pacientes, citas, presupuestos, pagos, gastos y facturas. <b>Se conservan</b> los doctores, horarios, usuarios y ajustes. Úsalo solo cuando termines de hacer pruebas.</div>
       <button class="ghost" id="dz_borrar" style="color:var(--danger);border-color:var(--danger)">🗑️ Borrar todos los datos</button>
     </div>
 
     <div class="card">
-      <h2>🕐 Horario de los doctores</h2>
+      <h2><span class="h2ico">🕐</span>Horario de los doctores</h2>
       <div class="sub">Define qué días y a qué horas pasa consulta cada doctor. Al agendar una cita, la plataforma te ofrecerá solo las horas libres de ese doctor.</div>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Doctor</label>
@@ -1178,7 +1193,7 @@
     </div>
 
     <div class="card">
-      <h2>🔔 Recordatorios por WhatsApp</h2>
+      <h2><span class="h2ico">🔔</span>Recordatorios por WhatsApp</h2>
       <div class="sub">Mensaje que se enviará a los pacientes para recordarles su cita. Usa las etiquetas y se sustituyen solas.</div>
       <div class="grid2">
         <div class="field"><label>Días de antelación</label><select id="r_dias"><option value="1">1 día antes</option><option value="2" selected>2 días antes</option><option value="3">3 días antes</option><option value="7">7 días antes</option></select></div>
@@ -1200,7 +1215,7 @@
       <div class="banner free">💡 Recomendado: descarga una copia de vez en cuando. Los datos se guardan en este navegador; si se borra el historial, se pierden.</div>
     </div>
     <div class="card">
-      <h2>📋 Registro de pacientes nuevos (QR)</h2>
+      <h2><span class="h2ico">📋</span>Registro de pacientes nuevos (QR)</h2>
       <div class="sub">Imprime este QR y ponlo en recepción o la sala de espera. El paciente nuevo lo escanea y rellena sus datos + cuestionario de salud, y aparece solo en «Pacientes».</div>
       <div class="field"><label>Dirección del formulario de registro</label><input id="regUrl"/></div>
       <div class="toolbar"><button class="main" id="genQR">Generar QR</button><a class="ghost" id="abrirReg" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center">↗️ Abrir formulario</a></div>
@@ -2402,7 +2417,7 @@ function renderProveedoresPanel(){
     const totalCarrito=cat.filter(x=>carrito[x.id]>0).reduce((s,x)=>s+num(x.precio)*carrito[x.id],0);
     const nLineas=Object.values(carrito).filter(c=>c>0).length;
     cont.innerHTML=`<button class="ghost" id="pr_volver" style="margin-bottom:14px">← Volver a proveedores</button>
-      <div class="cbtit">🏭 ${esc(p.nombre)} ${p.habitual?'<span class="pill v">habitual</span>':""}
+      <div class="cbtit"><span class="h2ico peq">🏭</span>${esc(p.nombre)} ${p.habitual?'<span class="pill v">habitual</span>':""}
         <span class="n">${p.email?"✉️ "+esc(p.email):"sin email"} ${p.tel?" · 📞 "+esc(p.tel):""}</span></div>
       <div class="hint" style="margin-bottom:12px">${p.contacto?"Contacto: "+esc(p.contacto)+" · ":""}${p.nif?"NIF: "+esc(p.nif)+" · ":""}Gastado con este proveedor: <b>${fmtEur(gastadoCon(p.nombre))}</b>
         <button class="ghost" id="pr_editar" style="padding:3px 9px;margin-left:8px">✏️ Editar datos</button></div>
@@ -2565,7 +2580,7 @@ function renderCarpetasPacientes(){
     ].sort((a,b2)=>(b2.fecha+" "+(b2.hora||"")).localeCompare(a.fecha+" "+(a.hora||"")));
     const plan=p.planPago?`<div class="hint" style="margin:10px 0"><b>Plan de pago:</b> ${p.planPago.cuotas.filter(c=>c.pagada).length}/${p.planPago.cuotas.length} cuotas pagadas · pendiente ${fmtEur(p.planPago.cuotas.filter(c=>!c.pagada).reduce((s,c)=>s+num(c.importe),0))}</div>`:"";
     cont.innerHTML=`<button class="ghost" id="pc_volver" style="margin-bottom:14px">← Volver a todos los pacientes</button>
-      <div class="cbtit">🗂️ ${esc(p.nombre)}<span class="n">${p.dni?"DNI "+esc(p.dni)+" · ":""}${esc(p.telefono||"")}</span></div>
+      <div class="cbtit"><span class="h2ico peq">🗂️</span>${esc(p.nombre)}<span class="n">${p.dni?"DNI "+esc(p.dni)+" · ":""}${esc(p.telefono||"")}</span></div>
       <div class="kpi" style="margin-bottom:12px">
         <div class="b"><div class="n">${fmtEur(b.presupuestado)}</div><div class="t">Presupuestado</div></div>
         <div class="b"><div class="n">${fmtEur(b.aceptado)}</div><div class="t">Aceptado</div></div>
@@ -2638,7 +2653,7 @@ function renderProveedores(){
     const fac=gastos().filter(g=>norm(g.proveedor||"(sin proveedor)")===norm(proveedorAbierto)&&(!anio||(g.fecha||"").slice(0,4)===String(anio)))
       .sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
     cont.innerHTML=`<button class="ghost" id="pv_volver" style="margin-bottom:14px">← Volver a todas las carpetas</button>
-      <div class="cbtit">📂 ${esc(p.nombre)}<span class="n">NIF ${esc(p.nif||"—")} · ${p.facturas} facturas · ${fmtEur(p.total)}</span></div>
+      <div class="cbtit"><span class="h2ico peq">📂</span>${esc(p.nombre)}<span class="n">NIF ${esc(p.nif||"—")} · ${p.facturas} facturas · ${fmtEur(p.total)}</span></div>
       <div class="kpi" style="margin-bottom:14px">
         <div class="b"><div class="n">${fmtEur(p.base)}</div><div class="t">Base total</div></div>
         <div class="b"><div class="n">${fmtEur(p.iva)}</div><div class="t">IVA soportado</div></div>
@@ -2707,7 +2722,7 @@ function movimientosDiarios(anio,trim){
 }
 function tablaDiario(anio,trim){
   const M=movimientosDiarios(anio,trim);
-  if(!M.length)return '<div class="cbtit">🕐 DIARIO DETALLADO</div><div class="hint">Sin movimientos en este periodo.</div>';
+  if(!M.length)return '<div class="cbtit"><span class="h2ico peq">🕐</span>DIARIO DETALLADO</div><div class="hint">Sin movimientos en este periodo.</div>';
   const dias=[...new Set(M.map(m=>m.fecha))];
   let saldoTotal=0;
   const bloques=dias.map(f=>{
@@ -2727,7 +2742,7 @@ function tablaDiario(anio,trim){
     const gast=delDia.filter(m=>m.tipo==="gasto").reduce((s,m)=>s+m.importe,0);
     const efectivo=delDia.filter(m=>m.tipo==="cobro"&&/efectivo/i.test(m.forma)).reduce((s,m)=>s+m.importe,0);
     return `<div style="margin-bottom:22px">
-      <div class="cbtit" style="border-bottom-color:var(--primary)">📅 ${esc(fechaBonita(f))}
+      <div class="cbtit" style="border-bottom-color:var(--primary)"><span class="h2ico peq">📅</span>${esc(fechaBonita(f))}
         <span class="n">${delDia.length} movimiento${delDia.length>1?"s":""} · cierre ${fmtEur(saldoDia)}</span></div>
       <div class="tablewrap"><table class="conta"><thead><tr>
         <th>Hora</th><th>Tipo</th><th>Concepto</th><th>Quién</th><th>Forma</th>
@@ -2737,7 +2752,7 @@ function tablaDiario(anio,trim){
           <td class="num">${fmtEur(saldoDia)}</td><td colspan="2"></td></tr>
         </tbody></table></div></div>`;
   }).join("");
-  return `<div class="cbtit">🕐 DIARIO DETALLADO<span class="n">${dias.length} días · ${M.length} movimientos · saldo del periodo ${fmtEur(saldoTotal)}</span></div>
+  return `<div class="cbtit"><span class="h2ico peq">🕐</span>DIARIO DETALLADO<span class="n">${dias.length} días · ${M.length} movimientos · saldo del periodo ${fmtEur(saldoTotal)}</span></div>
     <div class="hint" style="margin-bottom:14px">Cada movimiento con su hora y el acumulado del día. Los que no tengan hora aparecen al final del día.</div>`+bloques;
 }
 // Devuelve cada apunte con TODA su trazabilidad: de dónde sale, quién, qué documento
