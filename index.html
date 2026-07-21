@@ -1323,6 +1323,11 @@ function authHeaders(){return panelPass?{"x-panel-pass":panelPass}:{};}
 async function getStore(){try{const r=await fetch("/api/data",{cache:"no-store",headers:authHeaders()});if(r.status===401)return "AUTH";if(!r.ok)return null;return await r.json();}catch{return null;}}
 function tieneDatos(s){return s&&((s.pacientes&&s.pacientes.length)||(s.citas&&s.citas.length)||(s.presupuestos&&s.presupuestos.length)||(s.pagos&&s.pagos.length));}
 function escribeLocalCrudo(s){
+ // fusionamos las marcas de borrado del servidor con las locales (nunca se pierden)
+ try{const _rem=((s.listas||{}).cfg||{}).borrados||[];
+  let _loc=[];try{_loc=JSON.parse(localStorage.getItem(KEY_BORRADOS))||[]}catch{}
+  if(_rem.length||_loc.length){const _m={};[..._loc,..._rem].forEach(b=>{if(b&&b.id)_m[b.id]=b});
+   localStorage.setItem(KEY_BORRADOS,JSON.stringify(Object.values(_m)));}}catch{}
  // al traer datos del servidor, respetamos siempre lo que se borró a propósito
  let _pac=s.pacientes||[];
  try{const _t=new Set(borrados().map(b=>b.id));if(_t.size)_pac=_pac.filter(p=>!_t.has(p.id));}catch{}
@@ -3900,15 +3905,24 @@ function imprimirArqueo(){
  w.document.close();
 }
 // ==================== Marcas de borrado (para que lo borrado no vuelva) ====================
-function borrados(){return (cfg().borrados||[]);}
+const KEY_BORRADOS="scanner_borrados";
+function borrados(){
+ // Unimos las marcas locales (que nunca se pierden) con las que vengan del servidor
+ let loc=[];try{loc=JSON.parse(localStorage.getItem(KEY_BORRADOS))||[]}catch{}
+ const mapa={};[...loc,...(cfg().borrados||[])].forEach(b=>{if(b&&b.id)mapa[b.id]=b});
+ return Object.values(mapa);
+}
+function guardaBorrados(B){
+ const limite=Date.now()-90*24*3600*1000; // caducan a los 90 días
+ const lim=B.filter(b=>b&&b.t>limite).slice(-500);
+ try{localStorage.setItem(KEY_BORRADOS,JSON.stringify(lim))}catch{}
+ setCfg({borrados:lim});
+}
 function marcarBorrado(id){
  if(!id)return;
- const limite=Date.now()-90*24*3600*1000; // caducan a los 90 días
- const B=borrados().filter(b=>b.t>limite&&b.id!==id);
- B.push({id,t:Date.now()});
- setCfg({borrados:B.slice(-500)});
+ guardaBorrados(borrados().filter(b=>b.id!==id).concat([{id,t:Date.now()}]));
 }
-function olvidarBorrado(id){setCfg({borrados:borrados().filter(b=>b.id!==id)});}
+function olvidarBorrado(id){guardaBorrados(borrados().filter(b=>b.id!==id));}
 // ==================== Papelera (deshacer borrados) ====================
 function papelera(){return (cfg().papelera||[]);}
 function aPapelera(tipo,dato){
