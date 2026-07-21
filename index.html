@@ -263,6 +263,7 @@
     align-items:center;justify-content:center;font-size:16px;flex:0 0 32px;line-height:1;
     box-shadow:inset 0 0 0 1px rgba(13,148,136,.12)}
   .h2ico.peq{width:24px;height:24px;flex:0 0 24px;font-size:13px;border-radius:8px}
+  .bico{font-size:15px;line-height:1;flex:0 0 auto}
   .card h2{display:flex;align-items:center;gap:11px}
   .cbtit{display:flex;align-items:center;gap:9px}
   /* ---- Botones: el icono nunca pegado al texto ---- */
@@ -344,21 +345,21 @@
   <!-- ===================== INICIO ===================== -->
   <div class="page on" id="page-inicio">
     <div class="card">
-      <h2>Resumen de hoy</h2>
+      <h2><span class="h2ico">📊</span>Resumen de hoy</h2>
       <div class="sub" id="hoyTexto"></div>
       <div class="kpi" id="inicioKpi"></div>
       <div class="toolbar" style="margin-top:4px">
-        <button class="main" id="q_cita">📅 Nueva cita</button>
-        <button class="ghost" id="q_paciente">👤 Nuevo paciente</button>
-        <button class="ghost" id="q_recepcion">🖥️ Registrar en recepción</button>
-        <button class="ghost" id="q_leer">📷 Leer presupuesto</button>
+        <button class="main" id="q_cita"><span class="bico">📅</span>Nueva cita</button>
+        <button class="ghost" id="q_paciente"><span class="bico">👤</span>Nuevo paciente</button>
+        <button class="ghost" id="q_recepcion"><span class="bico">🖥️</span>Registrar en recepción</button>
+        <button class="ghost" id="q_leer"><span class="bico">📷</span>Leer presupuesto</button>
       </div>
     </div>
     <div class="grid2">
       <div class="card" id="setupCard" style="display:none"><h2><span class="h2ico">🚀</span>Pon en marcha tu clínica</h2><div class="sub">Cuatro pasos para dejarlo todo listo. Desaparecerá solo cuando los completes.</div><div id="setupLista"></div></div>
       <div class="card" id="salaCard" style="display:none"><h2><span class="h2ico">🪑</span>Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
-      <div class="card"><h2>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
-      <div class="card"><h2>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
+      <div class="card"><h2><span class="h2ico">📅</span>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
+      <div class="card"><h2><span class="h2ico">🗓️</span>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
     </div>
     <div class="card">
       <h2><span class="h2ico">🔔</span>Recordatorios (hoy y mañana)</h2>
@@ -370,7 +371,7 @@
       <div class="card"><h2><span class="h2ico">⚠️</span>Citas sin confirmar</h2><div id="alertaCitas"></div><div class="hint" id="alertaCitasVacio">Todas las próximas citas están confirmadas.</div></div>
     </div>
     <div class="card">
-      <h2>Estadísticas</h2>
+      <h2><span class="h2ico">📈</span>Estadísticas</h2>
       <div class="tablewrap"><table><thead><tr><th>Doctor</th><th>Citas</th><th>Presupuestos</th><th>Aceptados</th><th>Importe</th></tr></thead><tbody id="statsBody"></tbody></table></div>
       <div class="hint" id="statsVacio">Aún no hay datos.</div>
     </div>
@@ -379,7 +380,7 @@
   <!-- ===================== AGENDA ===================== -->
   <div class="page" id="page-agenda">
     <div class="card">
-      <h2>Nueva cita</h2>
+      <h2><span class="h2ico">➕</span>Nueva cita</h2>
       <div class="sub">Agenda una cita con el paciente y su doctor.</div>
       <div class="grid3">
         <div class="field"><label>Paciente</label><select id="c_paciente"></select></div>
@@ -402,21 +403,21 @@
         <div class="field"><label>Estado</label><select id="c_estado"><option>Programada</option><option>Confirmada</option><option>Realizada</option><option>Cancelada</option></select></div>
       </div>
       <div class="field"><label>Notas</label><input id="c_notas"/></div>
-      <button class="main" id="c_guardar">📅 Agendar cita</button>
+      <button class="main" id="c_guardar"><span class="bico">📅</span>Agendar cita</button>
       <span id="c_msg" class="hint"></span>
     </div>
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0;flex:1">Agenda</h2>
-        <button class="ghost" id="v_lista">📋 Lista</button>
-        <button class="ghost" id="v_dia">👥 Día por doctor</button>
-        <button class="ghost" id="v_mes">🗓️ Mes</button>
+        <h2 style="margin:0;flex:1"><span class="h2ico">📅</span>Agenda</h2>
+        <button class="ghost" id="v_lista"><span class="bico">📋</span>Lista</button>
+        <button class="ghost" id="v_dia"><span class="bico">👥</span>Día por doctor</button>
+        <button class="ghost" id="v_mes"><span class="bico">🗓️</span>Mes</button>
         <button class="ghost" id="a_hoy">Hoy</button>
         <button class="ghost" id="a_semana">Semana</button>
         <input id="a_fecha" type="date" title="Filtrar por fecha"/>
         <select id="a_doctor"><option value="">Todos los doctores</option></select>
         <button class="ghost" id="a_limpiar">Ver todas</button>
-        <button class="ghost" id="a_export">⬇️ Exportar</button>
+        <button class="ghost" id="a_export"><span class="bico">⬇️</span>Exportar</button>
       </div>
       <div id="agendaCal" style="display:none"></div>
       <div id="agendaDia" style="display:none"></div>
@@ -442,8 +443,8 @@
         </svg>
         <div class="jvtit"><b>JARVIS</b><small id="jvEstado">Asistente privado · en línea</small></div>
         <div class="jvtools">
-          <button class="jvtool" id="jvBtnVoz" title="Que Jarvis me hable en voz alta">🔊 Voz</button>
-          <button class="jvtool" id="jvBtnMic" title="Hablarle por micrófono">🎙️ Hablar</button>
+          <button class="jvtool" id="jvBtnVoz" title="Que Jarvis me hable en voz alta"><span class="bico">🔊</span>Voz</button>
+          <button class="jvtool" id="jvBtnMic" title="Hablarle por micrófono"><span class="bico">🎙️</span>Hablar</button>
         </div>
       </div>
       <div class="sub">Solo tú puedes verlo y usarlo. Pídele información o dale órdenes: escribiendo o <b>por voz</b>.</div>
@@ -470,10 +471,10 @@
           </div>
           <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin:6px 0 6px">Perfil rápido <span style="font-weight:400">(marca las casillas de golpe, luego puedes ajustarlas)</span></label>
           <div class="jvsug" style="margin:0 0 12px">
-            <button type="button" data-perfil="recepcion">🗓️ Recepción</button>
-            <button type="button" data-perfil="doctor">🦷 Doctor/a</button>
-            <button type="button" data-perfil="auxiliar">🧰 Auxiliar</button>
-            <button type="button" data-perfil="admin">🔑 Acceso total</button>
+            <button type="button" data-perfil="recepcion"><span class="bico">🗓️</span>Recepción</button>
+            <button type="button" data-perfil="doctor"><span class="bico">🦷</span>Doctor/a</button>
+            <button type="button" data-perfil="auxiliar"><span class="bico">🧰</span>Auxiliar</button>
+            <button type="button" data-perfil="admin"><span class="bico">🔑</span>Acceso total</button>
           </div>
           <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin:6px 0 2px">¿A qué secciones puede entrar?</label>
           <div class="permgrid" id="u_permisos"></div>
@@ -505,8 +506,8 @@
       <h2><span class="h2ico">📋</span>Registro de actividad</h2>
       <div class="sub">Quién ha hecho qué y cuándo. Útil para saber si algo se ha borrado o modificado.</div>
       <div class="toolbar">
-        <button class="ghost" id="lg_actualizar">🔄 Actualizar</button>
-        <button class="ghost" id="lg_limpiar">🗑️ Vaciar registro</button>
+        <button class="ghost" id="lg_actualizar"><span class="bico">🔄</span>Actualizar</button>
+        <button class="ghost" id="lg_limpiar"><span class="bico">🗑️</span>Vaciar registro</button>
       </div>
       <div id="lgLista"></div>
     </div>
@@ -520,7 +521,7 @@
         <label style="font-size:13px;color:var(--muted);font-weight:600">Avisar con</label>
         <select id="rec_dias" style="width:auto;min-width:90px"></select>
         <label style="font-size:13px;color:var(--muted);font-weight:600">de antelación</label>
-        <button class="ghost" id="rec_refrescar">🔄 Actualizar</button>
+        <button class="ghost" id="rec_refrescar"><span class="bico">🔄</span>Actualizar</button>
       </div>
       <div id="recLista"></div>
     </div>
@@ -531,19 +532,19 @@
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Sin venir desde hace más de</label>
         <select id="rv_meses" style="width:auto"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="9">9 meses</option><option value="12">1 año</option></select>
-        <button class="ghost" id="rv_actualizar">🔄 Actualizar</button>
-        <button class="ghost" id="rv_exportar">⬇️ Exportar</button>
+        <button class="ghost" id="rv_actualizar"><span class="bico">🔄</span>Actualizar</button>
+        <button class="ghost" id="rv_exportar"><span class="bico">⬇️</span>Exportar</button>
       </div>
       <div id="rvLista"></div>
     </div>
 
     <div class="card">
-      <h2>⏳ Lista de espera</h2>
+      <h2><span class="h2ico">⏳</span>Lista de espera</h2>
       <div class="sub">Pacientes que quieren <b>adelantar su cita</b>. Cuando se cancele un hueco, aquí tienes a quién llamar primero.</div>
       <div class="toolbar">
         <select id="le_paciente" style="min-width:200px"></select>
         <input id="le_nota" placeholder="Ej. le viene bien por las mañanas" style="min-width:230px"/>
-        <button class="main" id="le_add">➕ Añadir a la lista</button>
+        <button class="main" id="le_add"><span class="bico">➕</span>Añadir a la lista</button>
       </div>
       <div id="leLista"></div>
     </div>
@@ -552,11 +553,11 @@
   <div class="page" id="page-pacientes">
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0;flex:1">Pacientes</h2>
+        <h2 style="margin:0;flex:1"><span class="h2ico">👥</span>Pacientes</h2>
         <input id="p_buscar" placeholder="🔍 Buscar por nombre o DNI"/>
-        <button class="ghost" id="p_export">⬇️ Exportar</button>
-        <button class="ghost" id="p_escanear" title="Escanear un formulario relleno en papel">📸 Escanear formulario</button>
-        <button class="ghost" id="p_recepcion" title="Abrir el formulario completo para rellenarlo con el paciente">🖥️ Registrar en recepción</button>
+        <button class="ghost" id="p_export"><span class="bico">⬇️</span>Exportar</button>
+        <button class="ghost" id="p_escanear" title="Escanear un formulario relleno en papel"><span class="bico">📸</span>Escanear formulario</button>
+        <button class="ghost" id="p_recepcion" title="Abrir el formulario completo para rellenarlo con el paciente"><span class="bico">🖥️</span>Registrar en recepción</button>
         <button class="main" id="p_nuevo">＋ Nuevo paciente</button>
       </div>
       <div class="tablewrap">
@@ -590,10 +591,10 @@
         <div class="field"><label>Cobertura / seguro</label><input id="f_cobertura"/></div>
       </div>
       <div class="field"><label>Notas / historial clínico</label><textarea id="f_notas" rows="3"></textarea></div>
-      <button class="main" id="f_guardar">💾 Guardar ficha</button>
-      <button class="ghost" id="f_nuevaCita">📅 Nueva cita</button>
-      <button class="ghost" id="f_imprimir">🖨️ Imprimir ficha</button>
-      <button class="ghost" id="f_borrar" style="color:#a33">🗑️ Borrar</button>
+      <button class="main" id="f_guardar"><span class="bico">💾</span>Guardar ficha</button>
+      <button class="ghost" id="f_nuevaCita"><span class="bico">📅</span>Nueva cita</button>
+      <button class="ghost" id="f_imprimir"><span class="bico">🖨️</span>Imprimir ficha</button>
+      <button class="ghost" id="f_borrar" style="color:#a33"><span class="bico">🗑️</span>Borrar</button>
     </div>
     <div class="card">
       <h2><span class="h2ico">🦷</span>Odontograma</h2>
@@ -653,7 +654,7 @@
         <div class="field"><label>Doctor</label><select id="pl_doctor"></select></div>
         <div class="field"><label>Fase</label><select id="pl_fase"><option>Fase 1</option><option>Fase 2</option><option>Fase 3</option><option>Fase 4</option></select></div>
       </div>
-      <button class="main" id="pl_add">➕ Añadir paso al plan</button>
+      <button class="main" id="pl_add"><span class="bico">➕</span>Añadir paso al plan</button>
       <div id="plLista" style="margin-top:16px"></div>
     </div>
 
@@ -666,7 +667,7 @@
         <div class="field"><label>Pieza (opcional)</label><input id="ev_pieza" placeholder="Ej. 47"/></div>
       </div>
       <div class="field"><label>Qué se ha hecho</label><textarea id="ev_texto" rows="3" placeholder="Ej. Endodoncia 47, 2 conductos, obturación provisional. Se cita para corona."></textarea></div>
-      <button class="main" id="ev_add">➕ Añadir a la evolución</button>
+      <button class="main" id="ev_add"><span class="bico">➕</span>Añadir a la evolución</button>
       <div id="evLista" style="margin-top:16px"></div>
     </div>
 
@@ -679,8 +680,8 @@
         <input id="pe_fecha" type="date" style="width:auto"/>
         <label style="font-size:13px;color:var(--muted);font-weight:600">Ver sondaje</label>
         <select id="pe_hist" style="width:auto;min-width:150px"></select>
-        <button class="main" id="pe_guardar">💾 Guardar sondaje</button>
-        <button class="ghost" id="pe_nuevo">➕ Nuevo</button>
+        <button class="main" id="pe_guardar"><span class="bico">💾</span>Guardar sondaje</button>
+        <button class="ghost" id="pe_nuevo"><span class="bico">➕</span>Nuevo</button>
       </div>
       <div id="peLista"></div>
     </div>
@@ -694,7 +695,7 @@
         <div class="field"><label>Nº de cuotas</label><select id="pp_num"></select></div>
         <div class="field"><label>Primera cuota</label><input id="pp_fecha" type="date"/></div>
       </div>
-      <button class="main" id="pp_crear">💳 Crear plan de pago</button>
+      <button class="main" id="pp_crear"><span class="bico">💳</span>Crear plan de pago</button>
       <div id="ppLista" style="margin-top:16px"></div>
     </div>
 
@@ -709,7 +710,7 @@
         <div class="field"><label>Pauta</label><input id="rc_pauta" placeholder="Se rellena sola al elegir medicamento"/></div>
         <div class="field"><label>Doctor</label><select id="rc_doctor"></select></div>
       </div>
-      <button class="main" id="rc_add">💊 Emitir e imprimir receta</button>
+      <button class="main" id="rc_add"><span class="bico">💊</span>Emitir e imprimir receta</button>
       <div id="rcLista" style="margin-top:16px"></div>
     </div>
 
@@ -718,7 +719,7 @@
       <div class="sub">El paciente firma en la pantalla y queda guardado con su fecha. Puedes imprimirlo cuando quieras.</div>
       <div class="toolbar">
         <select id="cs_tipo" style="min-width:260px"></select>
-        <button class="main" id="cs_nuevo">✍️ Firmar consentimiento</button>
+        <button class="main" id="cs_nuevo"><span class="bico">✍️</span>Firmar consentimiento</button>
       </div>
       <div id="csLista"></div>
     </div>
@@ -729,7 +730,7 @@
       <div class="toolbar">
         <input type="file" id="ft_file" accept="image/*" style="max-width:260px"/>
         <input id="ft_nota" placeholder="Descripción (ej. antes del tratamiento)" style="min-width:230px"/>
-        <button class="main" id="ft_subir">⬆️ Añadir imagen</button>
+        <button class="main" id="ft_subir"><span class="bico">⬆️</span>Añadir imagen</button>
       </div>
       <div id="ftLista"></div>
     </div>
@@ -743,7 +744,7 @@
       <div id="escPaso1">
         <div class="toolbar">
           <input type="file" id="esc_file" accept="image/*" capture="environment" style="max-width:280px"/>
-          <button class="main" id="esc_leer">🔍 Leer formulario</button>
+          <button class="main" id="esc_leer"><span class="bico">🔍</span>Leer formulario</button>
           <button class="ghost" id="esc_cerrar1">Cancelar</button>
         </div>
         <div id="esc_prog" class="hint" style="display:none;margin-top:10px"></div>
@@ -776,8 +777,8 @@
           </div>
         </div>
         <div class="toolbar" style="margin-top:16px;margin-bottom:0">
-          <button class="main" id="esc_guardar">✅ Guardar paciente</button>
-          <button class="ghost" id="esc_otra">📸 Otra foto</button>
+          <button class="main" id="esc_guardar"><span class="bico">✅</span>Guardar paciente</button>
+          <button class="ghost" id="esc_otra"><span class="bico">📸</span>Otra foto</button>
           <button class="ghost" id="esc_cerrar2">Cancelar</button>
           <span class="hint" id="esc_texto"></span>
         </div>
@@ -794,7 +795,7 @@
         <canvas id="fm_canvas" style="width:100%;height:170px;display:block;touch-action:none;border-radius:11px"></canvas>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap">
-        <button class="ghost" id="fm_limpiar">🧽 Borrar firma</button>
+        <button class="ghost" id="fm_limpiar"><span class="bico">🧽</span>Borrar firma</button>
         <div style="display:flex;gap:8px"><button class="ghost" id="fm_cerrar">Cancelar</button><button class="main" id="fm_guardar">Guardar firmado</button></div>
       </div>
     </div>
@@ -813,7 +814,7 @@
           </label>
           <img id="preview" style="max-width:100%;border-radius:10px;display:none;border:1px solid var(--borde);margin-top:8px"/>
           <label class="hint" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="mejora" checked style="width:auto"/> Mejorar la foto antes de leer</label>
-          <button class="main" id="leer" disabled style="width:100%;margin-top:10px">🔍 Leer</button>
+          <button class="main" id="leer" disabled style="width:100%;margin-top:10px"><span class="bico">🔍</span>Leer</button>
           <div class="cargando" id="cargando"><span id="estadoOCR">Preparando…</span><div class="bar"><div id="barra"></div></div></div>
         </div>
         <div>
@@ -836,7 +837,7 @@
             </div>
             <div class="field"><label>Observaciones</label><textarea id="observaciones" rows="2"></textarea></div>
             <div class="field"><label>Paciente (se crea/enlaza)</label><input id="l_paciente"/><div class="hint" id="l_pacienteRef"></div></div>
-            <button class="main" id="guardar" style="width:100%">💾 Guardar presupuesto y paciente</button>
+            <button class="main" id="guardar" style="width:100%"><span class="bico">💾</span>Guardar presupuesto y paciente</button>
             <details style="margin-top:8px"><summary>Ver texto leído</summary><pre id="raw"></pre></details>
           </div>
         </div>
@@ -858,19 +859,19 @@
           <option value="2">2º trimestre (abr-jun)</option><option value="3">3er trimestre (jul-sep)</option>
           <option value="4">4º trimestre (oct-dic)</option></select>
         <button class="ghost" id="cb_ver">Ver</button>
-        <button class="ghost" id="cb_exportar">⬇️ Exportar para la gestoría</button>
-        <button class="ghost" id="cb_imprimir">🖨️ Imprimir resumen</button>
+        <button class="ghost" id="cb_exportar"><span class="bico">⬇️</span>Exportar para la gestoría</button>
+        <button class="ghost" id="cb_imprimir"><span class="bico">🖨️</span>Imprimir resumen</button>
       </div>
       <div class="kpi" id="cbKpi"></div>
       <div class="cbtit"><span class="h2ico peq">📌</span>QUÉ TOCA PRESENTAR ESTE PERIODO</div>
       <div class="oblig" id="cbOblig"></div>
       <div class="cbtabs">
-        <button data-libro="resumen" class="on">📊 Resumen</button>
-        <button data-libro="ingresos">💶 Libro de ingresos</button>
-        <button data-libro="gastos">💸 Libro de gastos</button>
-        <button data-libro="iva">🧾 Desglose de IVA</button>
-        <button data-libro="categorias">📂 Gasto por categoría</button>
-        <button data-libro="diario">🕐 Diario detallado</button>
+        <button data-libro="resumen" class="on"><span class="bico">📊</span>Resumen</button>
+        <button data-libro="ingresos"><span class="bico">💶</span>Libro de ingresos</button>
+        <button data-libro="gastos"><span class="bico">💸</span>Libro de gastos</button>
+        <button data-libro="iva"><span class="bico">🧾</span>Desglose de IVA</button>
+        <button data-libro="categorias"><span class="bico">📂</span>Gasto por categoría</button>
+        <button data-libro="diario"><span class="bico">🕐</span>Diario detallado</button>
       </div>
       <div id="cbResumen"></div>
     </div>
@@ -878,7 +879,7 @@
       <h2><span class="h2ico">🏢</span>Proveedores</h2>
       <div class="sub">Se crean solos al registrar gastos. Aquí ves cuánto gastas con cada uno y sus datos fiscales.</div>
       <div class="toolbar">
-        <button class="ghost" id="pv_exportar">⬇️ Exportar proveedores</button>
+        <button class="ghost" id="pv_exportar"><span class="bico">⬇️</span>Exportar proveedores</button>
       </div>
       <div id="pvLista"></div>
     </div>
@@ -911,7 +912,7 @@
       <div class="grid3">
         <div class="field"><label>Tipo de bien</label><select id="bi_tipo"></select></div>
         <div class="field"><label>% anual</label><input id="bi_pct" type="number" min="1" max="100" step="0.5"/></div>
-        <div class="field"><label>&nbsp;</label><button class="main" id="bi_add" style="width:100%">➕ Añadir bien</button></div>
+        <div class="field"><label>&nbsp;</label><button class="main" id="bi_add" style="width:100%"><span class="bico">➕</span>Añadir bien</button></div>
       </div>
       <div id="biLista"></div>
     </div>
@@ -968,7 +969,7 @@
     <div class="card">
       <div class="toolbar"><h2 style="margin:0;flex:1">Presupuestos</h2>
         <select id="pf_estado" title="Filtrar por estado"><option value="">Todos los estados</option></select>
-        <button class="main" id="exportar">⬇️ Exportar a Excel</button><button class="ghost" id="vaciar">🗑️ Vaciar</button></div>
+        <button class="main" id="exportar"><span class="bico">⬇️</span>Exportar a Excel</button><button class="ghost" id="vaciar"><span class="bico">🗑️</span>Vaciar</button></div>
       <div class="sub" style="margin-bottom:8px">Puedes cambiar el <b>Estado</b>, el <b>Auxiliar</b> y <b>¿Cita?</b> directamente en la tabla.</div>
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Doctor</th><th>Presup.</th><th>Venta</th><th>Auxiliar</th><th>Estado</th><th>Cita</th><th></th></tr></thead>
       <tbody id="presuBody"></tbody></table></div>
@@ -991,7 +992,7 @@
         <div class="field"><label>Forma de pago</label><select id="pg_forma"></select></div>
         <div class="field"><label>Concepto</label><input id="pg_concepto" placeholder="A cuenta, tratamiento…"/></div>
       </div>
-      <button class="main" id="pg_add">💳 Registrar pago</button>
+      <button class="main" id="pg_add"><span class="bico">💳</span>Registrar pago</button>
     </div>
     <div class="card">
       <h2>Resumen de cobros</h2>
@@ -1005,7 +1006,7 @@
       <div class="toolbar">
         <input id="cj_fecha" type="date"/>
         <button class="ghost" id="cj_ver">Ver día</button>
-        <button class="ghost" id="cj_imprimir">🖨️ Imprimir arqueo</button>
+        <button class="ghost" id="cj_imprimir"><span class="bico">🖨️</span>Imprimir arqueo</button>
       </div>
       <div id="cjResumen"></div>
     </div>
@@ -1017,7 +1018,7 @@
         <div style="font-weight:700;font-size:13px;margin-bottom:8px">📄 ¿Tienes la factura en PDF o foto? Léela automáticamente</div>
         <div class="toolbar" style="margin-bottom:0">
           <input type="file" id="fx_file" accept=".pdf,image/*" style="max-width:250px"/>
-          <button class="main" id="fx_leer">🔍 Leer factura</button>
+          <button class="main" id="fx_leer"><span class="bico">🔍</span>Leer factura</button>
           <span class="hint" id="fx_estado"></span>
         </div>
       </div>
@@ -1045,7 +1046,7 @@
       <div class="toolbar">
         <label class="chk" style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
           <input type="checkbox" id="gs_deducible" checked style="width:auto;accent-color:var(--primary)"/> Gasto deducible</label>
-        <button class="main" id="gs_add">➕ Añadir gasto</button>
+        <button class="main" id="gs_add"><span class="bico">➕</span>Añadir gasto</button>
         <span class="hint" id="gs_calc"></span>
       </div>
       <div id="gsLista"></div>
@@ -1066,7 +1067,7 @@
       <div class="sub">Guarda tus proveedores, qué te venden y a qué precio. Haz un pedido y envíalo por correo en un clic.</div>
       <div class="toolbar">
         <input id="pr_buscar" placeholder="Buscar proveedor…" style="min-width:220px"/>
-        <button class="main" id="pr_nuevo">➕ Nuevo proveedor</button>
+        <button class="main" id="pr_nuevo"><span class="bico">➕</span>Nuevo proveedor</button>
       </div>
       <div id="prLista"></div>
     </div>
@@ -1089,7 +1090,7 @@
     <div class="card">
       <h2><span class="h2ico">🖨️</span>Formulario de registro en papel</h2>
       <div class="sub">Imprime hojas en blanco para los pacientes que prefieran rellenarlo a mano. Luego puedes escanearlas desde Pacientes.</div>
-      <button class="main" id="fb_imprimir">🖨️ Imprimir formulario en blanco</button>
+      <button class="main" id="fb_imprimir"><span class="bico">🖨️</span>Imprimir formulario en blanco</button>
     </div>
 
     <div class="card">
@@ -1101,7 +1102,7 @@
       </div>
       <textarea id="im_pegar" rows="4" placeholder="Copia las filas en Excel (con la fila de títulos) y pégalas aquí…"></textarea>
       <div class="toolbar" style="margin-top:10px">
-        <button class="ghost" id="im_leer">🔍 Leer y previsualizar</button>
+        <button class="ghost" id="im_leer"><span class="bico">🔍</span>Leer y previsualizar</button>
         <button class="ghost" id="im_limpiar">Empezar de nuevo</button>
       </div>
       <div id="imMapeo" style="display:none">
@@ -1110,19 +1111,19 @@
         <div style="font-weight:700;font-size:13px;margin:18px 0 8px">2 · Comprueba que se ve bien</div>
         <div id="imPreview"></div>
         <div class="toolbar" style="margin-top:14px">
-          <button class="main" id="im_importar">✅ Importar pacientes</button>
+          <button class="main" id="im_importar"><span class="bico">✅</span>Importar pacientes</button>
           <span class="hint" id="im_info"></span>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>⏱️ Duración de los tratamientos</h2>
+      <h2><span class="h2ico">⏱️</span>Duración de los tratamientos</h2>
       <div class="sub">Cada tratamiento ocupa lo que necesita. Al elegir el motivo de la cita, la agenda reserva ese tiempo.</div>
       <div class="toolbar">
         <input id="du_nombre" placeholder="Tratamiento (ej. Endodoncia)" style="min-width:220px"/>
         <select id="du_min" style="width:auto"></select>
-        <button class="main" id="du_add">➕ Añadir</button>
+        <button class="main" id="du_add"><span class="bico">➕</span>Añadir</button>
       </div>
       <div id="duLista"></div>
       <div class="hint" style="margin-top:10px">Si un tratamiento no está en la lista, se usa la duración por defecto del horario.</div>
@@ -1138,7 +1139,7 @@
         <input id="bl_h1" type="time" title="Desde la hora"/>
         <input id="bl_h2" type="time" title="Hasta la hora"/>
         <input id="bl_motivo" placeholder="Motivo (vacaciones, reunión…)" style="min-width:190px"/>
-        <button class="main" id="bl_add">➕ Bloquear</button>
+        <button class="main" id="bl_add"><span class="bico">➕</span>Bloquear</button>
       </div>
       <div id="blLista"></div>
     </div>
@@ -1173,7 +1174,7 @@
     <div class="card" style="border-color:var(--danger)">
       <h2 style="color:var(--danger)"><span class="h2ico">⚠️</span>Empezar de cero</h2>
       <div class="sub">Borra todos los pacientes, citas, presupuestos, pagos, gastos y facturas. <b>Se conservan</b> los doctores, horarios, usuarios y ajustes. Úsalo solo cuando termines de hacer pruebas.</div>
-      <button class="ghost" id="dz_borrar" style="color:var(--danger);border-color:var(--danger)">🗑️ Borrar todos los datos</button>
+      <button class="ghost" id="dz_borrar" style="color:var(--danger);border-color:var(--danger)"><span class="bico">🗑️</span>Borrar todos los datos</button>
     </div>
 
     <div class="card">
@@ -1182,7 +1183,7 @@
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Doctor</label>
         <select id="h_doctor" style="min-width:220px"></select>
-        <button class="ghost" id="h_copiar">📋 Copiar L-V del lunes</button>
+        <button class="ghost" id="h_copiar"><span class="bico">📋</span>Copiar L-V del lunes</button>
       </div>
       <div id="h_tabla"></div>
       <div class="toolbar" style="margin-top:14px;margin-bottom:0">
@@ -1209,7 +1210,7 @@
       <h2>Copia de seguridad</h2>
       <div class="sub">Guarda todos los datos (pacientes, citas, presupuestos) en un archivo, o recupéralos en otro ordenador.</div>
       <div class="toolbar">
-        <button class="main" id="backupExport">⬇️ Descargar copia de seguridad</button>
+        <button class="main" id="backupExport"><span class="bico">⬇️</span>Descargar copia de seguridad</button>
         <label class="ghost" style="cursor:pointer">⬆️ Restaurar copia<input type="file" id="backupFile" accept="application/json,.json" style="display:none"/></label>
       </div>
       <div class="banner free">💡 Recomendado: descarga una copia de vez en cuando. Los datos se guardan en este navegador; si se borra el historial, se pierden.</div>
@@ -1741,7 +1742,7 @@ function citaHTML(c,compacto){
   return `<div class="cita"><div class="h">${esc(c.hora||"--:--")}</div>
     <div style="flex:1"><div><b>${esc(compacto?(c.doctor||""):(nombrePaciente(c.pacienteId)||c.pacienteNombre||"(paciente)"))}</b>${_al} ${c.motivo?"· "+esc(c.motivo):""}</div>
     <div class="m">${compacto?"":"👤 "+esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"—")+" · "}👨‍⚕️ ${esc(c.doctor||"—")}${c.notas?" · "+esc(c.notas):""}</div></div>
-    <div>${(c.fecha===hoyISO()&&!c.llegada&&c.estado!=="Cancelada")?`<button class="ghost" data-llego="${c.id}" title="Marcar que ha llegado" style="padding:4px 9px">✅ Llegó</button> `:""}<span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px">🗑️</button></div></div>`;
+    <div>${(c.fecha===hoyISO()&&!c.llegada&&c.estado!=="Cancelada")?`<button class="ghost" data-llego="${c.id}" title="Marcar que ha llegado" style="padding:4px 9px"><span class="bico">✅</span>Llegó</button> `:""}<span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px">🗑️</button></div></div>`;
 }
 let editingCitaId=null;
 document.getElementById("c_guardar").addEventListener("click",()=>{
@@ -2416,18 +2417,18 @@ function renderProveedoresPanel(){
     const cat=p.productos||[];
     const totalCarrito=cat.filter(x=>carrito[x.id]>0).reduce((s,x)=>s+num(x.precio)*carrito[x.id],0);
     const nLineas=Object.values(carrito).filter(c=>c>0).length;
-    cont.innerHTML=`<button class="ghost" id="pr_volver" style="margin-bottom:14px">← Volver a proveedores</button>
+    cont.innerHTML=`<button class="ghost" id="pr_volver" style="margin-bottom:14px"><span class="bico">←</span>Volver a proveedores</button>
       <div class="cbtit"><span class="h2ico peq">🏭</span>${esc(p.nombre)} ${p.habitual?'<span class="pill v">habitual</span>':""}
         <span class="n">${p.email?"✉️ "+esc(p.email):"sin email"} ${p.tel?" · 📞 "+esc(p.tel):""}</span></div>
       <div class="hint" style="margin-bottom:12px">${p.contacto?"Contacto: "+esc(p.contacto)+" · ":""}${p.nif?"NIF: "+esc(p.nif)+" · ":""}Gastado con este proveedor: <b>${fmtEur(gastadoCon(p.nombre))}</b>
-        <button class="ghost" id="pr_editar" style="padding:3px 9px;margin-left:8px">✏️ Editar datos</button></div>
+        <button class="ghost" id="pr_editar" style="padding:3px 9px;margin-left:8px"><span class="bico">✏️</span>Editar datos</button></div>
 
       <div style="font-weight:700;font-size:13px;margin:10px 0 8px">📦 Catálogo · lo que te vende</div>
       <div class="toolbar">
         <input id="pd_nombre" placeholder="Producto (ej. Guantes nitrilo M)" style="min-width:200px"/>
         <input id="pd_ref" placeholder="Referencia" style="width:120px"/>
         <input id="pd_precio" type="number" min="0" step="0.01" placeholder="Precio €" style="width:110px"/>
-        <button class="ghost" id="pd_add">➕ Añadir producto</button>
+        <button class="ghost" id="pd_add"><span class="bico">➕</span>Añadir producto</button>
       </div>
       ${cat.length?`<div class="tablewrap"><table class="conta"><thead><tr>
         <th>Producto</th><th>Ref.</th><th class="num">Precio</th><th class="num" style="width:150px">Cantidad a pedir</th><th></th></tr></thead><tbody>`+
@@ -2440,15 +2441,15 @@ function renderProveedoresPanel(){
       ${nLineas?`<div style="margin-top:16px;padding:15px;border:1.5px solid var(--primary);border-radius:12px;background:var(--primary-soft)">
         <div style="font-weight:700;margin-bottom:8px">🛒 Pedido: ${nLineas} producto${nLineas>1?"s":""} · Total ${fmtEur(totalCarrito)}</div>
         <div class="toolbar" style="margin-bottom:0">
-          <button class="main" id="pr_email"${p.email?"":" disabled title='Añade el email del proveedor'"}>📧 Enviar pedido por correo</button>
-          <button class="ghost" id="pr_imprimir">🖨️ Imprimir pedido</button>
+          <button class="main" id="pr_email"${p.email?"":" disabled title='Añade el email del proveedor'"}><span class="bico">📧</span>Enviar pedido por correo</button>
+          <button class="ghost" id="pr_imprimir"><span class="bico">🖨️</span>Imprimir pedido</button>
           <button class="ghost" id="pr_vaciar">Vaciar</button>
         </div></div>`:'<div class="hint" style="margin-top:14px">Pon una cantidad en los productos que quieras pedir.</div>'}
 
       ${(pedidos().filter(x=>x.provId===p.id).length)?`<div style="font-weight:700;font-size:13px;margin:20px 0 8px">🕐 Pedidos anteriores</div>`+
         pedidos().filter(x=>x.provId===p.id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).map(x=>
           `<div class="recrow"><div><b>${esc(fmtFecha(x.fecha))}</b> · ${x.lineas.length} productos · ${fmtEur(x.total)} ${x.enviado?'<span class="pill v">enviado</span>':""}</div>
-          <button class="ghost" data-repedir="${x.id}">🔁 Repetir</button></div>`).join(""):""}`;
+          <button class="ghost" data-repedir="${x.id}"><span class="bico">🔁</span>Repetir</button></div>`).join(""):""}`;
     // eventos ficha
     cont.querySelector("#pr_volver").addEventListener("click",()=>{provAbierto=null;carrito={};renderProveedoresPanel();});
     cont.querySelector("#pr_editar").addEventListener("click",()=>formProveedor(p));
@@ -2499,7 +2500,7 @@ function renderProveedoresPanel(){
 function formProveedor(p){
   const ed=!!p;p=p||{};
   const cont=document.getElementById("prLista");
-  cont.innerHTML=`<button class="ghost" id="pf_cancelar" style="margin-bottom:14px">← Cancelar</button>
+  cont.innerHTML=`<button class="ghost" id="pf_cancelar" style="margin-bottom:14px"><span class="bico">←</span>Cancelar</button>
     <div class="cbtit">${ed?"✏️ Editar proveedor":"➕ Nuevo proveedor"}</div>
     <div class="grid2">
       <div class="field"><label>Nombre <b style="color:var(--danger)">*</b></label><input id="pf_nombre" value="${esc(p.nombre||"")}"/></div>
@@ -2579,7 +2580,7 @@ function renderCarpetasPacientes(){
       ...b.PG.map(x=>({fecha:x.fecha||"",hora:x.hora||"",tipo:"cobro",concepto:x.concepto||"Cobro",forma:x.forma||"",estado:"",importe:num(x.importe)}))
     ].sort((a,b2)=>(b2.fecha+" "+(b2.hora||"")).localeCompare(a.fecha+" "+(a.hora||"")));
     const plan=p.planPago?`<div class="hint" style="margin:10px 0"><b>Plan de pago:</b> ${p.planPago.cuotas.filter(c=>c.pagada).length}/${p.planPago.cuotas.length} cuotas pagadas · pendiente ${fmtEur(p.planPago.cuotas.filter(c=>!c.pagada).reduce((s,c)=>s+num(c.importe),0))}</div>`:"";
-    cont.innerHTML=`<button class="ghost" id="pc_volver" style="margin-bottom:14px">← Volver a todos los pacientes</button>
+    cont.innerHTML=`<button class="ghost" id="pc_volver" style="margin-bottom:14px"><span class="bico">←</span>Volver a todos los pacientes</button>
       <div class="cbtit"><span class="h2ico peq">🗂️</span>${esc(p.nombre)}<span class="n">${p.dni?"DNI "+esc(p.dni)+" · ":""}${esc(p.telefono||"")}</span></div>
       <div class="kpi" style="margin-bottom:12px">
         <div class="b"><div class="n">${fmtEur(b.presupuestado)}</div><div class="t">Presupuestado</div></div>
@@ -2597,7 +2598,7 @@ function renderCarpetasPacientes(){
         <td class="num" style="${m.tipo==="cobro"?"color:var(--ok);font-weight:700":""}">${m.tipo==="cobro"?"+":""}${fmtEur(m.importe)}</td></tr>`).join("")
         :'<tr><td colspan="4"><div class="hint">Sin movimientos económicos.</div></td></tr>')+
       `</tbody></table></div>
-      <button class="ghost" id="pc_ficha" style="margin-top:12px">👤 Abrir ficha completa del paciente</button>`;
+      <button class="ghost" id="pc_ficha" style="margin-top:12px"><span class="bico">👤</span>Abrir ficha completa del paciente</button>`;
     cont.querySelector("#pc_volver").addEventListener("click",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
     cont.querySelector("#pc_ficha").addEventListener("click",()=>abrirFicha(p.id));
     return;
@@ -2652,7 +2653,7 @@ function renderProveedores(){
     if(!p){proveedorAbierto=null;return renderProveedores();}
     const fac=gastos().filter(g=>norm(g.proveedor||"(sin proveedor)")===norm(proveedorAbierto)&&(!anio||(g.fecha||"").slice(0,4)===String(anio)))
       .sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
-    cont.innerHTML=`<button class="ghost" id="pv_volver" style="margin-bottom:14px">← Volver a todas las carpetas</button>
+    cont.innerHTML=`<button class="ghost" id="pv_volver" style="margin-bottom:14px"><span class="bico">←</span>Volver a todas las carpetas</button>
       <div class="cbtit"><span class="h2ico peq">📂</span>${esc(p.nombre)}<span class="n">NIF ${esc(p.nif||"—")} · ${p.facturas} facturas · ${fmtEur(p.total)}</span></div>
       <div class="kpi" style="margin-bottom:14px">
         <div class="b"><div class="n">${fmtEur(p.base)}</div><div class="t">Base total</div></div>
@@ -3201,7 +3202,7 @@ function renderPlanPago(p){
         <div class="hint">${esc(fechaBonita(c.fecha))} ${vencida?'<b style="color:var(--danger)">· VENCIDA</b>':c.pagada?"· cobrada":""}</div></div></div>
       ${!c.pagada&&vencida?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${(p.telefono||"").replace(/\\D/g,"").length===9?"34"+(p.telefono||"").replace(/\\D/g,""):(p.telefono||"").replace(/\\D/g,"")}?text=${encodeURIComponent("Hola "+(p.nombre||"").split(" ")[0]+", te recordamos que tienes pendiente la cuota de "+num(c.importe).toFixed(2)+"€ de tu tratamiento. ¡Gracias!")}">📲 Recordar</a>`:""}
     </div>`;}).join("")+
-    `<button class="ghost" id="pp_borrar" style="margin-top:10px;color:var(--danger)">🗑️ Borrar el plan</button>`;
+    `<button class="ghost" id="pp_borrar" style="margin-top:10px;color:var(--danger)"><span class="bico">🗑️</span>Borrar el plan</button>`;
   cont.querySelectorAll("[data-ppc]").forEach(ch=>ch.addEventListener("change",()=>{
     const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);
     const cu=A[k].planPago.cuotas[Number(ch.dataset.ppc)];
@@ -3853,7 +3854,7 @@ function renderPapelera(){
   cont.innerHTML=P.map(x=>`<div class="recrow">
     <div><div style="font-weight:700">${esc(nom(x))} <span class="pill g">${esc(x.tipo)}</span></div>
       <div class="hint">Borrado por ${esc(x.quien)} el ${esc(new Date(x.cuando).toLocaleString("es-ES"))}</div></div>
-    <button class="ghost" data-restaurar="${x.id}">↩️ Restaurar</button></div>`).join("");
+    <button class="ghost" data-restaurar="${x.id}"><span class="bico">↩️</span>Restaurar</button></div>`).join("");
   cont.querySelectorAll("[data-restaurar]").forEach(b=>b.addEventListener("click",()=>{
     const it=papelera().find(x=>x.id===b.dataset.restaurar);if(!it)return;
     if(it.tipo==="paciente"){olvidarBorrado(it.dato&&it.dato.id);DB.setPacientes(DB.pacientes().concat([it.dato]));}
@@ -4240,7 +4241,7 @@ function renderConsentimientos(p){
       <div><div style="font-weight:700">${esc(c.titulo||c.tipo)}</div><div class="hint">Firmado el ${esc(fechaBonita(c.fecha))}</div></div>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="ghost" data-impcons="${c.id}">🖨️ Imprimir</button>
+      <button class="ghost" data-impcons="${c.id}"><span class="bico">🖨️</span>Imprimir</button>
       <button class="ghost" data-delcons="${c.id}" style="color:var(--danger)">🗑️</button>
     </div></div>`).join("");
   cont.querySelectorAll("[data-impcons]").forEach(b=>b.addEventListener("click",()=>imprimirConsentimiento(b.dataset.impcons)));
@@ -4356,7 +4357,7 @@ function renderFacturas(){
     L.map(f=>{const p=DB.pacientes().find(x=>x.id===f.pacienteId)||{};
       return `<div class="recrow"><div><div style="font-weight:700">${esc(f.numero)} · ${esc(p.nombre||"—")}</div>
         <div class="hint">${esc(fmtFecha(f.fecha))} · ${esc(f.concepto)} · <b>${f.total.toFixed(2)}€</b></div></div>
-        <button class="ghost" data-verfac="${f.id}">🖨️ Imprimir</button></div>`;}).join("");
+        <button class="ghost" data-verfac="${f.id}"><span class="bico">🖨️</span>Imprimir</button></div>`;}).join("");
   cont.querySelectorAll("[data-verfac]").forEach(b=>b.addEventListener("click",()=>imprimirFactura(b.dataset.verfac)));
 }
 // ==================== INFORMES · gráficas ====================
@@ -4933,7 +4934,7 @@ function renderUsuarios(){
       <div><div style="font-weight:700">${esc(u.nombre||u.usuario)} ${u.activo===false?'<span class="pill g">desactivado</span>':""}</div>
       <div class="hint">👤 ${esc(u.usuario)} · Accede a: ${SECCIONES.filter(s=>(u.permisos||{})[s.k]!==false).map(s=>esc(s.n)).join(", ")||"—"}</div></div>
       <div style="display:flex;gap:8px">
-        <button class="ghost" data-editu="${u.id}">✏️ Editar</button>
+        <button class="ghost" data-editu="${u.id}"><span class="bico">✏️</span>Editar</button>
         <button class="ghost" data-toggleu="${u.id}">${u.activo===false?"Activar":"Desactivar"}</button>
         <button class="ghost" data-delu="${u.id}" style="color:var(--danger)">🗑️</button>
       </div></div>`).join(""):'<div class="hint">Aún no has creado usuarios. Ahora mismo solo se entra con la contraseña maestra de la clínica.</div>';
