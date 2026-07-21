@@ -823,7 +823,7 @@
 
  <div id="escPaso2" style="display:none">
  <div class="alertabox" style="margin:14px 0">
- <div class="cab" style="color:var(--warn)"><span style="font-size:20px"></span><b>Revisa antes de guardar</b></div>
+ <div class="cab" style="color:var(--warn)"><svg class="ic" style="width:19px;height:19px"><use href="#i-search"/></svg><b>Revisa antes de guardar</b></div>
  <div style="font-size:12.5px;color:var(--warn);font-weight:600">El lector se equivoca con los números escritos a mano. <b>Comprueba especialmente el teléfono y el DNI</b>mirando la foto.</div>
  </div>
  <div class="grid2">
@@ -1439,14 +1439,14 @@ function aplicarPermisos(){
  if(k!=="ficha"&&!puede(k)){const primera=(SECCIONES.find(x=>puede(x.k))||{k:"inicio"}).k;ir(primera);}}
 }
 // ==================== Tema claro / oscuro / automático ====================
-const TEMAS={auto:{ico:"",txt:"Automático (según tu dispositivo)"},claro:{ico:"",txt:"Modo claro"},oscuro:{ico:"",txt:"Modo oscuro"}};
+const TEMAS={auto:{ico:"theme",txt:"Automático (según tu dispositivo)"},claro:{ico:"bulb",txt:"Modo claro"},oscuro:{ico:"lock",txt:"Modo oscuro"}};
 function temaActual(){return localStorage.getItem("scanner_tema")||"auto";}
 function aplicarTema(){
  const t=temaActual();
  const oscuro=t==="oscuro"||(t==="auto"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
  document.documentElement.classList.toggle("oscuro",oscuro);
  const b=document.getElementById("btnTema");
- if(b){b.textContent=TEMAS[t].ico;b.title=TEMAS[t].txt+" · pulsa para cambiar";}
+ if(b){b.innerHTML='<svg class="ic"><use href="#i-'+TEMAS[t].ico+'"/></svg>';b.title=TEMAS[t].txt+" · pulsa para cambiar";}
 }
 function cambiarTema(){
  const orden=["auto","claro","oscuro"];
@@ -1459,8 +1459,8 @@ function toast(msg,tipo){
  const c=document.getElementById("toasts");if(!c)return;
  const t=document.createElement("div");
  t.className="toast "+(tipo||"ok");
- const ico=tipo==="err"?"":tipo==="info"?"ℹ️":"";
- t.innerHTML=`<span style="font-size:15px">${ico}</span><span>${esc(msg)}</span>`;
+ const ico=tipo==="err"?"alert":tipo==="info"?"bulb":"check";
+ t.innerHTML=`<svg class="ic" style="width:17px;height:17px"><use href="#i-${ico}"/></svg><span>${esc(msg)}</span>`;
  c.appendChild(t);
  setTimeout(()=>{t.classList.add("out");setTimeout(()=>t.remove(),300);},2800);
 }
