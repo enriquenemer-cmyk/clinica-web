@@ -13,11 +13,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 <style>
-  :root{--bg:#eef2f7;--bg2:#e4eaf2;--sidebar:#0e1626;--sidebar2:#142033;--primary:#0d9488;--primary-d:#0f766e;--primary-soft:#d3f7f1;
-    --card:#fff;--txt:#0f172a;--muted:#64748b;--borde:#e6ecf3;--gris:#f8fafc;
-    --ok:#059669;--okbg:#e7f7ef;--warn:#b45309;--warnbg:#fdf3e3;--danger:#e11d48;--dangerbg:#fdeef1;
-    --radius:16px;--ctrl:11px;--shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.07);
+  /* Paleta sobria: verde pino DKV + grises neutros fríos */
+  :root{--bg:#f4f6f6;--bg2:#eceff0;--sidebar:#121e1a;--sidebar2:#182923;
+    --primary:#116b56;--primary-d:#0c5343;--primary-soft:#e7f0ed;
+    --card:#fff;--txt:#111a1f;--muted:#65727a;--borde:#e1e6e7;--gris:#f7f9f9;
+    --ok:#16794f;--okbg:#e8f3ed;--warn:#8a5a12;--warnbg:#f8f1e4;--danger:#a5302a;--dangerbg:#f9ebea;
+    --radius:16px;--ctrl:11px;--shadow:0 1px 2px rgba(17,26,31,.04),0 6px 20px rgba(17,26,31,.06);
     --verde:var(--primary);--verde-osc:var(--primary-d);--suave:var(--muted)}
+  /* Iconos vectoriales */
+  .ic{width:1.05em;height:1.05em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;
+    stroke-linejoin:round;vertical-align:-.16em;flex:0 0 auto;display:inline-block}
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--txt);background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);background-attachment:fixed;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
   .app{min-height:100vh}
@@ -206,12 +211,12 @@
   .diente{flex:1;min-width:30px;border:1px solid var(--borde);border-radius:8px;text-align:center;padding:9px 0;font-size:11px;cursor:pointer;font-weight:600;color:#334155;transition:.1s}
   .diente:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
   /* ---- Modo oscuro: se activa con la clase .oscuro en <html> ---- */
-  html.oscuro{--bg:#0b1220;--bg2:#070d18;--card:#151f32;--txt:#e5edf7;--muted:#94a3b8;--borde:#28344a;--gris:#111b2c;
-      --primary-soft:rgba(45,212,191,.16);--okbg:rgba(5,150,105,.20);--warnbg:rgba(180,83,9,.22);--dangerbg:rgba(225,29,72,.20);
-      --ok:#34d399;--warn:#fbbf24;--danger:#fb7185;--primary-d:#5eead4;
-      --kpibg:linear-gradient(180deg,#1b2740,#151f32);
+  html.oscuro{--bg:#0d1614;--bg2:#0a110f;--card:#16211e;--txt:#e6edea;--muted:#8fa09a;--borde:#26332f;--gris:#111a17;
+      --primary:#2f9c7f;--primary-soft:rgba(47,156,127,.16);--okbg:rgba(22,121,79,.22);--warnbg:rgba(138,90,18,.24);--dangerbg:rgba(165,48,42,.24);
+      --ok:#4cbb8c;--warn:#d9a441;--danger:#e07b74;--primary-d:#6fd3b4;
+      --kpibg:linear-gradient(180deg,#1c2a26,#16211e);
       --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 22px rgba(0,0,0,.42)}
-  html.oscuro .topbar{background:rgba(11,18,32,.85)}
+  html.oscuro .topbar{background:rgba(13,22,20,.86)}
   html.oscuro .search,html.oscuro input.search,html.oscuro .cita,html.oscuro .caldia,html.oscuro .odolegend button,
   html.oscuro input,html.oscuro select,html.oscuro textarea{background:var(--card);color:var(--txt)}
   html.oscuro .search::placeholder,html.oscuro input::placeholder,html.oscuro textarea::placeholder{color:#7b8aa3}
@@ -259,9 +264,10 @@
   .avisolegal{margin-top:16px;padding:13px 15px;background:var(--warnbg);border:1px solid var(--warn);
     border-radius:11px;color:var(--warn);font-size:12px;line-height:1.55}
   /* ---- Insignias de los títulos: unifican los iconos en toda la app ---- */
-  .h2ico{width:32px;height:32px;border-radius:10px;background:var(--primary-soft);display:inline-flex;
-    align-items:center;justify-content:center;font-size:16px;flex:0 0 32px;line-height:1;
-    box-shadow:inset 0 0 0 1px rgba(13,148,136,.12)}
+  .h2ico{width:32px;height:32px;border-radius:9px;background:var(--primary-soft);color:var(--primary);
+    display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 32px;line-height:1;
+    box-shadow:inset 0 0 0 1px rgba(17,107,86,.14)}
+  .h2ico .ic{width:17px;height:17px;vertical-align:0}
   .h2ico.peq{width:24px;height:24px;flex:0 0 24px;font-size:13px;border-radius:8px}
   .bico{font-size:15px;line-height:1;flex:0 0 auto}
   .card h2{display:flex;align-items:center;gap:11px}
@@ -312,6 +318,71 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 5.6a3 3 0 0 1 0 5.6M20.5 20a5 5 0 0 0-3.6-4.8"/></symbol>
+<symbol id="i-doctor" viewBox="0 0 24 24"><path d="M8 3v4a4 4 0 0 0 8 0V3"/><path d="M12 11v3a5 5 0 0 0 10 0v-1"/><circle cx="22" cy="11" r="1.6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9.5 18 20 6.5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5 17.5 9.5"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h11L20 7.5v11A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M8 4v5h8M8 15h8"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/><path d="M10.5 19.5a1.8 1.8 0 0 0 3 0"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6.5 6.5l1.5-2 4 1.5v3A1.5 1.5 0 0 1 19 20 15.5 15.5 0 0 1 4 5a1.5 1.5 0 0 1 2-1.5z"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5h16v11H9l-5 3.5z"/><path d="M8 9.5h8M8 12.8h5"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4M9 10h6M9 14h6M9 18h4"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="7" rx="1.5"/><path d="M7 14h10v6.5H7z"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12M6.5 11.5 12 17l5.5-5.5M4 20h16"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V8M6.5 12.5 12 7l5.5 5.5M4 4h16"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="M14 5.5 7.5 12l6.5 6.5"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="m10 5.5 6.5 6.5L10 18.5"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-.7 4.5"/><path d="M20 4.5V11h-6"/></symbol>
+<symbol id="i-euro" viewBox="0 0 24 24"><path d="M17 6.5a6.5 6.5 0 1 0 0 11"/><path d="M4.5 10.5h9M4.5 13.8h9"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7.5A2 2 0 0 1 5 5.5h13v3"/><rect x="3" y="7.5" width="18" height="11" rx="2"/><circle cx="17" cy="13" r="1.3"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 16.5 9 10l4 4 7.5-8"/><path d="M15 6h5.5v5.5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4.5h11a3 3 0 0 1 3 3V21H7a3 3 0 0 1-3-3z"/><path d="M18 7.5h2V21"/></symbol>
+<symbol id="i-calc" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4L11 7.5h8.5A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 8.5 4.5v9L12 21l-8.5-4.5v-9z"/><path d="m3.5 7.5 8.5 4.5 8.5-4.5M12 12v9"/></symbol>
+<symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4.5h2.5l2.5 11h9l2.5-8H6.5"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V6.5l8-3.5 8 3.5V21M4 21h16"/><path d="M9.5 21v-5h5v5M8 10h.01M12 10h.01M16 10h.01"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M17.5 12v3.5M20 12v2.5"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10.5" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/></symbol>
+<symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></symbol>
+<symbol id="i-tooth" viewBox="0 0 24 24"><path d="M12 3c-2 0-2.5 1-4.5 1S4 5.5 4 8c0 3 1.5 4 2 7s.5 5 2 5 1.5-4 2.5-6c.5-1 1.5-1 2 0 1 2 1 6 2.5 6s1.5-2 2-5 2-4 2-7c0-2.5-1.5-4-3.5-4S14 3 12 3z"/></symbol>
+<symbol id="i-stetho" viewBox="0 0 24 24"><path d="M6 3v5a4 4 0 0 0 8 0V3"/><path d="M10 12v2a5 5 0 0 0 10 0v-1.5"/><circle cx="20" cy="10.5" r="1.8"/></symbol>
+<symbol id="i-pill" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-45 12 12)"/><path d="M9 9l6 6"/></symbol>
+<symbol id="i-sign" viewBox="0 0 24 24"><path d="M3 18c3 0 4-9 7-9s2 7 4.5 7S18 12 21 12"/><path d="M3 21h18"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.9l6-.9z"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 17h6M10 20.5h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24"><path d="M13 4c4 2 6 6 6 10l-4 3-6-6 3-4 1-3z"/><path d="M9 11 5 12l-1 4 4-1M13 15l1 4 4-1-1-4"/></symbol>
+<symbol id="i-chair" viewBox="0 0 24 24"><path d="M6 4h12v8H6z"/><path d="M4 12h16v4H4zM7 16v4M17 16v4"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="10" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></symbol>
+<symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z"/><path d="M16 9.5a4 4 0 0 1 0 5"/></symbol>
+<symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="7.5" width="16" height="12" rx="3"/><path d="M12 4v3.5M8.5 13h.01M15.5 13h.01M9.5 16.5h5"/></symbol>
+<symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6-5.5 6-10a6 6 0 1 0-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2.3"/></symbol>
+<symbol id="i-tools" viewBox="0 0 24 24"><path d="M14.5 6a3.5 3.5 0 0 1 4.8 4.4l-9 9-4.3-4.3 9-9z"/><path d="m4 20 2-2"/></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><path d="m8 20-4-4 9-9 4 4-9 9z"/><path d="M11 20h9M13 7l4 4"/></symbol>
+<symbol id="i-party" viewBox="0 0 24 24"><path d="m3 21 6-16 9 9z"/><path d="M15 4.5v.01M19 8v.01M20.5 3.5v.01"/></symbol>
+<symbol id="i-coffee" viewBox="0 0 24 24"><path d="M4 9h13v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17M6 3v2.5M10 3v2.5M14 3v2.5"/></symbol>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M4 12h16"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6.5h.01M4 12h.01M4 17.5h.01M9 6.5h11M9 12h11M9 17.5h11"/></symbol>
+</defs></svg>
 <div class="app">
   <aside class="sidebar">
     <div class="brand"><span class="dkv-mark"><span class="txt">DKV</span></span><span class="brand-txt">Clínica dental<small>Espacio de Salud</small></span></div>
@@ -336,7 +407,7 @@
   <div class="appmain">
     <div class="topbar">
       <div class="pagetitle" id="pageTitle">Inicio</div>
-      <button class="ghost" id="btnTema" title="Cambiar entre claro, oscuro y automático" style="padding:7px 11px;font-size:15px;line-height:1">🌗</button>
+      <button class="ghost" id="btnTema" title="Cambiar entre claro, oscuro y automático" style="padding:7px 11px;font-size:15px;line-height:1"><svg class="ic"><use href="#i-theme"/></svg></button>
       <div class="syncdot" id="syncDot" title="Estado de la conexión con el servidor"><i></i><span>Conectando…</span></div>
       <div class="userchip" id="userChip" style="display:none"><div class="uavatar" id="uAvatar">·</div><div class="uinfo"><b></b><small></small></div><button class="usalir" id="btnSalir" title="Cerrar sesión">Salir</button></div>
       <input class="search" id="g_buscar" placeholder="Buscar paciente…   ( / )"/>
@@ -345,33 +416,33 @@
   <!-- ===================== INICIO ===================== -->
   <div class="page on" id="page-inicio">
     <div class="card">
-      <h2><span class="h2ico">📊</span>Resumen de hoy</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-chart"/></svg></span>Resumen de hoy</h2>
       <div class="sub" id="hoyTexto"></div>
       <div class="kpi" id="inicioKpi"></div>
       <div class="toolbar" style="margin-top:4px">
-        <button class="main" id="q_cita"><span class="bico">📅</span>Nueva cita</button>
-        <button class="ghost" id="q_paciente"><span class="bico">👤</span>Nuevo paciente</button>
-        <button class="ghost" id="q_recepcion"><span class="bico">🖥️</span>Registrar en recepción</button>
-        <button class="ghost" id="q_leer"><span class="bico">📷</span>Leer presupuesto</button>
+        <button class="main" id="q_cita"><span class="bico"><svg class="ic"><use href="#i-cal"/></svg></span>Nueva cita</button>
+        <button class="ghost" id="q_paciente"><span class="bico"><svg class="ic"><use href="#i-user"/></svg></span>Nuevo paciente</button>
+        <button class="ghost" id="q_recepcion"><span class="bico"><svg class="ic"><use href="#i-monitor"/></svg></span>Registrar en recepción</button>
+        <button class="ghost" id="q_leer"><span class="bico"><svg class="ic"><use href="#i-cam"/></svg></span>Leer presupuesto</button>
       </div>
     </div>
     <div class="grid2">
-      <div class="card" id="setupCard" style="display:none"><h2><span class="h2ico">🚀</span>Pon en marcha tu clínica</h2><div class="sub">Cuatro pasos para dejarlo todo listo. Desaparecerá solo cuando los completes.</div><div id="setupLista"></div></div>
-      <div class="card" id="salaCard" style="display:none"><h2><span class="h2ico">🪑</span>Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
-      <div class="card"><h2><span class="h2ico">📅</span>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico">☕</span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
-      <div class="card"><h2><span class="h2ico">🗓️</span>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico">📅</span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
+      <div class="card" id="setupCard" style="display:none"><h2><span class="h2ico"><svg class="ic"><use href="#i-rocket"/></svg></span>Pon en marcha tu clínica</h2><div class="sub">Cuatro pasos para dejarlo todo listo. Desaparecerá solo cuando los completes.</div><div id="setupLista"></div></div>
+      <div class="card" id="salaCard" style="display:none"><h2><span class="h2ico"><svg class="ic"><use href="#i-chair"/></svg></span>Sala de espera</h2><div class="sub">Pacientes que ya han llegado. Pulsa «Pasa» cuando entren a consulta.</div><div id="salaEspera"></div></div>
+      <div class="card"><h2><span class="h2ico"><svg class="ic"><use href="#i-cal"/></svg></span>Citas de hoy</h2><div id="citasHoy"></div><div class="vacio" id="citasHoyVacio"><span class="ico"><svg class="ic"><use href="#i-coffee"/></svg></span><b>Hoy no hay citas</b><span>Buen momento para llamar a los pacientes de revisión.</span></div></div>
+      <div class="card"><h2><span class="h2ico"><svg class="ic"><use href="#i-cal"/></svg></span>Próximas citas</h2><div id="citasProximas"></div><div class="vacio" id="citasProximasVacio"><span class="ico"><svg class="ic"><use href="#i-cal"/></svg></span><b>No hay citas próximas</b><span>Agenda una desde la sección Agenda.</span></div></div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">🔔</span>Recordatorios (hoy y mañana)</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-bell"/></svg></span>Recordatorios (hoy y mañana)</h2>
       <div class="sub">Citas por avisar. Pulsa 💬 para enviar el recordatorio por WhatsApp y ✓ para marcarlo como avisado.</div>
       <div id="recordatorios"></div><div class="hint" id="recordatoriosVacio">No hay citas pendientes de avisar.</div>
     </div>
     <div class="grid2">
-      <div class="card"><h2><span class="h2ico">💰</span>Saldos pendientes</h2><div id="alertaSaldos"></div><div class="hint" id="alertaSaldosVacio">Nadie tiene saldo pendiente.</div></div>
-      <div class="card"><h2><span class="h2ico">⚠️</span>Citas sin confirmar</h2><div id="alertaCitas"></div><div class="hint" id="alertaCitasVacio">Todas las próximas citas están confirmadas.</div></div>
+      <div class="card"><h2><span class="h2ico"><svg class="ic"><use href="#i-wallet"/></svg></span>Saldos pendientes</h2><div id="alertaSaldos"></div><div class="hint" id="alertaSaldosVacio">Nadie tiene saldo pendiente.</div></div>
+      <div class="card"><h2><span class="h2ico"><svg class="ic"><use href="#i-alert"/></svg></span>Citas sin confirmar</h2><div id="alertaCitas"></div><div class="hint" id="alertaCitasVacio">Todas las próximas citas están confirmadas.</div></div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">📈</span>Estadísticas</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-trend"/></svg></span>Estadísticas</h2>
       <div class="tablewrap"><table><thead><tr><th>Doctor</th><th>Citas</th><th>Presupuestos</th><th>Aceptados</th><th>Importe</th></tr></thead><tbody id="statsBody"></tbody></table></div>
       <div class="hint" id="statsVacio">Aún no hay datos.</div>
     </div>
@@ -380,7 +451,7 @@
   <!-- ===================== AGENDA ===================== -->
   <div class="page" id="page-agenda">
     <div class="card">
-      <h2><span class="h2ico">➕</span>Nueva cita</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-plus"/></svg></span>Nueva cita</h2>
       <div class="sub">Agenda una cita con el paciente y su doctor.</div>
       <div class="grid3">
         <div class="field"><label>Paciente</label><select id="c_paciente"></select></div>
@@ -392,7 +463,7 @@
         <div class="field"><label>Hora</label><input id="c_hora" type="time"/><div id="c_slots"></div></div>
         <div class="field" style="grid-column:1/-1">
           <label class="chk" style="display:flex;gap:9px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
-            <input type="checkbox" id="c_repetir" style="width:auto;accent-color:var(--primary)"/> 🔁 Repetir esta cita (ortodoncia, revisiones…)</label>
+            <input type="checkbox" id="c_repetir" style="width:auto;accent-color:var(--primary)"/><svg class="ic"><use href="#i-refresh"/></svg>Repetir esta cita (ortodoncia, revisiones…)</label>
           <div id="c_repZona" style="display:none;margin-top:8px;display:none">
             <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
               <span class="hint">cada</span><select id="c_cada" style="width:auto"></select>
@@ -403,26 +474,26 @@
         <div class="field"><label>Estado</label><select id="c_estado"><option>Programada</option><option>Confirmada</option><option>Realizada</option><option>Cancelada</option></select></div>
       </div>
       <div class="field"><label>Notas</label><input id="c_notas"/></div>
-      <button class="main" id="c_guardar"><span class="bico">📅</span>Agendar cita</button>
+      <button class="main" id="c_guardar"><span class="bico"><svg class="ic"><use href="#i-cal"/></svg></span>Agendar cita</button>
       <span id="c_msg" class="hint"></span>
     </div>
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0;flex:1"><span class="h2ico">📅</span>Agenda</h2>
-        <button class="ghost" id="v_lista"><span class="bico">📋</span>Lista</button>
-        <button class="ghost" id="v_dia"><span class="bico">👥</span>Día por doctor</button>
-        <button class="ghost" id="v_mes"><span class="bico">🗓️</span>Mes</button>
+        <h2 style="margin:0;flex:1"><span class="h2ico"><svg class="ic"><use href="#i-cal"/></svg></span>Agenda</h2>
+        <button class="ghost" id="v_lista"><span class="bico"><svg class="ic"><use href="#i-clip"/></svg></span>Lista</button>
+        <button class="ghost" id="v_dia"><span class="bico"><svg class="ic"><use href="#i-users"/></svg></span>Día por doctor</button>
+        <button class="ghost" id="v_mes"><span class="bico"><svg class="ic"><use href="#i-cal"/></svg></span>Mes</button>
         <button class="ghost" id="a_hoy">Hoy</button>
         <button class="ghost" id="a_semana">Semana</button>
         <input id="a_fecha" type="date" title="Filtrar por fecha"/>
         <select id="a_doctor"><option value="">Todos los doctores</option></select>
         <button class="ghost" id="a_limpiar">Ver todas</button>
-        <button class="ghost" id="a_export"><span class="bico">⬇️</span>Exportar</button>
+        <button class="ghost" id="a_export"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar</button>
       </div>
       <div id="agendaCal" style="display:none"></div>
       <div id="agendaDia" style="display:none"></div>
       <div id="agendaLista"></div>
-      <div class="vacio" id="agendaVacia"><span class="ico">🗓️</span><b>La agenda está vacía</b><span>Crea tu primera cita con el formulario de arriba.</span></div>
+      <div class="vacio" id="agendaVacia"><span class="ico"><svg class="ic"><use href="#i-cal"/></svg></span><b>La agenda está vacía</b><span>Crea tu primera cita con el formulario de arriba.</span></div>
     </div>
   </div>
 
@@ -443,8 +514,8 @@
         </svg>
         <div class="jvtit"><b>JARVIS</b><small id="jvEstado">Asistente privado · en línea</small></div>
         <div class="jvtools">
-          <button class="jvtool" id="jvBtnVoz" title="Que Jarvis me hable en voz alta"><span class="bico">🔊</span>Voz</button>
-          <button class="jvtool" id="jvBtnMic" title="Hablarle por micrófono"><span class="bico">🎙️</span>Hablar</button>
+          <button class="jvtool" id="jvBtnVoz" title="Que Jarvis me hable en voz alta"><span class="bico"><svg class="ic"><use href="#i-volume"/></svg></span>Voz</button>
+          <button class="jvtool" id="jvBtnMic" title="Hablarle por micrófono"><span class="bico"><svg class="ic"><use href="#i-mic"/></svg></span>Hablar</button>
         </div>
       </div>
       <div class="sub">Solo tú puedes verlo y usarlo. Pídele información o dale órdenes: escribiendo o <b>por voz</b>.</div>
@@ -459,11 +530,11 @@
 
   <div class="page" id="page-usuarios">
     <div class="card" id="cardUsuarios">
-        <h2><span class="h2ico">👥</span>Usuarios y permisos</h2>
+        <h2><span class="h2ico"><svg class="ic"><use href="#i-users"/></svg></span>Usuarios y permisos</h2>
         <div class="sub">Crea una cuenta para cada persona del equipo y marca a qué secciones puede entrar. Cada uno entrará con <b>su usuario y su contraseña</b>.</div>
         <div id="u_lista"></div>
         <div style="border:1.5px dashed var(--borde);border-radius:14px;padding:18px;margin-top:14px">
-          <div style="font-weight:700;margin-bottom:12px" id="u_formTitulo">➕ Nuevo usuario</div>
+          <div style="font-weight:700;margin-bottom:12px" id="u_formTitulo"><svg class="ic"><use href="#i-plus"/></svg>Nuevo usuario</div>
           <div class="grid3">
             <div class="field"><label>Nombre de la persona</label><input id="u_nombre" placeholder="Ej. María García"/></div>
             <div class="field"><label>Usuario (para entrar)</label><input id="u_usuario" placeholder="Ej. maria" autocomplete="off"/></div>
@@ -471,10 +542,10 @@
           </div>
           <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin:6px 0 6px">Perfil rápido <span style="font-weight:400">(marca las casillas de golpe, luego puedes ajustarlas)</span></label>
           <div class="jvsug" style="margin:0 0 12px">
-            <button type="button" data-perfil="recepcion"><span class="bico">🗓️</span>Recepción</button>
-            <button type="button" data-perfil="doctor"><span class="bico">🦷</span>Doctor/a</button>
-            <button type="button" data-perfil="auxiliar"><span class="bico">🧰</span>Auxiliar</button>
-            <button type="button" data-perfil="admin"><span class="bico">🔑</span>Acceso total</button>
+            <button type="button" data-perfil="recepcion"><span class="bico"><svg class="ic"><use href="#i-cal"/></svg></span>Recepción</button>
+            <button type="button" data-perfil="doctor"><span class="bico"><svg class="ic"><use href="#i-tooth"/></svg></span>Doctor/a</button>
+            <button type="button" data-perfil="auxiliar"><span class="bico"><svg class="ic"><use href="#i-tools"/></svg></span>Auxiliar</button>
+            <button type="button" data-perfil="admin"><span class="bico"><svg class="ic"><use href="#i-key"/></svg></span>Acceso total</button>
           </div>
           <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);margin:6px 0 2px">¿A qué secciones puede entrar?</label>
           <div class="permgrid" id="u_permisos"></div>
@@ -486,7 +557,7 @@
         </div>
       </div>
     <div class="card">
-      <h2><span class="h2ico">🔑</span>Contraseña de administradora</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-key"/></svg></span>Contraseña de administradora</h2>
       <div class="sub">La tuya, la que da acceso total. Cámbiala por una que recuerdes y no compartas con nadie.</div>
       <div class="grid2">
         <div class="field"><label>Nueva contraseña</label><input id="ad_pass1" type="text" placeholder="Mínimo 6 caracteres"/></div>
@@ -497,17 +568,17 @@
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🗑️</span>Papelera</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-trash"/></svg></span>Papelera</h2>
       <div class="sub">Lo que borres se guarda aquí por si fue un error. Puedes restaurarlo.</div>
       <div id="papLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📋</span>Registro de actividad</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-clip"/></svg></span>Registro de actividad</h2>
       <div class="sub">Quién ha hecho qué y cuándo. Útil para saber si algo se ha borrado o modificado.</div>
       <div class="toolbar">
-        <button class="ghost" id="lg_actualizar"><span class="bico">🔄</span>Actualizar</button>
-        <button class="ghost" id="lg_limpiar"><span class="bico">🗑️</span>Vaciar registro</button>
+        <button class="ghost" id="lg_actualizar"><span class="bico"><svg class="ic"><use href="#i-refresh"/></svg></span>Actualizar</button>
+        <button class="ghost" id="lg_limpiar"><span class="bico"><svg class="ic"><use href="#i-trash"/></svg></span>Vaciar registro</button>
       </div>
       <div id="lgLista"></div>
     </div>
@@ -515,36 +586,36 @@
 
   <div class="page" id="page-recordatorios">
     <div class="card">
-      <h2><span class="h2ico">🔔</span>Recordatorios de cita por WhatsApp</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-bell"/></svg></span>Recordatorios de cita por WhatsApp</h2>
       <p class="sub">Pacientes con cita próxima. Pulsa <b>Enviar</b> y se abre WhatsApp con el mensaje ya escrito: solo das a enviar.</p>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Avisar con</label>
         <select id="rec_dias" style="width:auto;min-width:90px"></select>
         <label style="font-size:13px;color:var(--muted);font-weight:600">de antelación</label>
-        <button class="ghost" id="rec_refrescar"><span class="bico">🔄</span>Actualizar</button>
+        <button class="ghost" id="rec_refrescar"><span class="bico"><svg class="ic"><use href="#i-refresh"/></svg></span>Actualizar</button>
       </div>
       <div id="recLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🔄</span>Pacientes para revisión</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-refresh"/></svg></span>Pacientes para revisión</h2>
       <div class="sub">Pacientes que <b>hace tiempo que no vienen</b> y no tienen ninguna cita futura. Llamarles o escribirles es la forma más rápida de llenar la agenda.</div>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Sin venir desde hace más de</label>
         <select id="rv_meses" style="width:auto"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="9">9 meses</option><option value="12">1 año</option></select>
-        <button class="ghost" id="rv_actualizar"><span class="bico">🔄</span>Actualizar</button>
-        <button class="ghost" id="rv_exportar"><span class="bico">⬇️</span>Exportar</button>
+        <button class="ghost" id="rv_actualizar"><span class="bico"><svg class="ic"><use href="#i-refresh"/></svg></span>Actualizar</button>
+        <button class="ghost" id="rv_exportar"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar</button>
       </div>
       <div id="rvLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">⏳</span>Lista de espera</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-hourglass"/></svg></span>Lista de espera</h2>
       <div class="sub">Pacientes que quieren <b>adelantar su cita</b>. Cuando se cancele un hueco, aquí tienes a quién llamar primero.</div>
       <div class="toolbar">
         <select id="le_paciente" style="min-width:200px"></select>
         <input id="le_nota" placeholder="Ej. le viene bien por las mañanas" style="min-width:230px"/>
-        <button class="main" id="le_add"><span class="bico">➕</span>Añadir a la lista</button>
+        <button class="main" id="le_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir a la lista</button>
       </div>
       <div id="leLista"></div>
     </div>
@@ -553,25 +624,25 @@
   <div class="page" id="page-pacientes">
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0;flex:1"><span class="h2ico">👥</span>Pacientes</h2>
+        <h2 style="margin:0;flex:1"><span class="h2ico"><svg class="ic"><use href="#i-users"/></svg></span>Pacientes</h2>
         <input id="p_buscar" placeholder="🔍 Buscar por nombre o DNI"/>
-        <button class="ghost" id="p_export"><span class="bico">⬇️</span>Exportar</button>
-        <button class="ghost" id="p_escanear" title="Escanear un formulario relleno en papel"><span class="bico">📸</span>Escanear formulario</button>
-        <button class="ghost" id="p_recepcion" title="Abrir el formulario completo para rellenarlo con el paciente"><span class="bico">🖥️</span>Registrar en recepción</button>
+        <button class="ghost" id="p_export"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar</button>
+        <button class="ghost" id="p_escanear" title="Escanear un formulario relleno en papel"><span class="bico"><svg class="ic"><use href="#i-cam"/></svg></span>Escanear formulario</button>
+        <button class="ghost" id="p_recepcion" title="Abrir el formulario completo para rellenarlo con el paciente"><span class="bico"><svg class="ic"><use href="#i-monitor"/></svg></span>Registrar en recepción</button>
         <button class="main" id="p_nuevo">＋ Nuevo paciente</button>
       </div>
       <div class="tablewrap">
         <table><thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Cobertura</th><th>Citas</th><th>Presup.</th></tr></thead>
         <tbody id="pacientesBody"></tbody></table>
       </div>
-      <div class="vacio" id="pacientesVacio"><span class="ico">👥</span><b>Todavía no tienes pacientes</b><span>Crea el primero con «+ Nuevo paciente», o deja que se registren solos escaneando tu código QR.</span></div>
+      <div class="vacio" id="pacientesVacio"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span><b>Todavía no tienes pacientes</b><span>Crea el primero con «+ Nuevo paciente», o deja que se registren solos escaneando tu código QR.</span></div>
     </div>
   </div>
 
   <!-- ===================== FICHA PACIENTE ===================== -->
   <div class="page" id="page-ficha">
     <div class="card">
-      <span class="back" id="f_volver">← Volver a pacientes</span>
+      <span class="back" id="f_volver"><svg class="ic"><use href="#i-left"/></svg>Volver a pacientes</span>
       <h2 id="f_titulo">Ficha del paciente</h2>
       <div id="f_alertas" style="display:none"></div>
       <div class="kpi" id="f_kpi"></div>
@@ -591,13 +662,13 @@
         <div class="field"><label>Cobertura / seguro</label><input id="f_cobertura"/></div>
       </div>
       <div class="field"><label>Notas / historial clínico</label><textarea id="f_notas" rows="3"></textarea></div>
-      <button class="main" id="f_guardar"><span class="bico">💾</span>Guardar ficha</button>
-      <button class="ghost" id="f_nuevaCita"><span class="bico">📅</span>Nueva cita</button>
-      <button class="ghost" id="f_imprimir"><span class="bico">🖨️</span>Imprimir ficha</button>
-      <button class="ghost" id="f_borrar" style="color:#a33"><span class="bico">🗑️</span>Borrar</button>
+      <button class="main" id="f_guardar"><span class="bico"><svg class="ic"><use href="#i-save"/></svg></span>Guardar ficha</button>
+      <button class="ghost" id="f_nuevaCita"><span class="bico"><svg class="ic"><use href="#i-cal"/></svg></span>Nueva cita</button>
+      <button class="ghost" id="f_imprimir"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir ficha</button>
+      <button class="ghost" id="f_borrar" style="color:#a33"><span class="bico"><svg class="ic"><use href="#i-trash"/></svg></span>Borrar</button>
     </div>
     <div class="card">
-      <h2><span class="h2ico">🦷</span>Odontograma</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-tooth"/></svg></span>Odontograma</h2>
       <div class="sub">Elige un estado abajo y pulsa sobre los dientes para marcarlos.</div>
       <div id="odoLegend" class="odolegend"></div>
       <div class="odogram">
@@ -637,12 +708,12 @@
       <div class="hint" id="f_pagosVacio">Sin pagos registrados. Puedes registrarlos en la pestaña «Pagos».</div>
     </div>
     <div class="card" id="f_cuestCard" style="display:none">
-      <h2><span class="h2ico">📋</span>Cuestionario de salud <span class="pill v" style="vertical-align:middle">autorregistro</span></h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-clip"/></svg></span>Cuestionario de salud <span class="pill v" style="vertical-align:middle">autorregistro</span></h2>
       <div id="f_cuest"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📝</span>Plan de tratamiento</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-edit"/></svg></span>Plan de tratamiento</h2>
       <div class="sub">Los pasos previstos, por fases. Marca cada uno según se va haciendo.</div>
       <div class="kpi" id="plKpi"></div>
       <div class="grid3">
@@ -654,12 +725,12 @@
         <div class="field"><label>Doctor</label><select id="pl_doctor"></select></div>
         <div class="field"><label>Fase</label><select id="pl_fase"><option>Fase 1</option><option>Fase 2</option><option>Fase 3</option><option>Fase 4</option></select></div>
       </div>
-      <button class="main" id="pl_add"><span class="bico">➕</span>Añadir paso al plan</button>
+      <button class="main" id="pl_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir paso al plan</button>
       <div id="plLista" style="margin-top:16px"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🩺</span>Evolución clínica</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-stetho"/></svg></span>Evolución clínica</h2>
       <div class="sub">Qué se ha hecho en cada sesión. Queda con su fecha y doctor: es la historia clínica del paciente.</div>
       <div class="grid3">
         <div class="field"><label>Fecha</label><input id="ev_fecha" type="date"/></div>
@@ -667,12 +738,12 @@
         <div class="field"><label>Pieza (opcional)</label><input id="ev_pieza" placeholder="Ej. 47"/></div>
       </div>
       <div class="field"><label>Qué se ha hecho</label><textarea id="ev_texto" rows="3" placeholder="Ej. Endodoncia 47, 2 conductos, obturación provisional. Se cita para corona."></textarea></div>
-      <button class="main" id="ev_add"><span class="bico">➕</span>Añadir a la evolución</button>
+      <button class="main" id="ev_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir a la evolución</button>
       <div id="evLista" style="margin-top:16px"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🦷</span>Periodontograma</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-tooth"/></svg></span>Periodontograma</h2>
       <div class="sub">Sondaje de 6 puntos por diente. Los índices se calculan solos y puedes comparar con sondajes anteriores.</div>
       <div class="kpi" id="peKpi"></div>
       <div class="toolbar">
@@ -680,14 +751,14 @@
         <input id="pe_fecha" type="date" style="width:auto"/>
         <label style="font-size:13px;color:var(--muted);font-weight:600">Ver sondaje</label>
         <select id="pe_hist" style="width:auto;min-width:150px"></select>
-        <button class="main" id="pe_guardar"><span class="bico">💾</span>Guardar sondaje</button>
-        <button class="ghost" id="pe_nuevo"><span class="bico">➕</span>Nuevo</button>
+        <button class="main" id="pe_guardar"><span class="bico"><svg class="ic"><use href="#i-save"/></svg></span>Guardar sondaje</button>
+        <button class="ghost" id="pe_nuevo"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Nuevo</button>
       </div>
       <div id="peLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">💳</span>Plan de pago a plazos</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-card"/></svg></span>Plan de pago a plazos</h2>
       <div class="sub">Divide un tratamiento en cuotas y ve marcándolas según cobras. Te avisa de las vencidas.</div>
       <div class="kpi" id="ppKpi"></div>
       <div class="grid3">
@@ -695,12 +766,12 @@
         <div class="field"><label>Nº de cuotas</label><select id="pp_num"></select></div>
         <div class="field"><label>Primera cuota</label><input id="pp_fecha" type="date"/></div>
       </div>
-      <button class="main" id="pp_crear"><span class="bico">💳</span>Crear plan de pago</button>
+      <button class="main" id="pp_crear"><span class="bico"><svg class="ic"><use href="#i-card"/></svg></span>Crear plan de pago</button>
       <div id="ppLista" style="margin-top:16px"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">💊</span>Recetas</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-pill"/></svg></span>Recetas</h2>
       <div class="sub">Elige un medicamento habitual o escribe otro. Se imprime con los datos de la clínica.</div>
       <div class="grid2">
         <div class="field"><label>Medicamento</label><select id="rc_med"></select></div>
@@ -710,27 +781,27 @@
         <div class="field"><label>Pauta</label><input id="rc_pauta" placeholder="Se rellena sola al elegir medicamento"/></div>
         <div class="field"><label>Doctor</label><select id="rc_doctor"></select></div>
       </div>
-      <button class="main" id="rc_add"><span class="bico">💊</span>Emitir e imprimir receta</button>
+      <button class="main" id="rc_add"><span class="bico"><svg class="ic"><use href="#i-pill"/></svg></span>Emitir e imprimir receta</button>
       <div id="rcLista" style="margin-top:16px"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">✍️</span>Consentimientos firmados</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-sign"/></svg></span>Consentimientos firmados</h2>
       <div class="sub">El paciente firma en la pantalla y queda guardado con su fecha. Puedes imprimirlo cuando quieras.</div>
       <div class="toolbar">
         <select id="cs_tipo" style="min-width:260px"></select>
-        <button class="main" id="cs_nuevo"><span class="bico">✍️</span>Firmar consentimiento</button>
+        <button class="main" id="cs_nuevo"><span class="bico"><svg class="ic"><use href="#i-sign"/></svg></span>Firmar consentimiento</button>
       </div>
       <div id="csLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📷</span>Fotos y radiografías</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-cam"/></svg></span>Fotos y radiografías</h2>
       <div class="sub">Imágenes del paciente (antes/después, radiografías). Se comprimen solas para no ocupar.</div>
       <div class="toolbar">
         <input type="file" id="ft_file" accept="image/*" style="max-width:260px"/>
         <input id="ft_nota" placeholder="Descripción (ej. antes del tratamiento)" style="min-width:230px"/>
-        <button class="main" id="ft_subir"><span class="bico">⬆️</span>Añadir imagen</button>
+        <button class="main" id="ft_subir"><span class="bico"><svg class="ic"><use href="#i-up"/></svg></span>Añadir imagen</button>
       </div>
       <div id="ftLista"></div>
     </div>
@@ -738,13 +809,13 @@
 
   <div id="escanModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.72);backdrop-filter:blur(4px);z-index:9998;align-items:center;justify-content:center;padding:16px">
     <div style="background:var(--card);border-radius:16px;padding:24px;max-width:940px;width:100%;max-height:94vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.45)">
-      <h2 style="margin:0 0 5px;font-size:18px"><span class="h2ico">📸</span>Escanear formulario de papel</h2>
+      <h2 style="margin:0 0 5px;font-size:18px"><span class="h2ico"><svg class="ic"><use href="#i-cam"/></svg></span>Escanear formulario de papel</h2>
       <div class="sub">Haz una foto del formulario relleno. Guardaré la hoja en su ficha y te ayudaré a pasar los datos.</div>
 
       <div id="escPaso1">
         <div class="toolbar">
           <input type="file" id="esc_file" accept="image/*" capture="environment" style="max-width:280px"/>
-          <button class="main" id="esc_leer"><span class="bico">🔍</span>Leer formulario</button>
+          <button class="main" id="esc_leer"><span class="bico"><svg class="ic"><use href="#i-search"/></svg></span>Leer formulario</button>
           <button class="ghost" id="esc_cerrar1">Cancelar</button>
         </div>
         <div id="esc_prog" class="hint" style="display:none;margin-top:10px"></div>
@@ -777,8 +848,8 @@
           </div>
         </div>
         <div class="toolbar" style="margin-top:16px;margin-bottom:0">
-          <button class="main" id="esc_guardar"><span class="bico">✅</span>Guardar paciente</button>
-          <button class="ghost" id="esc_otra"><span class="bico">📸</span>Otra foto</button>
+          <button class="main" id="esc_guardar"><span class="bico"><svg class="ic"><use href="#i-check"/></svg></span>Guardar paciente</button>
+          <button class="ghost" id="esc_otra"><span class="bico"><svg class="ic"><use href="#i-cam"/></svg></span>Otra foto</button>
           <button class="ghost" id="esc_cerrar2">Cancelar</button>
           <span class="hint" id="esc_texto"></span>
         </div>
@@ -795,7 +866,7 @@
         <canvas id="fm_canvas" style="width:100%;height:170px;display:block;touch-action:none;border-radius:11px"></canvas>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap">
-        <button class="ghost" id="fm_limpiar"><span class="bico">🧽</span>Borrar firma</button>
+        <button class="ghost" id="fm_limpiar"><span class="bico"><svg class="ic"><use href="#i-eraser"/></svg></span>Borrar firma</button>
         <div style="display:flex;gap:8px"><button class="ghost" id="fm_cerrar">Cancelar</button><button class="main" id="fm_guardar">Guardar firmado</button></div>
       </div>
     </div>
@@ -814,7 +885,7 @@
           </label>
           <img id="preview" style="max-width:100%;border-radius:10px;display:none;border:1px solid var(--borde);margin-top:8px"/>
           <label class="hint" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="mejora" checked style="width:auto"/> Mejorar la foto antes de leer</label>
-          <button class="main" id="leer" disabled style="width:100%;margin-top:10px"><span class="bico">🔍</span>Leer</button>
+          <button class="main" id="leer" disabled style="width:100%;margin-top:10px"><span class="bico"><svg class="ic"><use href="#i-search"/></svg></span>Leer</button>
           <div class="cargando" id="cargando"><span id="estadoOCR">Preparando…</span><div class="bar"><div id="barra"></div></div></div>
         </div>
         <div>
@@ -837,7 +908,7 @@
             </div>
             <div class="field"><label>Observaciones</label><textarea id="observaciones" rows="2"></textarea></div>
             <div class="field"><label>Paciente (se crea/enlaza)</label><input id="l_paciente"/><div class="hint" id="l_pacienteRef"></div></div>
-            <button class="main" id="guardar" style="width:100%"><span class="bico">💾</span>Guardar presupuesto y paciente</button>
+            <button class="main" id="guardar" style="width:100%"><span class="bico"><svg class="ic"><use href="#i-save"/></svg></span>Guardar presupuesto y paciente</button>
             <details style="margin-top:8px"><summary>Ver texto leído</summary><pre id="raw"></pre></details>
           </div>
         </div>
@@ -848,7 +919,7 @@
   <!-- ===================== PRESUPUESTOS ===================== -->
   <div class="page" id="page-contabilidad">
     <div class="card">
-      <h2><span class="h2ico">📗</span>Libro de ingresos y gastos</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-book"/></svg></span>Libro de ingresos y gastos</h2>
       <div class="sub">Todo lo que entra y sale, listo para entregar a tu gestoría. <b>Esto no sustituye a tu asesor</b>: es el registro ordenado que él necesita.</div>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Año</label>
@@ -859,33 +930,33 @@
           <option value="2">2º trimestre (abr-jun)</option><option value="3">3er trimestre (jul-sep)</option>
           <option value="4">4º trimestre (oct-dic)</option></select>
         <button class="ghost" id="cb_ver">Ver</button>
-        <button class="ghost" id="cb_exportar"><span class="bico">⬇️</span>Exportar para la gestoría</button>
-        <button class="ghost" id="cb_imprimir"><span class="bico">🖨️</span>Imprimir resumen</button>
+        <button class="ghost" id="cb_exportar"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar para la gestoría</button>
+        <button class="ghost" id="cb_imprimir"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir resumen</button>
       </div>
       <div class="kpi" id="cbKpi"></div>
-      <div class="cbtit"><span class="h2ico peq">📌</span>QUÉ TOCA PRESENTAR ESTE PERIODO</div>
+      <div class="cbtit"><span class="h2ico peq"><svg class="ic"><use href="#i-pin"/></svg></span>QUÉ TOCA PRESENTAR ESTE PERIODO</div>
       <div class="oblig" id="cbOblig"></div>
       <div class="cbtabs">
-        <button data-libro="resumen" class="on"><span class="bico">📊</span>Resumen</button>
-        <button data-libro="ingresos"><span class="bico">💶</span>Libro de ingresos</button>
-        <button data-libro="gastos"><span class="bico">💸</span>Libro de gastos</button>
-        <button data-libro="iva"><span class="bico">🧾</span>Desglose de IVA</button>
-        <button data-libro="categorias"><span class="bico">📂</span>Gasto por categoría</button>
-        <button data-libro="diario"><span class="bico">🕐</span>Diario detallado</button>
+        <button data-libro="resumen" class="on"><span class="bico"><svg class="ic"><use href="#i-chart"/></svg></span>Resumen</button>
+        <button data-libro="ingresos"><span class="bico"><svg class="ic"><use href="#i-euro"/></svg></span>Libro de ingresos</button>
+        <button data-libro="gastos"><span class="bico"><svg class="ic"><use href="#i-wallet"/></svg></span>Libro de gastos</button>
+        <button data-libro="iva"><span class="bico"><svg class="ic"><use href="#i-file"/></svg></span>Desglose de IVA</button>
+        <button data-libro="categorias"><span class="bico"><svg class="ic"><use href="#i-folder"/></svg></span>Gasto por categoría</button>
+        <button data-libro="diario"><span class="bico"><svg class="ic"><use href="#i-clock"/></svg></span>Diario detallado</button>
       </div>
       <div id="cbResumen"></div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">🏢</span>Proveedores</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-building"/></svg></span>Proveedores</h2>
       <div class="sub">Se crean solos al registrar gastos. Aquí ves cuánto gastas con cada uno y sus datos fiscales.</div>
       <div class="toolbar">
-        <button class="ghost" id="pv_exportar"><span class="bico">⬇️</span>Exportar proveedores</button>
+        <button class="ghost" id="pv_exportar"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar proveedores</button>
       </div>
       <div id="pvLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🗂️</span>Carpetas de pacientes</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-folder"/></svg></span>Carpetas de pacientes</h2>
       <div class="sub">El historial económico de cada paciente: lo presupuestado, lo facturado, lo cobrado y lo que debe.</div>
       <div class="toolbar">
         <input id="pc_buscar" placeholder="Buscar paciente…" style="min-width:220px"/>
@@ -896,13 +967,13 @@
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🧮</span>Tu pago trimestral de IRPF (modelo 130)</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-calc"/></svg></span>Tu pago trimestral de IRPF (modelo 130)</h2>
       <div class="sub"><b>Cálculo orientativo</b> para que sepas cuánto apartar. La cifra oficial la calcula tu gestoría.</div>
       <div id="cb130"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🏗️</span>Bienes de inversión y amortizaciones</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-tools"/></svg></span>Bienes de inversión y amortizaciones</h2>
       <div class="sub">Sillón, radiografía, mobiliario, ordenadores… Se deducen poco a poco cada año. <b>Es una deducción que se suele olvidar.</b></div>
       <div class="grid3">
         <div class="field"><label>Descripción</label><input id="bi_desc" placeholder="Sillón dental Adec"/></div>
@@ -912,13 +983,13 @@
       <div class="grid3">
         <div class="field"><label>Tipo de bien</label><select id="bi_tipo"></select></div>
         <div class="field"><label>% anual</label><input id="bi_pct" type="number" min="1" max="100" step="0.5"/></div>
-        <div class="field"><label>&nbsp;</label><button class="main" id="bi_add" style="width:100%"><span class="bico">➕</span>Añadir bien</button></div>
+        <div class="field"><label>&nbsp;</label><button class="main" id="bi_add" style="width:100%"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir bien</button></div>
       </div>
       <div id="biLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📅</span>Comparativa por trimestres</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-cal"/></svg></span>Comparativa por trimestres</h2>
       <div class="sub">Cómo va el año.</div>
       <div id="cbTrimestres"></div>
     </div>
@@ -926,40 +997,40 @@
 
   <div class="page" id="page-informes">
     <div class="card">
-      <h2><span class="h2ico">📊</span>Resumen del negocio</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-chart"/></svg></span>Resumen del negocio</h2>
       <div class="sub">Cómo va la clínica de un vistazo. Los datos se calculan solos con lo que vas registrando.</div>
       <div class="kpi" id="inf_kpi"></div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">💶</span>Ingresos cobrados por mes</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-euro"/></svg></span>Ingresos cobrados por mes</h2>
       <div class="sub">Últimos 12 meses, según los pagos registrados.</div>
       <div id="inf_ingresos"></div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">📈</span>Beneficio real (ingresos − gastos)</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-trend"/></svg></span>Beneficio real (ingresos − gastos)</h2>
       <div class="sub">Lo que de verdad queda. En verde los meses con beneficio, en rojo los que no.</div>
       <div id="inf_beneficio"></div>
     </div>
     <div class="grid2">
       <div class="card">
-        <h2><span class="h2ico">🧾</span>Presupuestos</h2>
+        <h2><span class="h2ico"><svg class="ic"><use href="#i-file"/></svg></span>Presupuestos</h2>
         <div class="sub">Cuántos aceptas de los que presentas.</div>
         <div id="inf_presu"></div>
       </div>
       <div class="card">
-        <h2><span class="h2ico">📅</span>Citas por mes</h2>
+        <h2><span class="h2ico"><svg class="ic"><use href="#i-cal"/></svg></span>Citas por mes</h2>
         <div class="sub">Actividad de la agenda.</div>
         <div id="inf_citas"></div>
       </div>
     </div>
     <div class="card" id="cardComisiones" style="display:none">
-      <h2><span class="h2ico">💰</span>Comisiones a pagar</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-wallet"/></svg></span>Comisiones a pagar</h2>
       <div class="sub">Según el porcentaje de cada doctor sobre lo que ha cerrado.</div>
       <div id="inf_comisiones"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">👨‍⚕️</span>Presupuestos aceptados por doctor</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-doctor"/></svg></span>Presupuestos aceptados por doctor</h2>
       <div class="sub">Quién cierra más presupuestos. Útil para formación y reparto de pacientes.</div>
       <div id="inf_doctores"></div>
     </div>
@@ -969,11 +1040,11 @@
     <div class="card">
       <div class="toolbar"><h2 style="margin:0;flex:1">Presupuestos</h2>
         <select id="pf_estado" title="Filtrar por estado"><option value="">Todos los estados</option></select>
-        <button class="main" id="exportar"><span class="bico">⬇️</span>Exportar a Excel</button><button class="ghost" id="vaciar"><span class="bico">🗑️</span>Vaciar</button></div>
+        <button class="main" id="exportar"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Exportar a Excel</button><button class="ghost" id="vaciar"><span class="bico"><svg class="ic"><use href="#i-trash"/></svg></span>Vaciar</button></div>
       <div class="sub" style="margin-bottom:8px">Puedes cambiar el <b>Estado</b>, el <b>Auxiliar</b> y <b>¿Cita?</b> directamente en la tabla.</div>
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Doctor</th><th>Presup.</th><th>Venta</th><th>Auxiliar</th><th>Estado</th><th>Cita</th><th></th></tr></thead>
       <tbody id="presuBody"></tbody></table></div>
-      <div class="vacio" id="presuVacio"><span class="ico">🧾</span><b>Aún no hay presupuestos</b><span>Puedes crearlos con la cámara desde «Leer presupuesto».</span></div>
+      <div class="vacio" id="presuVacio"><span class="ico"><svg class="ic"><use href="#i-file"/></svg></span><b>Aún no hay presupuestos</b><span>Puedes crearlos con la cámara desde «Leer presupuesto».</span></div>
     </div>
   </div>
 
@@ -992,33 +1063,33 @@
         <div class="field"><label>Forma de pago</label><select id="pg_forma"></select></div>
         <div class="field"><label>Concepto</label><input id="pg_concepto" placeholder="A cuenta, tratamiento…"/></div>
       </div>
-      <button class="main" id="pg_add"><span class="bico">💳</span>Registrar pago</button>
+      <button class="main" id="pg_add"><span class="bico"><svg class="ic"><use href="#i-card"/></svg></span>Registrar pago</button>
     </div>
     <div class="card">
       <h2>Resumen de cobros</h2>
       <div class="kpi" id="pg_kpi"></div>
       <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Importe</th><th>Forma</th><th>Concepto</th><th></th></tr></thead><tbody id="pg_body"></tbody></table></div>
-      <div class="vacio" id="pg_vacio"><span class="ico">💳</span><b>Todavía no hay cobros</b><span>Registra el primer pago con el formulario de arriba.</span></div>
+      <div class="vacio" id="pg_vacio"><span class="ico"><svg class="ic"><use href="#i-card"/></svg></span><b>Todavía no hay cobros</b><span>Registra el primer pago con el formulario de arriba.</span></div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">🧮</span>Cierre de caja</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-calc"/></svg></span>Cierre de caja</h2>
       <div class="sub">Cuadra la caja al final del día: qué has cobrado, en qué forma de pago, y qué has gastado.</div>
       <div class="toolbar">
         <input id="cj_fecha" type="date"/>
         <button class="ghost" id="cj_ver">Ver día</button>
-        <button class="ghost" id="cj_imprimir"><span class="bico">🖨️</span>Imprimir arqueo</button>
+        <button class="ghost" id="cj_imprimir"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir arqueo</button>
       </div>
       <div id="cjResumen"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">💸</span>Gastos</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-wallet"/></svg></span>Gastos</h2>
       <div class="sub">Material, laboratorio, alquiler, nóminas… Sin esto solo ves ingresos, no el beneficio real.</div>
       <div style="border:1.5px dashed var(--primary);border-radius:12px;padding:14px;margin-bottom:16px;background:var(--primary-soft)">
-        <div style="font-weight:700;font-size:13px;margin-bottom:8px">📄 ¿Tienes la factura en PDF o foto? Léela automáticamente</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px"><svg class="ic"><use href="#i-file"/></svg>¿Tienes la factura en PDF o foto? Léela automáticamente</div>
         <div class="toolbar" style="margin-bottom:0">
           <input type="file" id="fx_file" accept=".pdf,image/*" style="max-width:250px"/>
-          <button class="main" id="fx_leer"><span class="bico">🔍</span>Leer factura</button>
+          <button class="main" id="fx_leer"><span class="bico"><svg class="ic"><use href="#i-search"/></svg></span>Leer factura</button>
           <span class="hint" id="fx_estado"></span>
         </div>
       </div>
@@ -1046,14 +1117,14 @@
       <div class="toolbar">
         <label class="chk" style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
           <input type="checkbox" id="gs_deducible" checked style="width:auto;accent-color:var(--primary)"/> Gasto deducible</label>
-        <button class="main" id="gs_add"><span class="bico">➕</span>Añadir gasto</button>
+        <button class="main" id="gs_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir gasto</button>
         <span class="hint" id="gs_calc"></span>
       </div>
       <div id="gsLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📄</span>Facturas emitidas</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-file"/></svg></span>Facturas emitidas</h2>
       <div class="sub">Numeración correlativa. Pulsa 📄 en un pago para emitir su factura.</div>
       <div id="fcLista"></div>
     </div>
@@ -1063,11 +1134,11 @@
 
   <div class="page" id="page-proveedores">
     <div class="card">
-      <h2><span class="h2ico">🏭</span>Proveedores y pedidos</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-building"/></svg></span>Proveedores y pedidos</h2>
       <div class="sub">Guarda tus proveedores, qué te venden y a qué precio. Haz un pedido y envíalo por correo en un clic.</div>
       <div class="toolbar">
         <input id="pr_buscar" placeholder="Buscar proveedor…" style="min-width:220px"/>
-        <button class="main" id="pr_nuevo"><span class="bico">➕</span>Nuevo proveedor</button>
+        <button class="main" id="pr_nuevo"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Nuevo proveedor</button>
       </div>
       <div id="prLista"></div>
     </div>
@@ -1088,13 +1159,13 @@
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🖨️</span>Formulario de registro en papel</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-print"/></svg></span>Formulario de registro en papel</h2>
       <div class="sub">Imprime hojas en blanco para los pacientes que prefieran rellenarlo a mano. Luego puedes escanearlas desde Pacientes.</div>
-      <button class="main" id="fb_imprimir"><span class="bico">🖨️</span>Imprimir formulario en blanco</button>
+      <button class="main" id="fb_imprimir"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir formulario en blanco</button>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📥</span>Importar pacientes desde otro programa</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-down"/></svg></span>Importar pacientes desde otro programa</h2>
       <div class="sub">Exporta tus pacientes a Excel o CSV desde tu programa actual y tráelos aquí. Podrás revisar todo antes de guardar nada.</div>
       <div class="toolbar">
         <input type="file" id="im_file" accept=".csv,.txt,text/csv" style="max-width:250px"/>
@@ -1102,7 +1173,7 @@
       </div>
       <textarea id="im_pegar" rows="4" placeholder="Copia las filas en Excel (con la fila de títulos) y pégalas aquí…"></textarea>
       <div class="toolbar" style="margin-top:10px">
-        <button class="ghost" id="im_leer"><span class="bico">🔍</span>Leer y previsualizar</button>
+        <button class="ghost" id="im_leer"><span class="bico"><svg class="ic"><use href="#i-search"/></svg></span>Leer y previsualizar</button>
         <button class="ghost" id="im_limpiar">Empezar de nuevo</button>
       </div>
       <div id="imMapeo" style="display:none">
@@ -1111,26 +1182,26 @@
         <div style="font-weight:700;font-size:13px;margin:18px 0 8px">2 · Comprueba que se ve bien</div>
         <div id="imPreview"></div>
         <div class="toolbar" style="margin-top:14px">
-          <button class="main" id="im_importar"><span class="bico">✅</span>Importar pacientes</button>
+          <button class="main" id="im_importar"><span class="bico"><svg class="ic"><use href="#i-check"/></svg></span>Importar pacientes</button>
           <span class="hint" id="im_info"></span>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">⏱️</span>Duración de los tratamientos</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-clock"/></svg></span>Duración de los tratamientos</h2>
       <div class="sub">Cada tratamiento ocupa lo que necesita. Al elegir el motivo de la cita, la agenda reserva ese tiempo.</div>
       <div class="toolbar">
         <input id="du_nombre" placeholder="Tratamiento (ej. Endodoncia)" style="min-width:220px"/>
         <select id="du_min" style="width:auto"></select>
-        <button class="main" id="du_add"><span class="bico">➕</span>Añadir</button>
+        <button class="main" id="du_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir</button>
       </div>
       <div id="duLista"></div>
       <div class="hint" style="margin-top:10px">Si un tratamiento no está en la lista, se usa la duración por defecto del horario.</div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🚫</span>Bloqueos de agenda</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-ban"/></svg></span>Bloqueos de agenda</h2>
       <div class="sub">Vacaciones, festivos, reuniones… Esas horas dejarán de ofrecerse como libres.</div>
       <div class="toolbar">
         <select id="bl_doctor" style="min-width:190px"></select>
@@ -1139,20 +1210,20 @@
         <input id="bl_h1" type="time" title="Desde la hora"/>
         <input id="bl_h2" type="time" title="Hasta la hora"/>
         <input id="bl_motivo" placeholder="Motivo (vacaciones, reunión…)" style="min-width:190px"/>
-        <button class="main" id="bl_add"><span class="bico">➕</span>Bloquear</button>
+        <button class="main" id="bl_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Bloquear</button>
       </div>
       <div id="blLista"></div>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">📊</span>Comisiones por doctor</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-chart"/></svg></span>Comisiones por doctor</h2>
       <div class="sub">Porcentaje que se lleva cada doctor de los presupuestos aceptados. Verás el cálculo en Informes.</div>
       <div id="coLista"></div>
       <button class="main" id="co_guardar" style="margin-top:12px">Guardar comisiones</button>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🧾</span>Datos para las facturas</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-file"/></svg></span>Datos para las facturas</h2>
       <div class="sub">Aparecerán en las facturas que emitas. Rellénalos una vez.</div>
       <div class="grid3">
         <div class="field"><label>Nombre o razón social</label><input id="fc_nombre" placeholder="K Dental Excellent S.L."/></div>
@@ -1172,18 +1243,18 @@
     </div>
 
     <div class="card" style="border-color:var(--danger)">
-      <h2 style="color:var(--danger)"><span class="h2ico">⚠️</span>Empezar de cero</h2>
+      <h2 style="color:var(--danger)"><span class="h2ico"><svg class="ic"><use href="#i-alert"/></svg></span>Empezar de cero</h2>
       <div class="sub">Borra todos los pacientes, citas, presupuestos, pagos, gastos y facturas. <b>Se conservan</b> los doctores, horarios, usuarios y ajustes. Úsalo solo cuando termines de hacer pruebas.</div>
-      <button class="ghost" id="dz_borrar" style="color:var(--danger);border-color:var(--danger)"><span class="bico">🗑️</span>Borrar todos los datos</button>
+      <button class="ghost" id="dz_borrar" style="color:var(--danger);border-color:var(--danger)"><span class="bico"><svg class="ic"><use href="#i-trash"/></svg></span>Borrar todos los datos</button>
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🕐</span>Horario de los doctores</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-clock"/></svg></span>Horario de los doctores</h2>
       <div class="sub">Define qué días y a qué horas pasa consulta cada doctor. Al agendar una cita, la plataforma te ofrecerá solo las horas libres de ese doctor.</div>
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted);font-weight:600">Doctor</label>
         <select id="h_doctor" style="min-width:220px"></select>
-        <button class="ghost" id="h_copiar"><span class="bico">📋</span>Copiar L-V del lunes</button>
+        <button class="ghost" id="h_copiar"><span class="bico"><svg class="ic"><use href="#i-clip"/></svg></span>Copiar L-V del lunes</button>
       </div>
       <div id="h_tabla"></div>
       <div class="toolbar" style="margin-top:14px;margin-bottom:0">
@@ -1194,7 +1265,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="h2ico">🔔</span>Recordatorios por WhatsApp</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-bell"/></svg></span>Recordatorios por WhatsApp</h2>
       <div class="sub">Mensaje que se enviará a los pacientes para recordarles su cita. Usa las etiquetas y se sustituyen solas.</div>
       <div class="grid2">
         <div class="field"><label>Días de antelación</label><select id="r_dias"><option value="1">1 día antes</option><option value="2" selected>2 días antes</option><option value="3">3 días antes</option><option value="7">7 días antes</option></select></div>
@@ -1210,18 +1281,18 @@
       <h2>Copia de seguridad</h2>
       <div class="sub">Guarda todos los datos (pacientes, citas, presupuestos) en un archivo, o recupéralos en otro ordenador.</div>
       <div class="toolbar">
-        <button class="main" id="backupExport"><span class="bico">⬇️</span>Descargar copia de seguridad</button>
-        <label class="ghost" style="cursor:pointer">⬆️ Restaurar copia<input type="file" id="backupFile" accept="application/json,.json" style="display:none"/></label>
+        <button class="main" id="backupExport"><span class="bico"><svg class="ic"><use href="#i-down"/></svg></span>Descargar copia de seguridad</button>
+        <label class="ghost" style="cursor:pointer"><svg class="ic"><use href="#i-up"/></svg>Restaurar copia<input type="file" id="backupFile" accept="application/json,.json" style="display:none"/></label>
       </div>
-      <div class="banner free">💡 Recomendado: descarga una copia de vez en cuando. Los datos se guardan en este navegador; si se borra el historial, se pierden.</div>
+      <div class="banner free"><svg class="ic"><use href="#i-bulb"/></svg>Recomendado: descarga una copia de vez en cuando. Los datos se guardan en este navegador; si se borra el historial, se pierden.</div>
     </div>
     <div class="card">
-      <h2><span class="h2ico">📋</span>Registro de pacientes nuevos (QR)</h2>
+      <h2><span class="h2ico"><svg class="ic"><use href="#i-clip"/></svg></span>Registro de pacientes nuevos (QR)</h2>
       <div class="sub">Imprime este QR y ponlo en recepción o la sala de espera. El paciente nuevo lo escanea y rellena sus datos + cuestionario de salud, y aparece solo en «Pacientes».</div>
       <div class="field"><label>Dirección del formulario de registro</label><input id="regUrl"/></div>
       <div class="toolbar"><button class="main" id="genQR">Generar QR</button><a class="ghost" id="abrirReg" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center">↗️ Abrir formulario</a></div>
       <div id="qrbox" style="text-align:center;margin-top:6px"></div>
-      <div class="banner free" style="margin-top:12px">💡 Desde el <b>móvil de los pacientes</b>, el formulario debe estar publicado online (ver PUBLICAR.md). En un <b>ordenador o tablet de la clínica</b> funciona con la dirección local.</div>
+      <div class="banner free" style="margin-top:12px"><svg class="ic"><use href="#i-bulb"/></svg>Desde el <b>móvil de los pacientes</b>, el formulario debe estar publicado online (ver PUBLICAR.md). En un <b>ordenador o tablet de la clínica</b> funciona con la dirección local.</div>
     </div>
   </div>
     </div>
@@ -1297,7 +1368,7 @@ function pedirLogin(){
   const o=document.createElement("div");o.id="loginOverlay";
   o.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center";
   o.innerHTML=`<div style="background:#fff;border-radius:16px;padding:26px;width:330px;max-width:90%;box-shadow:0 20px 60px rgba(0,0,0,.35)">
-    <div style="font-size:34px;text-align:center">🔒</div>
+    <div style="font-size:34px;text-align:center"><svg class="ic"><use href="#i-lock"/></svg></div>
     <h2 style="text-align:center;margin:6px 0 4px;font-size:18px">Acceso al panel</h2>
     <p style="text-align:center;color:#64748b;font-size:13px;margin:0 0 16px">Introduce tu usuario y contraseña</p>
     <input id="loginUser" placeholder="Usuario" autocomplete="username" style="width:100%;padding:11px;border:1px solid #e8edf3;border-radius:10px;font-size:15px;margin-bottom:9px"/>
@@ -1439,7 +1510,7 @@ function pintarSlots(){
   const motivo=(document.getElementById("c_motivo")||{}).value||"";
   const s=slotsDia(doc,fec,motivo);
   if(s===null){cont.innerHTML='<div class="hint">Este doctor aún no tiene horario configurado. Ponlo en <b>Ajustes › Horario de los doctores</b> y aquí te saldrán sus horas libres.</div>';return;}
-  if(!s.length){cont.innerHTML='<div class="hint" style="color:var(--warn)">⚠️ '+esc(doc)+' no pasa consulta ese día.</div>';return;}
+  if(!s.length){cont.innerHTML='<div class="hint" style="color:var(--warn)"><svg class="ic"><use href="#i-alert"/></svg>'+esc(doc)+' no pasa consulta ese día.</div>';return;}
   const libres=s.filter(x=>!x.ocupada&&!x.bloqueada).length;
   const dur=duracionDe(motivo);
   const actual=document.getElementById("c_hora").value;
@@ -1504,7 +1575,7 @@ function renderRecordatoriosWA(){
     const msg=encodeURIComponent(mensajeRecordatorio(c));
     return `<div class="recrow${c.recordado?" sent":""}">
       <div><div style="font-weight:700">${esc(nom)} ${c.recordado?'<span class="pill v">enviado ✓</span>':''}</div>
-        <div class="hint">🕐 ${esc(c.hora||"—")} · 👨‍⚕️ ${esc(c.doctor||"—")} · ${esc(c.motivo||"")} ${tel?"· 📞 "+esc(tel):'· <span style="color:var(--danger)">sin teléfono</span>'}</div></div>
+        <div class="hint"><svg class="ic"><use href="#i-clock"/></svg>${esc(c.hora||"—")} · 👨‍⚕️ ${esc(c.doctor||"—")} · ${esc(c.motivo||"")} ${tel?"· 📞 "+esc(tel):'· <span style="color:var(--danger)">sin teléfono</span>'}</div></div>
       <div style="display:flex;gap:8px;align-items:center">
         ${tel?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${tel}?text=${msg}" data-id="${c.id}">📲 Enviar</a>`:""}
         <button class="ghost" data-marca="${c.id}">${c.recordado?"Desmarcar":"Marcar enviado"}</button>
@@ -1680,7 +1751,7 @@ function renderCuestionario(p){
 function renderTratamientos(p){
   const tr=p.tratamientos||[];
   document.getElementById("t_vacio").style.display=tr.length?"none":"block";
-  document.getElementById("t_body").innerHTML=tr.map(t=>`<tr><td>${esc(fmtFecha(t.fecha))}</td><td>${esc(t.trat||"")}</td><td>${esc(t.pieza||"")}</td><td>${esc(t.doctor||"")}</td><td>${esc(t.importe||"")}</td><td>${esc(t.notas||"")}</td><td><button class="ghost" data-deltrat="${t.id}" style="padding:3px 7px">🗑️</button></td></tr>`).join("");
+  document.getElementById("t_body").innerHTML=tr.map(t=>`<tr><td>${esc(fmtFecha(t.fecha))}</td><td>${esc(t.trat||"")}</td><td>${esc(t.pieza||"")}</td><td>${esc(t.doctor||"")}</td><td>${esc(t.importe||"")}</td><td>${esc(t.notas||"")}</td><td><button class="ghost" data-deltrat="${t.id}" style="padding:3px 7px"><svg class="ic"><use href="#i-trash"/></svg></button></td></tr>`).join("");
   document.querySelectorAll("[data-deltrat]").forEach(b=>b.addEventListener("click",()=>{
     const A=DB.pacientes(),i=A.findIndex(x=>x.id===fichaId);if(i<0)return;
     A[i].tratamientos=(A[i].tratamientos||[]).filter(x=>x.id!==b.dataset.deltrat);DB.setPacientes(A);abrirFicha(fichaId);}));
@@ -1737,12 +1808,12 @@ document.getElementById("f_nuevaCita").addEventListener("click",()=>{
 
 // ==================== Agenda / Citas ====================
 function citaHTML(c,compacto){
-  const _al=tieneAlertaGrave(c.pacienteId)?'<span class="avisocita" title="Este paciente tiene avisos médicos importantes">⚠️</span>':"";
+  const _al=tieneAlertaGrave(c.pacienteId)?'<span class="avisocita" title="Este paciente tiene avisos médicos importantes"><svg class="ic"><use href="#i-alert"/></svg></span>':"";
   const est={Programada:"g",Confirmada:"v",Realizada:"v",Cancelada:"r"}[c.estado]||"g";
   return `<div class="cita"><div class="h">${esc(c.hora||"--:--")}</div>
     <div style="flex:1"><div><b>${esc(compacto?(c.doctor||""):(nombrePaciente(c.pacienteId)||c.pacienteNombre||"(paciente)"))}</b>${_al} ${c.motivo?"· "+esc(c.motivo):""}</div>
     <div class="m">${compacto?"":"👤 "+esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"—")+" · "}👨‍⚕️ ${esc(c.doctor||"—")}${c.notas?" · "+esc(c.notas):""}</div></div>
-    <div>${(c.fecha===hoyISO()&&!c.llegada&&c.estado!=="Cancelada")?`<button class="ghost" data-llego="${c.id}" title="Marcar que ha llegado" style="padding:4px 9px"><span class="bico">✅</span>Llegó</button> `:""}<span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px">🗑️</button></div></div>`;
+    <div>${(c.fecha===hoyISO()&&!c.llegada&&c.estado!=="Cancelada")?`<button class="ghost" data-llego="${c.id}" title="Marcar que ha llegado" style="padding:4px 9px"><span class="bico"><svg class="ic"><use href="#i-check"/></svg></span>Llegó</button> `:""}<span class="pill ${est}">${esc(c.estado||"")}</span> <button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px"><svg class="ic"><use href="#i-chat"/></svg></button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px"><svg class="ic"><use href="#i-edit"/></svg></button> <button class="ghost" data-delcita="${c.id}" style="padding:4px 8px"><svg class="ic"><use href="#i-trash"/></svg></button></div></div>`;
 }
 let editingCitaId=null;
 document.getElementById("c_guardar").addEventListener("click",()=>{
@@ -1809,7 +1880,7 @@ function renderAgenda(){
   document.getElementById("agendaVacia").style.display=C.length?"none":"block";
   const porDia={};C.forEach(c=>{(porDia[c.fecha]=porDia[c.fecha]||[]).push(c)});
   document.getElementById("agendaLista").innerHTML=Object.keys(porDia).sort().map(dia=>
-    `<div class="diahdr">📅 ${fmtFecha(dia)}</div>`+porDia[dia].map(c=>citaHTML(c,false)).join("")).join("");
+    `<div class="diahdr"><svg class="ic"><use href="#i-cal"/></svg>${fmtFecha(dia)}</div>`+porDia[dia].map(c=>citaHTML(c,false)).join("")).join("");
 }
 document.getElementById("a_fecha").addEventListener("change",renderAgenda);
 document.getElementById("a_doctor").addEventListener("change",renderAgenda);
@@ -1851,13 +1922,13 @@ leerBtn.addEventListener("click",async()=>{
       const{data:{text}}=await worker.recognize(u);lects.push(parse(text));}
     await worker.terminate();
     if(lects.length===1)cargaFormulario(lects[0]);
-    else{lects.forEach(d=>guardaPresupuesto(d,true));document.getElementById("banner").innerHTML=`<div class="banner free">✅ ${lects.length} presupuestos leídos y guardados (con sus pacientes).</div>`;}
-  }catch(err){document.getElementById("banner").innerHTML=`<div class="banner err">⚠️ ${esc(err.message||"No se pudo leer.")}</div>`;}
+    else{lects.forEach(d=>guardaPresupuesto(d,true));document.getElementById("banner").innerHTML=`<div class="banner free"><svg class="ic"><use href="#i-check"/></svg>${lects.length} presupuestos leídos y guardados (con sus pacientes).</div>`;}
+  }catch(err){document.getElementById("banner").innerHTML=`<div class="banner err"><svg class="ic"><use href="#i-alert"/></svg>${esc(err.message||"No se pudo leer.")}</div>`;}
   finally{document.getElementById("cargando").style.display="none";leerBtn.disabled=false;}
 });
 function cargaFormulario(d){
   ultimaLectura=d;document.getElementById("vacio").style.display="none";document.getElementById("resultado").style.display="block";
-  document.getElementById("banner").innerHTML=`<div class="banner free">✅ Leído. Revisa y guarda.</div>`;
+  document.getElementById("banner").innerHTML=`<div class="banner free"><svg class="ic"><use href="#i-check"/></svg>Leído. Revisa y guarda.</div>`;
   poblarListas();
   const v=(k,val)=>document.getElementById(k).value=val||"";
   v("fecha",d.fecha);v("importe_presupuestado",d.importe_presupuestado);v("importe_venta",d.importe_venta);v("observaciones",d.observaciones);v("l_paciente",d.paciente);
@@ -1885,7 +1956,7 @@ document.getElementById("guardar").addEventListener("click",()=>{
     auxiliar:g("auxiliar"),forma_pago:g("forma_pago"),estado:g("estado"),cita:g("cita")});
   document.getElementById("resultado").style.display="none";document.getElementById("vacio").style.display="block";
   preview.style.display="none";leerBtn.disabled=true;leerBtn.textContent="🔍 Leer";archivos=[];fileInput.value="";
-  document.getElementById("banner").innerHTML=`<div class="banner free">💾 Guardado y asociado al paciente. Míralo en «Pacientes» o «Presupuestos».</div>`;
+  document.getElementById("banner").innerHTML=`<div class="banner free"><svg class="ic"><use href="#i-save"/></svg>Guardado y asociado al paciente. Míralo en «Pacientes» o «Presupuestos».</div>`;
 });
 
 // ==================== Presupuestos (tabla global) ====================
@@ -1904,7 +1975,7 @@ function renderPresupuestos(){
     <td>${selCelda(r.id,"auxiliar",r.auxiliar,L.auxiliares)}</td>
     <td>${selCelda(r.id,"estado",r.estado,L.estado)}</td>
     <td>${selCelda(r.id,"cita",r.cita,["Sí","No"])}</td>
-    <td><button class="ghost" data-delpre="${r.id}" style="padding:4px 8px">🗑️</button></td></tr>`).join("");
+    <td><button class="ghost" data-delpre="${r.id}" style="padding:4px 8px"><svg class="ic"><use href="#i-trash"/></svg></button></td></tr>`).join("");
   document.querySelectorAll("[data-delpre]").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("¿Borrar este presupuesto?"))return;DB.setPresupuestos(DB.presupuestos().filter(x=>x.id!==b.dataset.delpre));renderPresupuestos();}));
   document.querySelectorAll("[data-preid]").forEach(s=>s.addEventListener("change",()=>{
@@ -2112,7 +2183,7 @@ document.querySelectorAll("[data-libro]").forEach(b=>b.addEventListener("click",
     const rp=Number(r.value)||0;const el=document.getElementById("gs_liquido");
     if(!el)return;
     const base=b>0?b:t/(1+(Number(document.getElementById("gs_iva").value)||0)/100);
-    el.innerHTML=rp?`Retención <b>${(base*rp/100).toFixed(2)}€</b> → pagas <b>${(t-base*rp/100).toFixed(2)}€</b>`:"";
+    el.innerHTML=rp?`Retención <b>${(base*rp/100).toFixed(2)}€</b><svg class="ic"><use href="#i-right"/></svg>pagas <b>${(t-base*rp/100).toFixed(2)}€</b>`:"";
   };
   [r,document.getElementById("gs_importe"),document.getElementById("gs_base")].forEach(x=>{if(x){x.addEventListener("change",calcRet);x.addEventListener("input",calcRet);}});
 })();
@@ -2379,7 +2450,7 @@ async function leerFacturaProveedor(){
     if(d.retPct)g("gs_ret").value=String(d.retPct);
     g("gs_importe").dispatchEvent(new Event("input"));
     const leidos=["proveedor","nif","numfac","fecha","base","total"].filter(k=>d[k]);
-    est.innerHTML=`<b style="color:var(--ok)">✓ Leídos ${leidos.length} datos</b> · <b style="color:var(--warn)">revísalos antes de guardar</b>`;
+    est.innerHTML=`<b style="color:var(--ok)"><svg class="ic"><use href="#i-check"/></svg>Leídos ${leidos.length} datos</b> · <b style="color:var(--warn)">revísalos antes de guardar</b>`;
     toast("Factura leída. Comprueba los importes antes de guardar","info");
   }catch(e){est.textContent="";toast("No pude leer la factura: "+(e.message||""),"err");}
   btn.disabled=false;
@@ -2417,39 +2488,39 @@ function renderProveedoresPanel(){
     const cat=p.productos||[];
     const totalCarrito=cat.filter(x=>carrito[x.id]>0).reduce((s,x)=>s+num(x.precio)*carrito[x.id],0);
     const nLineas=Object.values(carrito).filter(c=>c>0).length;
-    cont.innerHTML=`<button class="ghost" id="pr_volver" style="margin-bottom:14px"><span class="bico">←</span>Volver a proveedores</button>
-      <div class="cbtit"><span class="h2ico peq">🏭</span>${esc(p.nombre)} ${p.habitual?'<span class="pill v">habitual</span>':""}
+    cont.innerHTML=`<button class="ghost" id="pr_volver" style="margin-bottom:14px"><span class="bico"><svg class="ic"><use href="#i-left"/></svg></span>Volver a proveedores</button>
+      <div class="cbtit"><span class="h2ico peq"><svg class="ic"><use href="#i-building"/></svg></span>${esc(p.nombre)} ${p.habitual?'<span class="pill v">habitual</span>':""}
         <span class="n">${p.email?"✉️ "+esc(p.email):"sin email"} ${p.tel?" · 📞 "+esc(p.tel):""}</span></div>
       <div class="hint" style="margin-bottom:12px">${p.contacto?"Contacto: "+esc(p.contacto)+" · ":""}${p.nif?"NIF: "+esc(p.nif)+" · ":""}Gastado con este proveedor: <b>${fmtEur(gastadoCon(p.nombre))}</b>
-        <button class="ghost" id="pr_editar" style="padding:3px 9px;margin-left:8px"><span class="bico">✏️</span>Editar datos</button></div>
+        <button class="ghost" id="pr_editar" style="padding:3px 9px;margin-left:8px"><span class="bico"><svg class="ic"><use href="#i-edit"/></svg></span>Editar datos</button></div>
 
-      <div style="font-weight:700;font-size:13px;margin:10px 0 8px">📦 Catálogo · lo que te vende</div>
+      <div style="font-weight:700;font-size:13px;margin:10px 0 8px"><svg class="ic"><use href="#i-box"/></svg>Catálogo · lo que te vende</div>
       <div class="toolbar">
         <input id="pd_nombre" placeholder="Producto (ej. Guantes nitrilo M)" style="min-width:200px"/>
         <input id="pd_ref" placeholder="Referencia" style="width:120px"/>
         <input id="pd_precio" type="number" min="0" step="0.01" placeholder="Precio €" style="width:110px"/>
-        <button class="ghost" id="pd_add"><span class="bico">➕</span>Añadir producto</button>
+        <button class="ghost" id="pd_add"><span class="bico"><svg class="ic"><use href="#i-plus"/></svg></span>Añadir producto</button>
       </div>
       ${cat.length?`<div class="tablewrap"><table class="conta"><thead><tr>
         <th>Producto</th><th>Ref.</th><th class="num">Precio</th><th class="num" style="width:150px">Cantidad a pedir</th><th></th></tr></thead><tbody>`+
         cat.map(x=>`<tr>
           <td><b>${esc(x.nombre)}</b></td><td>${esc(x.ref||"—")}</td><td class="num">${fmtEur(x.precio)}</td>
           <td class="num"><input type="number" min="0" data-cant="${x.id}" value="${carrito[x.id]||""}" placeholder="0" style="width:70px;text-align:center"/></td>
-          <td><button class="ghost" data-delprod="${x.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`).join("")+
+          <td><button class="ghost" data-delprod="${x.id}" style="padding:3px 8px;color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button></td></tr>`).join("")+
         `</tbody></table></div>`:'<div class="hint">Aún no hay productos. Añade lo que te vende para poder pedirlo.</div>'}
 
       ${nLineas?`<div style="margin-top:16px;padding:15px;border:1.5px solid var(--primary);border-radius:12px;background:var(--primary-soft)">
-        <div style="font-weight:700;margin-bottom:8px">🛒 Pedido: ${nLineas} producto${nLineas>1?"s":""} · Total ${fmtEur(totalCarrito)}</div>
+        <div style="font-weight:700;margin-bottom:8px"><svg class="ic"><use href="#i-cart"/></svg>Pedido: ${nLineas} producto${nLineas>1?"s":""} · Total ${fmtEur(totalCarrito)}</div>
         <div class="toolbar" style="margin-bottom:0">
-          <button class="main" id="pr_email"${p.email?"":" disabled title='Añade el email del proveedor'"}><span class="bico">📧</span>Enviar pedido por correo</button>
-          <button class="ghost" id="pr_imprimir"><span class="bico">🖨️</span>Imprimir pedido</button>
+          <button class="main" id="pr_email"${p.email?"":" disabled title='Añade el email del proveedor'"}><span class="bico"><svg class="ic"><use href="#i-mail"/></svg></span>Enviar pedido por correo</button>
+          <button class="ghost" id="pr_imprimir"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir pedido</button>
           <button class="ghost" id="pr_vaciar">Vaciar</button>
         </div></div>`:'<div class="hint" style="margin-top:14px">Pon una cantidad en los productos que quieras pedir.</div>'}
 
-      ${(pedidos().filter(x=>x.provId===p.id).length)?`<div style="font-weight:700;font-size:13px;margin:20px 0 8px">🕐 Pedidos anteriores</div>`+
+      ${(pedidos().filter(x=>x.provId===p.id).length)?`<div style="font-weight:700;font-size:13px;margin:20px 0 8px"><svg class="ic"><use href="#i-clock"/></svg>Pedidos anteriores</div>`+
         pedidos().filter(x=>x.provId===p.id).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).map(x=>
           `<div class="recrow"><div><b>${esc(fmtFecha(x.fecha))}</b> · ${x.lineas.length} productos · ${fmtEur(x.total)} ${x.enviado?'<span class="pill v">enviado</span>':""}</div>
-          <button class="ghost" data-repedir="${x.id}"><span class="bico">🔁</span>Repetir</button></div>`).join(""):""}`;
+          <button class="ghost" data-repedir="${x.id}"><span class="bico"><svg class="ic"><use href="#i-refresh"/></svg></span>Repetir</button></div>`).join(""):""}`;
     // eventos ficha
     cont.querySelector("#pr_volver").addEventListener("click",()=>{provAbierto=null;carrito={};renderProveedoresPanel();});
     cont.querySelector("#pr_editar").addEventListener("click",()=>formProveedor(p));
@@ -2485,11 +2556,11 @@ function renderProveedoresPanel(){
   let L=provs().slice();
   if(q)L=L.filter(p=>norm(p.nombre).includes(q));
   L.sort((a,b)=>(b.habitual?1:0)-(a.habitual?1:0)||gastadoCon(b.nombre)-gastadoCon(a.nombre));
-  if(!provs().length){cont.innerHTML='<div class="vacio"><span class="ico">🏭</span><b>Aún no tienes proveedores</b><span>Añade tu laboratorio, el de material, el de suministros… con su email para poder hacerles pedidos.</span></div>';return;}
+  if(!provs().length){cont.innerHTML='<div class="vacio"><span class="ico"><svg class="ic"><use href="#i-building"/></svg></span><b>Aún no tienes proveedores</b><span>Añade tu laboratorio, el de material, el de suministros… con su email para poder hacerles pedidos.</span></div>';return;}
   cont.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">`+
     L.map(p=>`<div class="folder" data-prov="${p.id}">
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
-        <span style="font-size:26px">🏭</span>
+        <span style="font-size:26px"><svg class="ic"><use href="#i-building"/></svg></span>
         <div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre)} ${p.habitual?"⭐":""}</div>
         <div class="hint">${(p.productos||[]).length} productos${p.email?" · ✉️":""}</div></div></div>
       <div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -2500,7 +2571,7 @@ function renderProveedoresPanel(){
 function formProveedor(p){
   const ed=!!p;p=p||{};
   const cont=document.getElementById("prLista");
-  cont.innerHTML=`<button class="ghost" id="pf_cancelar" style="margin-bottom:14px"><span class="bico">←</span>Cancelar</button>
+  cont.innerHTML=`<button class="ghost" id="pf_cancelar" style="margin-bottom:14px"><span class="bico"><svg class="ic"><use href="#i-left"/></svg></span>Cancelar</button>
     <div class="cbtit">${ed?"✏️ Editar proveedor":"➕ Nuevo proveedor"}</div>
     <div class="grid2">
       <div class="field"><label>Nombre <b style="color:var(--danger)">*</b></label><input id="pf_nombre" value="${esc(p.nombre||"")}"/></div>
@@ -2512,7 +2583,7 @@ function formProveedor(p){
       <div class="field"><label>NIF/CIF</label><input id="pf_nif" value="${esc(p.nif||"")}"/></div>
     </div>
     <label class="chk" style="display:flex;gap:9px;align-items:center;font-size:13px;font-weight:600;color:var(--muted)">
-      <input type="checkbox" id="pf_habitual" ${p.habitual?"checked":""} style="width:auto;accent-color:var(--primary)"/> ⭐ Proveedor habitual (de los que más compras)</label>
+      <input type="checkbox" id="pf_habitual" ${p.habitual?"checked":""} style="width:auto;accent-color:var(--primary)"/><svg class="ic"><use href="#i-star"/></svg>Proveedor habitual (de los que más compras)</label>
     <div class="field" style="margin-top:12px"><label>Notas</label><textarea id="pf_notas" rows="2">${esc(p.notas||"")}</textarea></div>
     <button class="main" id="pf_guardar">${ed?"Guardar cambios":"Crear proveedor"}</button>`;
   cont.querySelector("#pf_cancelar").addEventListener("click",()=>{provAbierto=ed?p.id:null;renderProveedoresPanel();});
@@ -2580,8 +2651,8 @@ function renderCarpetasPacientes(){
       ...b.PG.map(x=>({fecha:x.fecha||"",hora:x.hora||"",tipo:"cobro",concepto:x.concepto||"Cobro",forma:x.forma||"",estado:"",importe:num(x.importe)}))
     ].sort((a,b2)=>(b2.fecha+" "+(b2.hora||"")).localeCompare(a.fecha+" "+(a.hora||"")));
     const plan=p.planPago?`<div class="hint" style="margin:10px 0"><b>Plan de pago:</b> ${p.planPago.cuotas.filter(c=>c.pagada).length}/${p.planPago.cuotas.length} cuotas pagadas · pendiente ${fmtEur(p.planPago.cuotas.filter(c=>!c.pagada).reduce((s,c)=>s+num(c.importe),0))}</div>`:"";
-    cont.innerHTML=`<button class="ghost" id="pc_volver" style="margin-bottom:14px"><span class="bico">←</span>Volver a todos los pacientes</button>
-      <div class="cbtit"><span class="h2ico peq">🗂️</span>${esc(p.nombre)}<span class="n">${p.dni?"DNI "+esc(p.dni)+" · ":""}${esc(p.telefono||"")}</span></div>
+    cont.innerHTML=`<button class="ghost" id="pc_volver" style="margin-bottom:14px"><span class="bico"><svg class="ic"><use href="#i-left"/></svg></span>Volver a todos los pacientes</button>
+      <div class="cbtit"><span class="h2ico peq"><svg class="ic"><use href="#i-folder"/></svg></span>${esc(p.nombre)}<span class="n">${p.dni?"DNI "+esc(p.dni)+" · ":""}${esc(p.telefono||"")}</span></div>
       <div class="kpi" style="margin-bottom:12px">
         <div class="b"><div class="n">${fmtEur(b.presupuestado)}</div><div class="t">Presupuestado</div></div>
         <div class="b"><div class="n">${fmtEur(b.aceptado)}</div><div class="t">Aceptado</div></div>
@@ -2598,7 +2669,7 @@ function renderCarpetasPacientes(){
         <td class="num" style="${m.tipo==="cobro"?"color:var(--ok);font-weight:700":""}">${m.tipo==="cobro"?"+":""}${fmtEur(m.importe)}</td></tr>`).join("")
         :'<tr><td colspan="4"><div class="hint">Sin movimientos económicos.</div></td></tr>')+
       `</tbody></table></div>
-      <button class="ghost" id="pc_ficha" style="margin-top:12px"><span class="bico">👤</span>Abrir ficha completa del paciente</button>`;
+      <button class="ghost" id="pc_ficha" style="margin-top:12px"><span class="bico"><svg class="ic"><use href="#i-user"/></svg></span>Abrir ficha completa del paciente</button>`;
     cont.querySelector("#pc_volver").addEventListener("click",()=>{pacienteCarpeta=null;renderCarpetasPacientes();});
     cont.querySelector("#pc_ficha").addEventListener("click",()=>abrirFicha(p.id));
     return;
@@ -2653,8 +2724,8 @@ function renderProveedores(){
     if(!p){proveedorAbierto=null;return renderProveedores();}
     const fac=gastos().filter(g=>norm(g.proveedor||"(sin proveedor)")===norm(proveedorAbierto)&&(!anio||(g.fecha||"").slice(0,4)===String(anio)))
       .sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
-    cont.innerHTML=`<button class="ghost" id="pv_volver" style="margin-bottom:14px"><span class="bico">←</span>Volver a todas las carpetas</button>
-      <div class="cbtit"><span class="h2ico peq">📂</span>${esc(p.nombre)}<span class="n">NIF ${esc(p.nif||"—")} · ${p.facturas} facturas · ${fmtEur(p.total)}</span></div>
+    cont.innerHTML=`<button class="ghost" id="pv_volver" style="margin-bottom:14px"><span class="bico"><svg class="ic"><use href="#i-left"/></svg></span>Volver a todas las carpetas</button>
+      <div class="cbtit"><span class="h2ico peq"><svg class="ic"><use href="#i-folder"/></svg></span>${esc(p.nombre)}<span class="n">NIF ${esc(p.nif||"—")} · ${p.facturas} facturas · ${fmtEur(p.total)}</span></div>
       <div class="kpi" style="margin-bottom:14px">
         <div class="b"><div class="n">${fmtEur(p.base)}</div><div class="t">Base total</div></div>
         <div class="b"><div class="n">${fmtEur(p.iva)}</div><div class="t">IVA soportado</div></div>
@@ -2679,7 +2750,7 @@ function renderProveedores(){
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px">`+
     P.map(p=>`<div class="folder" data-carpeta="${esc(p.nombre)}">
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
-        <span style="font-size:26px">📁</span>
+        <span style="font-size:26px"><svg class="ic"><use href="#i-folder"/></svg></span>
         <div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre)}</div>
         <div class="hint">${esc(p.nif||"sin NIF")}</div></div></div>
       <div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -2723,7 +2794,7 @@ function movimientosDiarios(anio,trim){
 }
 function tablaDiario(anio,trim){
   const M=movimientosDiarios(anio,trim);
-  if(!M.length)return '<div class="cbtit"><span class="h2ico peq">🕐</span>DIARIO DETALLADO</div><div class="hint">Sin movimientos en este periodo.</div>';
+  if(!M.length)return '<div class="cbtit"><span class="h2ico peq"><svg class="ic"><use href="#i-clock"/></svg></span>DIARIO DETALLADO</div><div class="hint">Sin movimientos en este periodo.</div>';
   const dias=[...new Set(M.map(m=>m.fecha))];
   let saldoTotal=0;
   const bloques=dias.map(f=>{
@@ -2743,7 +2814,7 @@ function tablaDiario(anio,trim){
     const gast=delDia.filter(m=>m.tipo==="gasto").reduce((s,m)=>s+m.importe,0);
     const efectivo=delDia.filter(m=>m.tipo==="cobro"&&/efectivo/i.test(m.forma)).reduce((s,m)=>s+m.importe,0);
     return `<div style="margin-bottom:22px">
-      <div class="cbtit" style="border-bottom-color:var(--primary)"><span class="h2ico peq">📅</span>${esc(fechaBonita(f))}
+      <div class="cbtit" style="border-bottom-color:var(--primary)"><span class="h2ico peq"><svg class="ic"><use href="#i-cal"/></svg></span>${esc(fechaBonita(f))}
         <span class="n">${delDia.length} movimiento${delDia.length>1?"s":""} · cierre ${fmtEur(saldoDia)}</span></div>
       <div class="tablewrap"><table class="conta"><thead><tr>
         <th>Hora</th><th>Tipo</th><th>Concepto</th><th>Quién</th><th>Forma</th>
@@ -2753,7 +2824,7 @@ function tablaDiario(anio,trim){
           <td class="num">${fmtEur(saldoDia)}</td><td colspan="2"></td></tr>
         </tbody></table></div></div>`;
   }).join("");
-  return `<div class="cbtit"><span class="h2ico peq">🕐</span>DIARIO DETALLADO<span class="n">${dias.length} días · ${M.length} movimientos · saldo del periodo ${fmtEur(saldoTotal)}</span></div>
+  return `<div class="cbtit"><span class="h2ico peq"><svg class="ic"><use href="#i-clock"/></svg></span>DIARIO DETALLADO<span class="n">${dias.length} días · ${M.length} movimientos · saldo del periodo ${fmtEur(saldoTotal)}</span></div>
     <div class="hint" style="margin-bottom:14px">Cada movimiento con su hora y el acumulado del día. Los que no tengan hora aparecen al final del día.</div>`+bloques;
 }
 // Devuelve cada apunte con TODA su trazabilidad: de dónde sale, quién, qué documento
@@ -2849,7 +2920,7 @@ function renderBienes(){
     B.map(b=>{const a=amortizacionAnual(b,anio);
       return `<tr><td>${esc(b.desc)}</td><td>${esc(fmtFecha(b.fecha))}</td><td class="num">${fmtEur(b.importe)}</td>
       <td>${b.pct}%</td><td><b style="color:${a?"var(--primary-d)":"var(--muted)"}">${fmtEur(a)}</b>${a?"":" <span class='hint'>(amortizado)</span>"}</td>
-      <td><button class="ghost" data-delbi="${b.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`;}).join("")+
+      <td><button class="ghost" data-delbi="${b.id}" style="padding:3px 8px;color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button></td></tr>`;}).join("")+
     `<tr style="background:var(--gris)"><td colspan="4"><b>Total a deducir en ${esc(anio)}</b></td><td colspan="2"><b style="color:var(--primary-d)">${fmtEur(tot)}</b></td></tr>`+
     `</tbody></table></div>`;
   cont.querySelectorAll("[data-delbi]").forEach(b=>b.addEventListener("click",()=>{
@@ -2929,7 +3000,7 @@ function renderContabilidad(){
     ["deducible","Deducible",f=>f.deducible?'<span class="pill v">sí</span>':'<span class="pill g">no</span>']];
   // desglose de IVA por tipo (lo que pide el modelo 303)
   const tiposIva=[...new Set([...det.ingresos.map(x=>x.ivaPct),...det.gastos.map(x=>x.ivaPct)])].sort((a,b)=>a-b);
-  const tablaIva=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">🧾 DESGLOSE DE IVA POR TIPO</div>
+  const tablaIva=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px"><svg class="ic"><use href="#i-file"/></svg>DESGLOSE DE IVA POR TIPO</div>
     <div class="hint" style="margin-bottom:8px">Así es como lo pide el modelo 303. Recuerda que los tratamientos sanitarios suelen ir exentos (0%).</div>
     <div class="tablewrap"><table class="conta"><thead><tr><th>Tipo</th><th class="num">Base repercutido</th><th>Cuota repercutida</th><th>Base soportado</th><th>Cuota soportada</th></tr></thead><tbody>`+
     tiposIva.map(t=>{
@@ -2941,7 +3012,7 @@ function renderContabilidad(){
   // gasto por categoría
   const cats=[...new Set(det.gastos.map(g=>g.tipo))];
   const totG=suma(det.gastos,"total")||1;
-  const tablaCat=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px">📂 EN QUÉ SE VA EL DINERO</div>`+
+  const tablaCat=`<div style="font-weight:700;font-size:13px;margin:16px 0 7px"><svg class="ic"><use href="#i-folder"/></svg>EN QUÉ SE VA EL DINERO</div>`+
     (cats.length?cats.map(c=>{const f=det.gastos.filter(g=>g.tipo===c);const t=suma(f,"total");
       return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
         <b>${esc(c)}</b><span>${fmtEur(t)} · ${Math.round(t/totG*100)}%</span></div>
@@ -3202,7 +3273,7 @@ function renderPlanPago(p){
         <div class="hint">${esc(fechaBonita(c.fecha))} ${vencida?'<b style="color:var(--danger)">· VENCIDA</b>':c.pagada?"· cobrada":""}</div></div></div>
       ${!c.pagada&&vencida?`<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${(p.telefono||"").replace(/\\D/g,"").length===9?"34"+(p.telefono||"").replace(/\\D/g,""):(p.telefono||"").replace(/\\D/g,"")}?text=${encodeURIComponent("Hola "+(p.nombre||"").split(" ")[0]+", te recordamos que tienes pendiente la cuota de "+num(c.importe).toFixed(2)+"€ de tu tratamiento. ¡Gracias!")}">📲 Recordar</a>`:""}
     </div>`;}).join("")+
-    `<button class="ghost" id="pp_borrar" style="margin-top:10px;color:var(--danger)"><span class="bico">🗑️</span>Borrar el plan</button>`;
+    `<button class="ghost" id="pp_borrar" style="margin-top:10px;color:var(--danger)"><span class="bico"><svg class="ic"><use href="#i-trash"/></svg></span>Borrar el plan</button>`;
   cont.querySelectorAll("[data-ppc]").forEach(ch=>ch.addEventListener("change",()=>{
     const A=DB.pacientes();const k=A.findIndex(x=>x.id===fichaId);
     const cu=A[k].planPago.cuotas[Number(ch.dataset.ppc)];
@@ -3389,8 +3460,8 @@ function renderRecetas(p){
   cont.innerHTML=R.map(r=>`<div class="recrow">
     <div><div style="font-weight:700">${esc(r.med)}</div><div class="hint">${esc(r.pauta)} · ${esc(fechaBonita(r.fecha))} · ${esc(r.doctor||"—")}</div></div>
     <div style="display:flex;gap:8px">
-      <button class="ghost" data-imprec="${r.id}">🖨️</button>
-      <button class="ghost" data-delrec="${r.id}" style="color:var(--danger)">🗑️</button></div></div>`).join("");
+      <button class="ghost" data-imprec="${r.id}"><svg class="ic"><use href="#i-print"/></svg></button>
+      <button class="ghost" data-delrec="${r.id}" style="color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button></div></div>`).join("");
   cont.querySelectorAll("[data-imprec]").forEach(b=>b.addEventListener("click",()=>imprimirReceta(b.dataset.imprec)));
   cont.querySelectorAll("[data-delrec]").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("¿Borrar esta receta?"))return;
@@ -3769,7 +3840,7 @@ function renderGastos(){
     <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Concepto</th><th>Importe</th><th></th></tr></thead><tbody>`+
     G.slice(0,60).map(g=>`<tr><td>${esc(fmtFecha(g.fecha))}</td><td><span class="pill g">${esc(g.categoria||"Otros")}</span></td>
       <td style="white-space:normal">${esc(g.concepto||"—")}</td><td><b>${num(g.importe).toFixed(2)}€</b></td>
-      <td><button class="ghost" data-delgs="${g.id}" style="padding:3px 8px;color:var(--danger)">🗑️</button></td></tr>`).join("")+
+      <td><button class="ghost" data-delgs="${g.id}" style="padding:3px 8px;color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button></td></tr>`).join("")+
     `</tbody></table></div>`;
   cont.querySelectorAll("[data-delgs]").forEach(b=>b.addEventListener("click",()=>{
     if(!confirm("¿Borrar este gasto?"))return;
@@ -3890,7 +3961,7 @@ function renderSalaEspera(){
     const col=min>20?"var(--danger)":min>10?"var(--warn)":"var(--ok)";
     return `<div class="recrow">
       <div><div style="font-weight:700">${esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"—")}
-        ${tieneAlertaGrave(c.pacienteId)?'<span class="avisocita">⚠️</span>':""}</div>
+        ${tieneAlertaGrave(c.pacienteId)?'<span class="avisocita"><svg class="ic"><use href="#i-alert"/></svg></span>':""}</div>
         <div class="hint">Cita ${esc(c.hora||"")} · ${esc(c.doctor||"—")} · esperando <b style="color:${col}">${min} min</b></div></div>
       <button class="main" data-pasa="${c.id}" style="padding:8px 15px">Pasa ▶</button></div>`;}).join("");
   cont.querySelectorAll("[data-pasa]").forEach(b=>b.addEventListener("click",()=>pasarConsulta(b.dataset.pasa)));
@@ -3920,7 +3991,7 @@ function renderPlan(p){
           <div><div style="font-weight:600${x.hecho?";text-decoration:line-through":""}">${esc(x.trat)}${x.pieza?` · <span class="pill v">${esc(x.pieza)}</span>`:""}</div>
           <div class="hint">${esc(x.doctor||"—")}${x.importe?" · "+num(x.importe)+"€":""}${x.hecho&&x.fecha?" · hecho el "+esc(fechaBonita(x.fecha)):""}</div></div>
         </div>
-        <button class="ghost" data-delpl="${x.id}" style="color:var(--danger);padding:3px 9px">🗑️</button></div>`).join("")+`</div>`;
+        <button class="ghost" data-delpl="${x.id}" style="color:var(--danger);padding:3px 9px"><svg class="ic"><use href="#i-trash"/></svg></button></div>`).join("")+`</div>`;
   }).join("");
   cont.querySelectorAll("[data-plchk]").forEach(ch=>ch.addEventListener("change",()=>{
     const A=DB.pacientes();const i=A.findIndex(x=>x.id===fichaId);
@@ -3964,7 +4035,7 @@ function renderDuraciones(){
   if(!D.length){cont.innerHTML='<div class="hint">Sin tratamientos configurados. Añade los más habituales (revisión, limpieza, endodoncia…).</div>';return;}
   cont.innerHTML=D.map(d=>`<div class="recrow" style="padding:9px 13px">
     <div><b>${esc(d.nombre)}</b> <span class="pill v">${d.min} min</span></div>
-    <button class="ghost" data-deldu="${d.id}" style="color:var(--danger);padding:3px 9px">🗑️</button></div>`).join("");
+    <button class="ghost" data-deldu="${d.id}" style="color:var(--danger);padding:3px 9px"><svg class="ic"><use href="#i-trash"/></svg></button></div>`).join("");
   cont.querySelectorAll("[data-deldu]").forEach(b=>b.addEventListener("click",()=>{
     setCfg({duraciones:duraciones().filter(x=>x.id!==b.dataset.deldu)});renderDuraciones();toast("Tratamiento quitado");
   }));
@@ -3993,7 +4064,7 @@ function renderBloqueos(){
       <div class="hint">${esc(fechaBonita(b.desde))}${b.hasta&&b.hasta!==b.desde?" → "+esc(fechaBonita(b.hasta)):""}
         · ${b.h1||b.h2?esc((b.h1||"00:00")+" a "+(b.h2||"23:59")):"todo el día"}
         · ${b.doctor?esc(b.doctor):"todos los doctores"}</div></div>
-    <button class="ghost" data-delbl="${b.id}" style="color:var(--danger);padding:3px 9px">🗑️</button></div>`).join("");
+    <button class="ghost" data-delbl="${b.id}" style="color:var(--danger);padding:3px 9px"><svg class="ic"><use href="#i-trash"/></svg></button></div>`).join("");
   cont.querySelectorAll("[data-delbl]").forEach(x=>x.addEventListener("click",()=>{
     setCfg({bloqueos:bloqueos().filter(y=>y.id!==x.dataset.delbl)});renderBloqueos();pintarSlots();toast("Bloqueo quitado");
   }));
@@ -4010,7 +4081,7 @@ function renderEvolucion(p){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <b style="font-size:13px">${esc(fechaBonita(e.fecha))}${e.pieza?` · pieza <span class="pill v">${esc(e.pieza)}</span>`:""}</b>
       <span class="hint">${esc(e.doctor||"—")} ${e.autor?"· anotado por "+esc(e.autor):""}
-        <button class="ghost" data-delev="${e.id}" style="padding:2px 7px;color:var(--danger);margin-left:6px">🗑️</button></span>
+        <button class="ghost" data-delev="${e.id}" style="padding:2px 7px;color:var(--danger);margin-left:6px"><svg class="ic"><use href="#i-trash"/></svg></button></span>
     </div>
     <div style="font-size:13.5px;line-height:1.55;margin-top:5px;white-space:pre-wrap">${esc(e.texto)}</div>
   </div>`).join("");
@@ -4138,7 +4209,7 @@ function renderFotos(p){
       <img data-img="${fo.id}" style="width:100%;height:120px;object-fit:cover;display:block;background:var(--gris);cursor:zoom-in" alt="imagen"/>
       <div style="padding:8px 10px"><div style="font-size:12px;font-weight:600">${esc(fo.nota||"Sin descripción")}</div>
         <div class="hint" style="display:flex;justify-content:space-between;align-items:center">${esc(fechaBonita(fo.fecha))}
-        <button class="ghost" data-delimg="${fo.id}" style="padding:2px 7px;color:var(--danger)">🗑️</button></div></div>
+        <button class="ghost" data-delimg="${fo.id}" style="padding:2px 7px;color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button></div></div>
     </div>`).join("")+"</div>";
   cont.querySelectorAll("[data-img]").forEach(el=>{
     const fo=L.find(x=>x.id===el.dataset.img);pintaImagen(el,fo);
@@ -4241,8 +4312,8 @@ function renderConsentimientos(p){
       <div><div style="font-weight:700">${esc(c.titulo||c.tipo)}</div><div class="hint">Firmado el ${esc(fechaBonita(c.fecha))}</div></div>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="ghost" data-impcons="${c.id}"><span class="bico">🖨️</span>Imprimir</button>
-      <button class="ghost" data-delcons="${c.id}" style="color:var(--danger)">🗑️</button>
+      <button class="ghost" data-impcons="${c.id}"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir</button>
+      <button class="ghost" data-delcons="${c.id}" style="color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button>
     </div></div>`).join("");
   cont.querySelectorAll("[data-impcons]").forEach(b=>b.addEventListener("click",()=>imprimirConsentimiento(b.dataset.impcons)));
   cont.querySelectorAll("[data-delcons]").forEach(b=>b.addEventListener("click",()=>{
@@ -4357,7 +4428,7 @@ function renderFacturas(){
     L.map(f=>{const p=DB.pacientes().find(x=>x.id===f.pacienteId)||{};
       return `<div class="recrow"><div><div style="font-weight:700">${esc(f.numero)} · ${esc(p.nombre||"—")}</div>
         <div class="hint">${esc(fmtFecha(f.fecha))} · ${esc(f.concepto)} · <b>${f.total.toFixed(2)}€</b></div></div>
-        <button class="ghost" data-verfac="${f.id}"><span class="bico">🖨️</span>Imprimir</button></div>`;}).join("");
+        <button class="ghost" data-verfac="${f.id}"><span class="bico"><svg class="ic"><use href="#i-print"/></svg></span>Imprimir</button></div>`;}).join("");
   cont.querySelectorAll("[data-verfac]").forEach(b=>b.addEventListener("click",()=>imprimirFactura(b.dataset.verfac)));
 }
 // ==================== INFORMES · gráficas ====================
@@ -4905,7 +4976,7 @@ function jvIniciar(){
   const bv=document.getElementById("jvBtnVoz");if(bv)bv.classList.toggle("on",jvVoz);
   if(!c.dataset.ini){c.dataset.ini="1";
     const s=sesion();const quien=s&&s.nombre&&s.rol!=="admin"?", "+s.nombre.split(" ")[0]:"";
-    jvPinta(`${jvSaludo()}${quien}. Soy <b>JARVIS</b>, a tu servicio.\n\n${jvResumen()}\n\nPuedes escribirme o pulsar <b>🎙️ Hablar</b> y decírmelo en voz alta. Escribe <b>ayuda</b> para verlo todo.`,"jv");
+    jvPinta(`${jvSaludo()}${quien}. Soy <b>JARVIS</b>, a tu servicio.\n\n${jvResumen()}\n\nPuedes escribirme o pulsar <b><svg class="ic"><use href="#i-mic"/></svg>Hablar</b> y decírmelo en voz alta. Escribe <b>ayuda</b> para verlo todo.`,"jv");
   }
   const sug=["Citas de hoy","Citas de esta semana","Citas sin confirmar","¿Quién me debe dinero?","Caja de hoy","Presupuestos sin aceptar","Pacientes nuevos","¿A quién hay que avisar?","Cómo va el día","Ayuda"];
   document.getElementById("jvSug").innerHTML=sug.map(s=>`<button data-sug="${esc(s)}">${esc(s)}</button>`).join("");
@@ -4932,11 +5003,11 @@ function renderUsuarios(){
   const U=usuarios();
   L.innerHTML=U.length?U.map(u=>`<div class="userow${u.activo===false?" off":""}">
       <div><div style="font-weight:700">${esc(u.nombre||u.usuario)} ${u.activo===false?'<span class="pill g">desactivado</span>':""}</div>
-      <div class="hint">👤 ${esc(u.usuario)} · Accede a: ${SECCIONES.filter(s=>(u.permisos||{})[s.k]!==false).map(s=>esc(s.n)).join(", ")||"—"}</div></div>
+      <div class="hint"><svg class="ic"><use href="#i-user"/></svg>${esc(u.usuario)} · Accede a: ${SECCIONES.filter(s=>(u.permisos||{})[s.k]!==false).map(s=>esc(s.n)).join(", ")||"—"}</div></div>
       <div style="display:flex;gap:8px">
-        <button class="ghost" data-editu="${u.id}"><span class="bico">✏️</span>Editar</button>
+        <button class="ghost" data-editu="${u.id}"><span class="bico"><svg class="ic"><use href="#i-edit"/></svg></span>Editar</button>
         <button class="ghost" data-toggleu="${u.id}">${u.activo===false?"Activar":"Desactivar"}</button>
-        <button class="ghost" data-delu="${u.id}" style="color:var(--danger)">🗑️</button>
+        <button class="ghost" data-delu="${u.id}" style="color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></button>
       </div></div>`).join(""):'<div class="hint">Aún no has creado usuarios. Ahora mismo solo se entra con la contraseña maestra de la clínica.</div>';
   L.querySelectorAll("[data-editu]").forEach(b=>b.addEventListener("click",()=>{
     const u=usuarios().find(x=>x.id===b.dataset.editu);if(!u)return;
@@ -4992,7 +5063,7 @@ function renderCalendario(){
     celdas+=`<div class="caldia ${iso===hoy?"hoy":""}" data-caldia="${iso}"><div class="num">${d}</div>${vis}${evs.length>2?`<div class="mas">+${evs.length-2} más</div>`:""}</div>`;
   }
   document.getElementById("agendaCal").innerHTML=
-    `<div class="calnav"><button class="ghost" id="cal_prev">←</button><b>${meses[m]} ${y}</b><button class="ghost" id="cal_next">→</button></div>
+    `<div class="calnav"><button class="ghost" id="cal_prev"><svg class="ic"><use href="#i-left"/></svg></button><b>${meses[m]} ${y}</b><button class="ghost" id="cal_next"><svg class="ic"><use href="#i-right"/></svg></button></div>
      <div class="calgrid">${dow.map(x=>`<div class="caldow">${x}</div>`).join("")}${celdas}</div>`;
   document.getElementById("cal_prev").onclick=()=>{if(--calRef.m<0){calRef.m=11;calRef.y--;}renderCalendario();};
   document.getElementById("cal_next").onclick=()=>{if(++calRef.m>11){calRef.m=0;calRef.y++;}renderCalendario();};
@@ -5018,9 +5089,9 @@ function renderDiaDoctores(){
   const conHorario=Object.keys(H).filter(d=>{const r=H[d]&&H[d][diaDeFecha(f)];return r&&(r.m1||r.t1);});
   let docs=[...new Set([...conHorario,...C.map(c=>c.doctor).filter(Boolean)])].sort();
   const nav=`<div class="toolbar" style="margin-bottom:12px">
-      <button class="ghost" id="d_ant">←</button>
+      <button class="ghost" id="d_ant"><svg class="ic"><use href="#i-left"/></svg></button>
       <b style="font-size:15px;min-width:210px;text-align:center">${fechaBonita(f)}</b>
-      <button class="ghost" id="d_sig">→</button>
+      <button class="ghost" id="d_sig"><svg class="ic"><use href="#i-right"/></svg></button>
       <button class="ghost" id="d_hoy">Hoy</button>
     </div>`;
   if(!docs.length){cont.innerHTML=nav+`<div class="hint">No hay citas ni doctores con horario ese día.<br>Configura los horarios en <b>Ajustes › Horario de los doctores</b> para ver aquí sus columnas.</div>`;navDia(cont);return;}
@@ -5091,7 +5162,7 @@ function renderPagos(){
   document.getElementById("pg_body").innerHTML=G.slice().sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).map(p=>`<tr>
     <td>${esc(fmtFecha(p.fecha))}${p.hora?' <span class="hint">'+esc(p.hora)+'</span>':""}</td><td>${esc(nombrePaciente(p.pacienteId)||"—")}</td><td>${esc(p.importe)}€</td>
     <td>${esc(p.forma||"—")}</td><td>${esc(p.concepto||"—")}</td>
-    <td><button class="ghost" data-factura="${p.id}" title="Emitir factura numerada" style="padding:4px 8px">📄</button> <button class="ghost" data-recibo="${p.id}" title="Imprimir recibo" style="padding:4px 8px">🧾</button> <button class="ghost" data-delpago="${p.id}" style="padding:4px 8px">🗑️</button></td></tr>`).join("");
+    <td><button class="ghost" data-factura="${p.id}" title="Emitir factura numerada" style="padding:4px 8px"><svg class="ic"><use href="#i-file"/></svg></button> <button class="ghost" data-recibo="${p.id}" title="Imprimir recibo" style="padding:4px 8px"><svg class="ic"><use href="#i-file"/></svg></button> <button class="ghost" data-delpago="${p.id}" style="padding:4px 8px"><svg class="ic"><use href="#i-trash"/></svg></button></td></tr>`).join("");
   document.querySelectorAll("[data-recibo]").forEach(b=>b.addEventListener("click",()=>imprimirRecibo(b.dataset.recibo)));
   document.querySelectorAll("[data-llego]").forEach(b=>b.addEventListener("click",()=>marcarLlegada(b.dataset.llego)));
   document.querySelectorAll("[data-factura]").forEach(b=>b.addEventListener("click",()=>emitirFactura(b.dataset.factura)));
@@ -5108,7 +5179,7 @@ function renderRecordatorios(){
   document.getElementById("recordatorios").innerHTML=R.map(c=>`<div class="cita">
     <div class="h">${c.fecha===hoy?"HOY":"MAÑ."}</div>
     <div style="flex:1"><b>${esc(c.hora||"")}</b> ${esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"")} · 👨‍⚕️ ${esc(c.doctor||"—")}${c.motivo?" · "+esc(c.motivo):""}</div>
-    <div><button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px">💬</button> <button class="ghost" data-recordado="${c.id}" title="Marcar como avisado" style="padding:4px 8px">✓</button></div></div>`).join("");
+    <div><button class="ghost" data-wacita="${c.id}" title="Recordar por WhatsApp" style="padding:4px 8px"><svg class="ic"><use href="#i-chat"/></svg></button> <button class="ghost" data-recordado="${c.id}" title="Marcar como avisado" style="padding:4px 8px"><svg class="ic"><use href="#i-check"/></svg></button></div></div>`).join("");
 }
 
 // ==================== Odontograma ====================
@@ -5155,7 +5226,7 @@ function renderAlertas(){
   document.getElementById("alertaSaldos").innerHTML=pend.slice(0,8).map(x=>`<div class="cita"><div style="flex:1">${esc(x.p.nombre||"(sin nombre)")}</div><div><span class="pill r">${Math.round(x.s)}€</span> <button class="ghost" data-verpac="${x.p.id}" style="padding:4px 8px">ver</button></div></div>`).join("");
   const sinConf=DB.citas().filter(c=>c.fecha>=hoyISO()&&c.estado==="Programada").sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
   document.getElementById("alertaCitasVacio").style.display=sinConf.length?"none":"block";
-  document.getElementById("alertaCitas").innerHTML=sinConf.slice(0,8).map(c=>`<div class="cita"><div style="flex:1"><b>${esc(fmtFecha(c.fecha))} ${esc(c.hora||"")}</b> ${esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"")}</div><div><button class="ghost" data-wacita="${c.id}" style="padding:4px 8px">💬</button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px">✏️</button></div></div>`).join("");
+  document.getElementById("alertaCitas").innerHTML=sinConf.slice(0,8).map(c=>`<div class="cita"><div style="flex:1"><b>${esc(fmtFecha(c.fecha))} ${esc(c.hora||"")}</b> ${esc(nombrePaciente(c.pacienteId)||c.pacienteNombre||"")}</div><div><button class="ghost" data-wacita="${c.id}" style="padding:4px 8px"><svg class="ic"><use href="#i-chat"/></svg></button> <button class="ghost" data-editcita="${c.id}" style="padding:4px 8px"><svg class="ic"><use href="#i-edit"/></svg></button></div></div>`).join("");
 }
 
 // ==================== Buscador global ====================
